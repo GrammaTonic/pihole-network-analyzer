@@ -10,38 +10,38 @@ import (
 // Config represents the application configuration
 type Config struct {
 	// Analysis options
-	OnlineOnly  bool `json:"online_only"`
-	NoExclude   bool `json:"no_exclude"`
-	TestMode    bool `json:"test_mode"`
-	
+	OnlineOnly bool `json:"online_only"`
+	NoExclude  bool `json:"no_exclude"`
+	TestMode   bool `json:"test_mode"`
+
 	// Pi-hole configuration
 	Pihole PiholeConfig `json:"pihole"`
-	
+
 	// Exclusion configuration
 	Exclusions ExclusionConfig `json:"exclusions"`
-	
+
 	// Output configuration
 	Output OutputConfig `json:"output"`
 }
 
 // OutputConfig holds output-related settings
 type OutputConfig struct {
-	SaveReports    bool   `json:"save_reports"`
-	ReportDir      string `json:"report_dir"`
-	VerboseOutput  bool   `json:"verbose_output"`
-	MaxClients     int    `json:"max_clients_display"`
-	MaxDomains     int    `json:"max_domains_display"`
+	SaveReports   bool   `json:"save_reports"`
+	ReportDir     string `json:"report_dir"`
+	VerboseOutput bool   `json:"verbose_output"`
+	MaxClients    int    `json:"max_clients_display"`
+	MaxDomains    int    `json:"max_domains_display"`
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	homeDir, _ := os.UserHomeDir()
-	
+
 	return &Config{
 		OnlineOnly: false,
 		NoExclude:  false,
 		TestMode:   false,
-		
+
 		Pihole: PiholeConfig{
 			Host:     "",
 			Port:     "22",
@@ -50,16 +50,16 @@ func DefaultConfig() *Config {
 			KeyFile:  filepath.Join(homeDir, ".ssh", "id_rsa"),
 			DBPath:   "/etc/pihole/pihole-FTL.db",
 		},
-		
+
 		Exclusions: ExclusionConfig{
 			ExcludeNetworks: []string{
-				"172.16.0.0/12",  // Docker default networks
-				"127.0.0.0/8",    // Loopback
+				"172.16.0.0/12", // Docker default networks
+				"127.0.0.0/8",   // Loopback
 			},
 			ExcludeIPs:   []string{},
 			ExcludeHosts: []string{"pi.hole"},
 		},
-		
+
 		Output: OutputConfig{
 			SaveReports:   true,
 			ReportDir:     ".",
@@ -73,24 +73,24 @@ func DefaultConfig() *Config {
 // LoadConfig loads configuration from file, falling back to defaults
 func LoadConfig(configPath string) (*Config, error) {
 	config := DefaultConfig()
-	
+
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		fmt.Printf("Config file not found at %s, using defaults\n", configPath)
 		return config, nil
 	}
-	
+
 	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %v", err)
 	}
-	
+
 	// Parse JSON
 	if err := json.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("error parsing config file: %v", err)
 	}
-	
+
 	fmt.Printf("Configuration loaded from %s\n", configPath)
 	return config, nil
 }
@@ -102,18 +102,18 @@ func SaveConfig(config *Config, configPath string) error {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("error creating config directory: %v", err)
 	}
-	
+
 	// Marshal to JSON with indentation
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error marshaling config: %v", err)
 	}
-	
+
 	// Write to file
 	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		return fmt.Errorf("error writing config file: %v", err)
 	}
-	
+
 	fmt.Printf("Configuration saved to %s\n", configPath)
 	return nil
 }
@@ -155,7 +155,7 @@ func ShowConfig(config *Config) {
 	fmt.Printf("Save Reports:      %t\n", config.Output.SaveReports)
 	fmt.Printf("Report Directory:  %s\n", config.Output.ReportDir)
 	fmt.Printf("Verbose Output:    %t\n", config.Output.VerboseOutput)
-	
+
 	fmt.Println("\nPi-hole Configuration:")
 	fmt.Printf("  Host:            %s\n", config.Pihole.Host)
 	fmt.Printf("  Port:            %s\n", config.Pihole.Port)
@@ -167,7 +167,7 @@ func ShowConfig(config *Config) {
 	}
 	fmt.Printf("  Key File:        %s\n", config.Pihole.KeyFile)
 	fmt.Printf("  Database Path:   %s\n", config.Pihole.DBPath)
-	
+
 	fmt.Println("\nExclusion Networks:")
 	for _, network := range config.Exclusions.ExcludeNetworks {
 		fmt.Printf("  - %s\n", network)

@@ -191,11 +191,11 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	addressInsert := `INSERT INTO network_addresses (network_id, ip, lastSeen) VALUES (?, ?, ?)`
 
 	networks := map[string]struct {
-		id      int
-		hwaddr  string
-		name    string
-		ip      string
-		vendor  string
+		id     int
+		hwaddr string
+		name   string
+		ip     string
+		vendor string
 	}{
 		"192.168.2.110": {1, "66:78:8b:59:bf:1a", "mac.home", "192.168.2.110", "Apple"},
 		"192.168.2.210": {2, "32:79:b9:39:43:7c", "s21-van-marloes.home", "192.168.2.210", "Samsung"},
@@ -209,7 +209,7 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	}
 
 	for _, network := range networks {
-		_, err = db.Exec(networkInsert, network.id, network.hwaddr, "eth0", network.name, 
+		_, err = db.Exec(networkInsert, network.id, network.hwaddr, "eth0", network.name,
 			time.Now().Unix()-86400, time.Now().Unix(), 100, network.vendor)
 		if err != nil {
 			return fmt.Errorf("error inserting network: %v", err)
@@ -223,7 +223,7 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 
 	// Insert query records
 	queryInsert := `INSERT INTO queries (timestamp, type, status, domain, client, forward) VALUES (?, ?, ?, ?, ?, ?)`
-	
+
 	for _, record := range mockData.PiholeRecords {
 		statusCode := getStatusCodeFromString(record.Status)
 		_, err = db.Exec(queryInsert, int64(record.Timestamp), 1, statusCode, record.Domain, record.Client, "")

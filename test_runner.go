@@ -54,7 +54,7 @@ func RunTests() {
 	for i, scenario := range testScenarios {
 		fmt.Printf("\n%d. Running test: %s\n", i+1, scenario.name)
 		fmt.Println("   " + strings.Repeat("-", len(scenario.name)))
-		
+
 		err := scenario.testFunc()
 		if err != nil {
 			fmt.Printf("   ❌ FAILED: %v\n", err)
@@ -66,7 +66,7 @@ func RunTests() {
 
 	fmt.Printf("\n" + strings.Repeat("=", 50))
 	fmt.Printf("\nTest Results: %d/%d tests passed\n", successCount, len(testScenarios))
-	
+
 	if successCount == len(testScenarios) {
 		fmt.Println("🎉 All tests passed!")
 	} else {
@@ -77,29 +77,29 @@ func RunTests() {
 // Test CSV analysis with default settings
 func testCSVAnalysisDefault() error {
 	csvFile := filepath.Join("test_data", "mock_dns_data.csv")
-	
+
 	// Reset flags to default
 	*onlineOnlyFlag = false
 	*noExcludeFlag = false
-	
+
 	clientStats, err := analyzeDNSData(csvFile)
 	if err != nil {
 		return fmt.Errorf("CSV analysis failed: %v", err)
 	}
-	
+
 	// Should exclude Docker IPs, so we expect fewer clients
 	expectedMinClients := 3 // At least the main network clients
 	expectedMaxClients := 8 // But not the Docker ones
-	
+
 	if len(clientStats) < expectedMinClients || len(clientStats) > expectedMaxClients {
 		return fmt.Errorf("expected %d-%d clients, got %d", expectedMinClients, expectedMaxClients, len(clientStats))
 	}
-	
+
 	// Check that Docker IPs are excluded
 	if _, exists := clientStats["172.20.0.8"]; exists {
 		return fmt.Errorf("Docker IP 172.20.0.8 should be excluded but was found")
 	}
-	
+
 	fmt.Printf("   Found %d clients (Docker IPs correctly excluded)\n", len(clientStats))
 	return nil
 }
@@ -107,28 +107,28 @@ func testCSVAnalysisDefault() error {
 // Test CSV analysis without exclusions
 func testCSVAnalysisNoExclusions() error {
 	csvFile := filepath.Join("test_data", "mock_dns_data.csv")
-	
+
 	// Enable no-exclude flag
 	*onlineOnlyFlag = false
 	*noExcludeFlag = true
-	
+
 	clientStats, err := analyzeDNSData(csvFile)
 	if err != nil {
 		return fmt.Errorf("CSV analysis failed: %v", err)
 	}
-	
+
 	// Should include all clients including Docker
 	expectedMinClients := 8 // Should include Docker containers
-	
+
 	if len(clientStats) < expectedMinClients {
 		return fmt.Errorf("expected at least %d clients, got %d", expectedMinClients, len(clientStats))
 	}
-	
+
 	// Check that Docker IPs are included
 	if _, exists := clientStats["172.20.0.8"]; !exists {
 		return fmt.Errorf("Docker IP 172.20.0.8 should be included but was not found")
 	}
-	
+
 	fmt.Printf("   Found %d clients (all IPs included)\n", len(clientStats))
 	return nil
 }
@@ -136,22 +136,22 @@ func testCSVAnalysisNoExclusions() error {
 // Test CSV analysis with online-only filter
 func testCSVAnalysisOnlineOnly() error {
 	csvFile := filepath.Join("test_data", "mock_dns_data.csv")
-	
+
 	// Enable online-only flag
 	*onlineOnlyFlag = true
 	*noExcludeFlag = false
-	
+
 	clientStats, err := analyzeDNSData(csvFile)
 	if err != nil {
 		return fmt.Errorf("CSV analysis failed: %v", err)
 	}
-	
+
 	// Mock ARP checking
 	err = mockCheckARPStatus(clientStats)
 	if err != nil {
 		return fmt.Errorf("ARP status check failed: %v", err)
 	}
-	
+
 	// Count online clients
 	onlineCount := 0
 	for _, stats := range clientStats {
@@ -159,12 +159,12 @@ func testCSVAnalysisOnlineOnly() error {
 			onlineCount++
 		}
 	}
-	
+
 	expectedOnlineClients := 4 // Based on mock ARP data (excluding pi.hole which is excluded by default)
 	if onlineCount != expectedOnlineClients {
 		return fmt.Errorf("expected %d online clients, got %d", expectedOnlineClients, onlineCount)
 	}
-	
+
 	fmt.Printf("   Found %d online clients\n", onlineCount)
 	return nil
 }
@@ -172,24 +172,24 @@ func testCSVAnalysisOnlineOnly() error {
 // Test Pi-hole analysis with default settings
 func testPiholeAnalysisDefault() error {
 	dbFile := filepath.Join("test_data", "mock_pihole.db")
-	
+
 	// Reset flags to default
 	*onlineOnlyFlag = false
 	*noExcludeFlag = false
-	
+
 	clientStats, err := analyzePiholeDatabase(dbFile)
 	if err != nil {
 		return fmt.Errorf("Pi-hole analysis failed: %v", err)
 	}
-	
+
 	// Should exclude Docker IPs
 	expectedMinClients := 3
 	expectedMaxClients := 8
-	
+
 	if len(clientStats) < expectedMinClients || len(clientStats) > expectedMaxClients {
 		return fmt.Errorf("expected %d-%d clients, got %d", expectedMinClients, expectedMaxClients, len(clientStats))
 	}
-	
+
 	fmt.Printf("   Found %d clients from Pi-hole database\n", len(clientStats))
 	return nil
 }
@@ -197,23 +197,23 @@ func testPiholeAnalysisDefault() error {
 // Test Pi-hole analysis without exclusions
 func testPiholeAnalysisNoExclusions() error {
 	dbFile := filepath.Join("test_data", "mock_pihole.db")
-	
+
 	// Enable no-exclude flag
 	*onlineOnlyFlag = false
 	*noExcludeFlag = true
-	
+
 	clientStats, err := analyzePiholeDatabase(dbFile)
 	if err != nil {
 		return fmt.Errorf("Pi-hole analysis failed: %v", err)
 	}
-	
+
 	// Should include all clients including Docker
 	expectedMinClients := 7
-	
+
 	if len(clientStats) < expectedMinClients {
 		return fmt.Errorf("expected at least %d clients, got %d", expectedMinClients, len(clientStats))
 	}
-	
+
 	fmt.Printf("   Found %d clients (all included)\n", len(clientStats))
 	return nil
 }
@@ -221,22 +221,22 @@ func testPiholeAnalysisNoExclusions() error {
 // Test Pi-hole analysis with online-only filter
 func testPiholeAnalysisOnlineOnly() error {
 	dbFile := filepath.Join("test_data", "mock_pihole.db")
-	
+
 	// Enable online-only flag
 	*onlineOnlyFlag = true
 	*noExcludeFlag = false
-	
+
 	clientStats, err := analyzePiholeDatabase(dbFile)
 	if err != nil {
 		return fmt.Errorf("Pi-hole analysis failed: %v", err)
 	}
-	
+
 	// Mock ARP checking
 	err = mockCheckARPStatus(clientStats)
 	if err != nil {
 		return fmt.Errorf("ARP status check failed: %v", err)
 	}
-	
+
 	fmt.Printf("   Found %d clients from Pi-hole database\n", len(clientStats))
 	return nil
 }
@@ -247,17 +247,17 @@ func testARPFunctionality() error {
 	if err != nil {
 		return fmt.Errorf("mock ARP table failed: %v", err)
 	}
-	
+
 	expectedEntries := 5 // Based on mock data
 	if len(arpEntries) != expectedEntries {
 		return fmt.Errorf("expected %d ARP entries, got %d", expectedEntries, len(arpEntries))
 	}
-	
+
 	// Check specific entries
 	if entry, exists := arpEntries["192.168.2.110"]; !exists || !entry.IsOnline {
 		return fmt.Errorf("expected 192.168.2.110 to be online in ARP table")
 	}
-	
+
 	fmt.Printf("   Mock ARP table has %d entries\n", len(arpEntries))
 	return nil
 }
@@ -266,14 +266,14 @@ func testARPFunctionality() error {
 func testHostnameResolution() error {
 	testIPs := []string{"192.168.2.110", "192.168.2.210", "192.168.2.6"}
 	expectedHostnames := []string{"mac.home", "s21-van-marloes.home", "pi.hole"}
-	
+
 	for i, ip := range testIPs {
 		hostname := MockHostnameResolution(ip, MockDataInstance)
 		if hostname != expectedHostnames[i] {
 			return fmt.Errorf("expected hostname %s for IP %s, got %s", expectedHostnames[i], ip, hostname)
 		}
 	}
-	
+
 	fmt.Printf("   Hostname resolution working for %d IPs\n", len(testIPs))
 	return nil
 }
@@ -281,13 +281,13 @@ func testHostnameResolution() error {
 // Test exclusion logic
 func testExclusionLogic() error {
 	exclusions := getDefaultExclusions("192.168.2.6")
-	
+
 	// Test cases
 	testCases := []struct {
-		ip       string
-		hostname string
+		ip            string
+		hostname      string
 		shouldExclude bool
-		reason    string
+		reason        string
 	}{
 		{"172.20.0.8", "", true, "Docker network"},
 		{"192.168.2.6", "", true, "Pi-hole host"},
@@ -295,15 +295,15 @@ func testExclusionLogic() error {
 		{"127.0.0.1", "", true, "Loopback"},
 		{"192.168.2.100", "pi.hole", true, "Pi-hole hostname"},
 	}
-	
+
 	for _, tc := range testCases {
 		shouldExclude, reason := shouldExcludeClient(tc.ip, tc.hostname, exclusions)
 		if shouldExclude != tc.shouldExclude {
-			return fmt.Errorf("IP %s: expected exclude=%t, got exclude=%t (reason: %s)", 
+			return fmt.Errorf("IP %s: expected exclude=%t, got exclude=%t (reason: %s)",
 				tc.ip, tc.shouldExclude, shouldExclude, reason)
 		}
 	}
-	
+
 	fmt.Printf("   Exclusion logic tested for %d cases\n", len(testCases))
 	return nil
 }
@@ -312,7 +312,7 @@ func testExclusionLogic() error {
 func mockCheckARPStatus(clientStats map[string]*ClientStats) error {
 	arpEntries := MockDataInstance.ARPEntries
 	hostnames := MockDataInstance.Hostnames
-	
+
 	onlineCount := 0
 	for ip, stats := range clientStats {
 		if arpEntry, exists := arpEntries[ip]; exists && arpEntry.IsOnline {
@@ -324,12 +324,12 @@ func mockCheckARPStatus(clientStats map[string]*ClientStats) error {
 			stats.IsOnline = false
 			stats.ARPStatus = "offline"
 		}
-		
+
 		// Set hostname if available
 		if hostname, exists := hostnames[ip]; exists {
 			stats.Hostname = hostname
 		}
 	}
-	
+
 	return nil
 }

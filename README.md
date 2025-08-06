@@ -1,5 +1,9 @@
 # OMG - DNS Usage Analyzer
 
+[![Test Suite](https://github.com/GrammaTonic/OMG/actions/workflows/test.yml/badge.svg)](https://github.com/GrammaTonic/OMG/actions/workflows/test.yml)
+[![Build Status](https://github.com/GrammaTonic/OMG/actions/workflows/simple-ci.yml/badge.svg)](https://github.com/GrammaTonic/OMG/actions/workflows/simple-ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/GrammaTonic/OMG)](https://goreportcard.com/report/github.com/GrammaTonic/OMG)
+
 A Go application to analyze DNS usage patterns per client from CSV log files or directly from Pi-hole servers via SSH.
 
 ## Features

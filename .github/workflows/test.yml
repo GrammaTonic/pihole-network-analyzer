@@ -1,0 +1,165 @@
+name: Test Suite Validation
+
+on:
+  push:
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/test.yml'
+  pull_request:
+    paths:
+      - '**.go'
+      - 'go.mod' 
+      - 'go.sum'
+
+jobs:
+  validate-tests:
+    name: Validate Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        check-latest: true
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      run: |
+        go mod download
+        go mod verify
+      timeout-minutes: 3
+        
+    - name: Build application
+      run: |
+        echo "🔨 Building DNS Analyzer for testing..."
+        go build -v -o dns-analyzer .
+        chmod +x dns-analyzer
+      timeout-minutes: 3
+        
+    - name: Run comprehensive test suite
+      run: |
+        echo "🧪 Running comprehensive test suite..."
+        echo "======================================"
+        ./dns-analyzer --test
+      timeout-minutes: 6
+        
+    - name: Test CSV analysis functionality
+      run: |
+        echo "📊 Testing CSV analysis with mock data..."
+        ./dns-analyzer --test-mode test_data/mock_dns_data.csv
+        
+    - name: Test configuration system
+      run: |
+        echo "⚙️ Testing configuration system..."
+        
+        # Test default config creation
+        ./dns-analyzer --create-config
+        
+        # Test config display
+        ./dns-analyzer --show-config
+        
+        # Test custom config
+        echo '{
+          "online_only": true,
+          "test_mode": true,
+          "output": {
+            "max_clients_display": 5,
+            "verbose_output": true
+          }
+        }' > test-config.json
+        
+        ./dns-analyzer --config test-config.json --show-config
+        
+    - name: Test Pi-hole setup integration
+      run: |
+        echo "🔧 Testing Pi-hole configuration integration..."
+        
+        # Test that Pi-hole config is shown in --show-config
+        ./dns-analyzer --show-config | grep -q "Pi-hole Configuration:"
+        echo "✅ Pi-hole configuration display working!"
+        
+    - name: Test exclusion logic
+      run: |
+        echo "🚫 Testing exclusion logic..."
+        
+        # Test with exclusions (default)
+        ./dns-analyzer --test-mode test_data/mock_dns_data.csv > with_exclusions.txt
+        
+        # Test without exclusions
+        ./dns-analyzer --test-mode --no-exclude test_data/mock_dns_data.csv > without_exclusions.txt
+        
+        # Verify different results
+        if cmp -s with_exclusions.txt without_exclusions.txt; then
+          echo "❌ Exclusion logic not working - results are identical"
+          exit 1
+        else
+          echo "✅ Exclusion logic working - results differ as expected"
+        fi
+        
+    - name: Test online-only mode
+      run: |
+        echo "🌐 Testing online-only mode..."
+        
+        # Test online-only mode
+        ./dns-analyzer --test-mode --online-only test_data/mock_dns_data.csv > online_only.txt
+        
+        # Test all clients mode
+        ./dns-analyzer --test-mode test_data/mock_dns_data.csv > all_clients.txt
+        
+        echo "✅ Online-only mode test completed"
+        
+    - name: Performance test
+      run: |
+        echo "⚡ Running performance test..."
+        
+        # Time the test suite
+        time ./dns-analyzer --test
+        
+        echo "✅ Performance test completed"
+        
+    - name: Validate test data integrity
+      run: |
+        echo "🔍 Validating test data integrity..."
+        
+        # Build and run to generate test data
+        ./dns-analyzer --test > /dev/null
+        
+        # Check that mock data files are created
+        [ -f "test_data/mock_dns_data.csv" ] || (echo "❌ Mock CSV not created" && exit 1)
+        [ -f "test_data/mock_pihole.db" ] || (echo "❌ Mock Pi-hole DB not created" && exit 1)
+        
+        # Verify CSV has expected number of records
+        record_count=$(tail -n +2 test_data/mock_dns_data.csv | wc -l)
+        if [ "$record_count" -eq 20 ]; then
+          echo "✅ Mock CSV has correct number of records ($record_count)"
+        else
+          echo "❌ Mock CSV has unexpected number of records ($record_count, expected 20)"
+          exit 1
+        fi
+        
+    - name: Cleanup test artifacts
+      if: always()
+      run: |
+        echo "🧹 Cleaning up test artifacts..."
+        rm -f test-config.json
+        rm -f with_exclusions.txt without_exclusions.txt
+        rm -f online_only.txt all_clients.txt
+        rm -rf test_data/
+        rm -rf reports/
+        echo "✅ Cleanup completed"

@@ -28,32 +28,32 @@ import (
 
 // Command-line flags
 var (
-	onlineOnlyFlag  = flag.Bool("online-only", false, "Show only clients that are currently online (have MAC addresses in ARP table)")
-	noExcludeFlag   = flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)")
-	piholeFlag      = flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file")
-	piholeSetupFlag = flag.Bool("pihole-setup", false, "Setup Pi-hole configuration")
-	testFlag        = flag.Bool("test", false, "Run test suite with mock data")
-	testModeFlag    = flag.Bool("test-mode", false, "Enable test mode for development (uses mock data)")
-	configFlag      = flag.String("config", "", "Configuration file path (default: ~/.dns-analyzer/config.json)")
-	showConfigFlag  = flag.Bool("show-config", false, "Show current configuration and exit")
+	onlineOnlyFlag   = flag.Bool("online-only", false, "Show only clients that are currently online (have MAC addresses in ARP table)")
+	noExcludeFlag    = flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)")
+	piholeFlag       = flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file")
+	piholeSetupFlag  = flag.Bool("pihole-setup", false, "Setup Pi-hole configuration")
+	testFlag         = flag.Bool("test", false, "Run test suite with mock data")
+	testModeFlag     = flag.Bool("test-mode", false, "Enable test mode for development (uses mock data)")
+	configFlag       = flag.String("config", "", "Configuration file path (default: ~/.dns-analyzer/config.json)")
+	showConfigFlag   = flag.Bool("show-config", false, "Show current configuration and exit")
 	createConfigFlag = flag.Bool("create-config", false, "Create default configuration file and exit")
 )
 
 // DNSRecord represents a single DNS query record
 type DNSRecord struct {
-	ID           int
-	DateTime     string
-	Domain       string
-	Type         int
-	Status       int
-	Client       string
-	Forward      string
+	ID             int
+	DateTime       string
+	Domain         string
+	Type           int
+	Status         int
+	Client         string
+	Forward        string
 	AdditionalInfo string
-	ReplyType    int
-	ReplyTime    float64
-	DNSSEC       int
-	ListID       int
-	EDE          int
+	ReplyType      int
+	ReplyTime      float64
+	DNSSEC         int
+	ListID         int
+	EDE            int
 }
 
 // PiholeRecord represents a record from Pi-hole database
@@ -67,12 +67,12 @@ type PiholeRecord struct {
 
 // PiholeConfig holds SSH connection details for Pi-hole
 type PiholeConfig struct {
-	Host       string `json:"host"`
-	Port       string `json:"port"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	KeyFile    string `json:"keyfile"`
-	DBPath     string `json:"dbpath"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	KeyFile  string `json:"keyfile"`
+	DBPath   string `json:"dbpath"`
 }
 
 // ExclusionConfig holds the exclusion rules
@@ -92,18 +92,18 @@ type ARPEntry struct {
 
 // ClientStats holds statistics for a client
 type ClientStats struct {
-	Client        string
-	TotalQueries  int
-	Uniquedomains int
+	Client         string
+	TotalQueries   int
+	Uniquedomains  int
 	TotalReplyTime float64
-	AvgReplyTime  float64
-	Domains       map[string]int
-	QueryTypes    map[int]int
-	StatusCodes   map[int]int
-	HWAddr        string // Added for Pi-hole data
-	IsOnline      bool   // Added for ARP checking
-	ARPStatus     string // Added for ARP status
-	Hostname      string // Added for hostname resolution
+	AvgReplyTime   float64
+	Domains        map[string]int
+	QueryTypes     map[int]int
+	StatusCodes    map[int]int
+	HWAddr         string // Added for Pi-hole data
+	IsOnline       bool   // Added for ARP checking
+	ARPStatus      string // Added for ARP status
+	Hostname       string // Added for hostname resolution
 }
 
 // ClientStatsList for sorting
@@ -116,13 +116,13 @@ func (c ClientStatsList) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
 func main() {
 	// Parse command-line flags
 	flag.Parse()
-	
+
 	// Handle configuration-related flags first
 	configPath := GetConfigPath()
 	if *configFlag != "" {
 		configPath = *configFlag
 	}
-	
+
 	if *createConfigFlag {
 		err := CreateDefaultConfigFile(configPath)
 		if err != nil {
@@ -131,27 +131,27 @@ func main() {
 		fmt.Printf("Default configuration created at: %s\n", configPath)
 		return
 	}
-	
+
 	// Load configuration
 	config, err := LoadConfig(configPath)
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
-	
+
 	// Merge command line flags with config
 	MergeFlags(config)
-	
+
 	if *showConfigFlag {
 		ShowConfig(config)
 		return
 	}
-	
+
 	// Handle test mode first
 	if *testFlag {
 		RunTests()
 		return
 	}
-	
+
 	if config.TestMode {
 		fmt.Println("🧪 Test Mode Enabled - Using Mock Data")
 		err := InitTestMode()
@@ -160,16 +160,16 @@ func main() {
 		}
 		defer CleanupTestEnvironment()
 	}
-	
+
 	// Get non-flag arguments
 	args := flag.Args()
-	
+
 	// Handle Pi-hole setup first
 	if *piholeSetupFlag {
 		setupPiholeConfig()
 		return
 	}
-	
+
 	// Handle Pi-hole analysis
 	if *piholeFlag != "" {
 		configFile := *piholeFlag
@@ -180,10 +180,10 @@ func main() {
 		if config.NoExclude {
 			fmt.Println("Mode: No exclusions applied")
 		}
-		
+
 		var clientStats map[string]*ClientStats
 		var err error
-		
+
 		if config.TestMode {
 			// Use mock Pi-hole database in test mode
 			dbFile := filepath.Join("test_data", "mock_pihole.db")
@@ -191,11 +191,11 @@ func main() {
 		} else {
 			clientStats, err = analyzePiholeData(configFile)
 		}
-		
+
 		if err != nil {
 			log.Fatalf("Error analyzing Pi-hole data: %v", err)
 		}
-		
+
 		// Check ARP status for all clients
 		if config.TestMode {
 			err = mockCheckARPStatus(clientStats)
@@ -205,7 +205,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("Warning: Could not check ARP status: %v\n", err)
 		}
-		
+
 		displayResultsWithConfig(clientStats, config)
 		return
 	}
@@ -244,12 +244,12 @@ func main() {
 
 	// Default: CSV analysis
 	csvFile := args[0]
-	
+
 	// In test mode, use mock CSV file if original file doesn't exist
 	if config.TestMode && csvFile == "test.csv" {
 		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
 	}
-	
+
 	fmt.Printf("Analyzing DNS usage data from: %s\n", csvFile)
 	fmt.Println("Processing large file, please wait...")
 	if config.OnlineOnly {
@@ -258,7 +258,7 @@ func main() {
 	if config.NoExclude {
 		fmt.Println("Mode: No exclusions applied")
 	}
-	
+
 	clientStats, err := analyzeDNSDataWithConfig(csvFile, config)
 	if err != nil {
 		log.Fatalf("Error analyzing data: %v", err)
@@ -280,14 +280,14 @@ func main() {
 func setupPiholeConfig() {
 	fmt.Println("Pi-hole Configuration Setup")
 	fmt.Println("============================")
-	
+
 	piholeConfig := PiholeConfig{}
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	fmt.Print("Pi-hole server IP/hostname: ")
 	piholeConfig.Host, _ = reader.ReadString('\n')
 	piholeConfig.Host = strings.TrimSpace(piholeConfig.Host)
-	
+
 	fmt.Print("SSH port (default 22): ")
 	port, _ := reader.ReadString('\n')
 	port = strings.TrimSpace(port)
@@ -295,18 +295,18 @@ func setupPiholeConfig() {
 		port = "22"
 	}
 	piholeConfig.Port = port
-	
+
 	fmt.Print("SSH username (default pi): ")
 	piholeConfig.Username, _ = reader.ReadString('\n')
 	piholeConfig.Username = strings.TrimSpace(piholeConfig.Username)
 	if piholeConfig.Username == "" {
 		piholeConfig.Username = "pi"
 	}
-	
+
 	fmt.Print("Use SSH key authentication? (y/n): ")
 	authChoice, _ := reader.ReadString('\n')
 	authChoice = strings.TrimSpace(strings.ToLower(authChoice))
-	
+
 	if authChoice == "y" || authChoice == "yes" {
 		fmt.Print("SSH private key file path (default ~/.ssh/id_rsa): ")
 		piholeConfig.KeyFile, _ = reader.ReadString('\n')
@@ -320,31 +320,31 @@ func setupPiholeConfig() {
 		piholeConfig.Password, _ = reader.ReadString('\n')
 		piholeConfig.Password = strings.TrimSpace(piholeConfig.Password)
 	}
-	
+
 	fmt.Print("Pi-hole database path (default /etc/pihole/pihole-FTL.db): ")
 	piholeConfig.DBPath, _ = reader.ReadString('\n')
 	piholeConfig.DBPath = strings.TrimSpace(piholeConfig.DBPath)
 	if piholeConfig.DBPath == "" {
 		piholeConfig.DBPath = "/etc/pihole/pihole-FTL.db"
 	}
-	
+
 	// Load or create the main configuration
 	configPath := GetConfigPath()
 	config := DefaultConfig()
-	
+
 	// Try to load existing config
 	if data, err := ioutil.ReadFile(configPath); err == nil {
 		json.Unmarshal(data, config)
 	}
-	
+
 	// Update Pi-hole configuration
 	config.Pihole = piholeConfig
-	
+
 	// Save updated configuration
 	if err := SaveConfig(config, configPath); err != nil {
 		log.Fatalf("Error saving configuration: %v", err)
 	}
-	
+
 	fmt.Printf("\nPi-hole configuration updated in: %s\n", configPath)
 	fmt.Println("You can now run: dns-analyzer --config config.json test.csv")
 	fmt.Println("Or use: dns-analyzer --show-config to view all settings")
@@ -352,13 +352,13 @@ func setupPiholeConfig() {
 
 func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 	fmt.Println("Connecting to Pi-hole server...")
-	
+
 	// Read configuration
 	configData, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %v", err)
 	}
-	
+
 	config := PiholeConfig{}
 	// Simple JSON parsing (could use json package for more robust parsing)
 	lines := strings.Split(string(configData), "\n")
@@ -378,17 +378,17 @@ func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 			config.DBPath = extractJSONValue(line)
 		}
 	}
-	
+
 	// Create SSH client
 	sshConfig := &ssh.ClientConfig{
-		User: config.Username,
+		User:            config.Username,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // In production, use proper host key verification
-		Timeout: 30 * time.Second,
+		Timeout:         30 * time.Second,
 	}
-	
+
 	// Try SSH agent first, then key file, then password
 	var authMethods []ssh.AuthMethod
-	
+
 	// Try SSH agent (for 1Password and other SSH agent integrations)
 	if sshAuthSock := os.Getenv("SSH_AUTH_SOCK"); sshAuthSock != "" {
 		if agentConn, err := net.Dial("unix", sshAuthSock); err == nil {
@@ -398,7 +398,7 @@ func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 			defer agentConn.Close()
 		}
 	}
-	
+
 	// Try specific key file if provided
 	if config.KeyFile != "" {
 		key, err := ioutil.ReadFile(config.KeyFile)
@@ -408,65 +408,65 @@ func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 			}
 		}
 	}
-	
+
 	// Try password if provided
 	if config.Password != "" {
 		authMethods = append(authMethods, ssh.Password(config.Password))
 	}
-	
+
 	if len(authMethods) == 0 {
 		return nil, fmt.Errorf("no authentication methods available - please configure SSH key, SSH agent, or password")
 	}
-	
+
 	sshConfig.Auth = authMethods
-	
+
 	// Connect to SSH
 	client, err := ssh.Dial("tcp", net.JoinHostPort(config.Host, config.Port), sshConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SSH: %v", err)
 	}
 	defer client.Close()
-	
+
 	fmt.Println("Connected to Pi-hole server successfully!")
-	
+
 	// Copy database file to temporary location for analysis
 	tempDB := fmt.Sprintf("/tmp/pihole-analysis-%d.db", time.Now().Unix())
 	copyCmd := fmt.Sprintf("cp %s %s && chmod 644 %s", config.DBPath, tempDB, tempDB)
-	
+
 	session, err := client.NewSession()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSH session: %v", err)
 	}
 	defer session.Close()
-	
+
 	err = session.Run(copyCmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy database: %v", err)
 	}
-	
+
 	// Download the database file via SCP-like operation
 	localDBPath := fmt.Sprintf("pihole-data-%d.db", time.Now().Unix())
 	err = downloadFile(client, tempDB, localDBPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download database: %v", err)
 	}
-	
+
 	// Clean up remote temp file
 	session2, _ := client.NewSession()
 	session2.Run(fmt.Sprintf("rm -f %s", tempDB))
 	session2.Close()
-	
+
 	fmt.Printf("Database downloaded to: %s\n", localDBPath)
-	
+
 	// Analyze the database
 	clientStats, err := analyzePiholeDatabase(localDBPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to analyze database: %v", err)
 	}
-	
+
 	// Clean up local database file
 	os.Remove(localDBPath)
-	
+
 	return clientStats, nil
 }
 
@@ -488,14 +488,14 @@ func downloadFile(client *ssh.Client, remotePath, localPath string) error {
 		return err
 	}
 	defer session.Close()
-	
+
 	// Create local file
 	localFile, err := os.Create(localPath)
 	if err != nil {
 		return err
 	}
 	defer localFile.Close()
-	
+
 	// Use cat command to stream file content
 	session.Stdout = localFile
 	return session.Run(fmt.Sprintf("cat %s", remotePath))
@@ -507,10 +507,10 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 		return nil, fmt.Errorf("error opening database: %v", err)
 	}
 	defer db.Close()
-	
+
 	// Get exclusion configuration with default settings
 	exclusions := getDefaultExclusions("192.168.2.6") // Default Pi-hole IP, will be updated
-	
+
 	// Execute the Pi-hole query
 	query := `
 	SELECT
@@ -541,20 +541,20 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 		network n ON na.network_id = n.id
 	ORDER BY q.timestamp DESC
 	LIMIT 100000`
-	
+
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("error executing query: %v", err)
 	}
 	defer rows.Close()
-	
+
 	clientStats := make(map[string]*ClientStats)
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool) // Cache of excluded IPs to avoid repeated checks
-	
+
 	fmt.Println("Processing Pi-hole database records...")
-	
+
 	for rows.Next() {
 		var record PiholeRecord
 		err := rows.Scan(&record.Timestamp, &record.Client, &record.HWAddr, &record.Domain, &record.Status)
@@ -562,15 +562,15 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 			log.Printf("Error scanning record: %v", err)
 			continue
 		}
-		
+
 		recordCount++
-		
+
 		// Check if this IP has already been determined to be excluded
 		if excluded, exists := excludedIPs[record.Client]; exists && excluded {
 			excludedCount++
 			continue
 		}
-		
+
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[record.Client]; !exists {
 			// Only apply exclusions if not disabled by flag
@@ -588,28 +588,28 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 				excludedIPs[record.Client] = false
 			}
 		}
-		
+
 		// Update client statistics
 		updateClientStatsFromPihole(clientStats, &record)
-		
+
 		if recordCount%10000 == 0 {
 			fmt.Printf("Processed %d records (%d excluded)...\n", recordCount, excludedCount)
 		}
 	}
-	
+
 	fmt.Printf("Total Pi-hole records processed: %d (excluded: %d)\n", recordCount, excludedCount)
-	
+
 	// Calculate unique domains count
 	for _, stats := range clientStats {
 		stats.Uniquedomains = len(stats.Domains)
 	}
-	
+
 	return clientStats, nil
 }
 
 func updateClientStatsFromPihole(clientStats map[string]*ClientStats, record *PiholeRecord) {
 	client := record.Client
-	
+
 	if clientStats[client] == nil {
 		clientStats[client] = &ClientStats{
 			Client:      client,
@@ -622,15 +622,15 @@ func updateClientStatsFromPihole(clientStats map[string]*ClientStats, record *Pi
 			Hostname:    "",
 		}
 	}
-	
+
 	stats := clientStats[client]
 	stats.TotalQueries++
 	stats.Domains[record.Domain]++
-	
+
 	// Convert status string to status code for consistency
 	statusCode := getStatusCodeFromString(record.Status)
 	stats.StatusCodes[statusCode]++
-	
+
 	// Set HWAddr if we have it
 	if record.HWAddr != "" {
 		stats.HWAddr = record.HWAddr
@@ -669,37 +669,37 @@ func getStatusCodeFromString(status string) int {
 func getLocalARPTable() (map[string]*ARPEntry, error) {
 	// Try different ARP commands based on OS
 	var cmd *exec.Cmd
-	
+
 	// For macOS and Linux
 	cmd = exec.Command("arp", "-a")
-	
+
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ARP table: %v", err)
 	}
-	
+
 	return parseARPOutput(string(output))
 }
 
 func parseARPOutput(output string) (map[string]*ARPEntry, error) {
 	arpEntries := make(map[string]*ARPEntry)
 	lines := strings.Split(output, "\n")
-	
+
 	// Regex patterns for different ARP output formats
 	// macOS format: "hostname (192.168.1.1) at aa:bb:cc:dd:ee:ff on en0 ifscope [ethernet]"
 	// Linux format: "192.168.1.1 ether aa:bb:cc:dd:ee:ff C eth0"
 	macOSPattern := regexp.MustCompile(`\(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\) at ([a-fA-F0-9:]{17})`)
 	linuxPattern := regexp.MustCompile(`([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+\w+\s+([a-fA-F0-9:]{17})\s+(\w+)`)
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
 		var ip, hwAddr, status string
 		var isOnline bool
-		
+
 		// Try macOS format first
 		if matches := macOSPattern.FindStringSubmatch(line); len(matches) >= 3 {
 			ip = matches[1]
@@ -715,7 +715,7 @@ func parseARPOutput(output string) (map[string]*ARPEntry, error) {
 		} else {
 			continue
 		}
-		
+
 		arpEntries[ip] = &ARPEntry{
 			IP:       ip,
 			HWAddr:   hwAddr,
@@ -723,17 +723,17 @@ func parseARPOutput(output string) (map[string]*ARPEntry, error) {
 			IsOnline: isOnline,
 		}
 	}
-	
+
 	return arpEntries, nil
 }
 
 func pingHost(ip string) bool {
 	// Try to ping the host to refresh ARP table
 	var cmd *exec.Cmd
-	
+
 	// Use ping with 1 packet and 1 second timeout
 	cmd = exec.Command("ping", "-c", "1", "-W", "1000", ip)
-	
+
 	err := cmd.Run()
 	return err == nil
 }
@@ -742,41 +742,41 @@ func arpPing(ip string) bool {
 	// Use arping to send ARP requests directly (more reliable for ARP table population)
 	// First try arping if available, fallback to regular ping
 	var cmd *exec.Cmd
-	
+
 	// Try arping first (if installed via brew install arping)
 	cmd = exec.Command("arping", "-c", "1", "-W", "1000", ip)
 	err := cmd.Run()
 	if err == nil {
 		return true
 	}
-	
+
 	// Fallback to regular ping
 	return pingHost(ip)
 }
 
 func refreshARPTable(clientIPs []string) {
 	fmt.Println("Refreshing ARP table by sending ARP requests to clients...")
-	
+
 	// Channel to limit concurrent pings
 	semaphore := make(chan struct{}, 10) // Limit to 10 concurrent pings
 	var wg sync.WaitGroup
-	
+
 	for _, ip := range clientIPs {
 		// Skip if it's obviously not a valid IPv4 address
 		if strings.Contains(ip, ":") || ip == "" || !isValidIPv4(ip) {
 			continue
 		}
-		
+
 		wg.Add(1)
 		go func(ip string) {
 			defer wg.Done()
-			semaphore <- struct{}{} // Acquire semaphore
+			semaphore <- struct{}{}        // Acquire semaphore
 			defer func() { <-semaphore }() // Release semaphore
-			
+
 			arpPing(ip) // Use ARP ping instead of regular ping
 		}(ip)
 	}
-	
+
 	// Wait for all pings to complete
 	wg.Wait()
 	fmt.Println("ARP table refresh completed")
@@ -802,7 +802,7 @@ func resolveHostname(ip string) string {
 	if err != nil || len(names) == 0 {
 		return "" // Return empty string if resolution fails
 	}
-	
+
 	// Return the first hostname, removing trailing dot if present
 	hostname := names[0]
 	if strings.HasSuffix(hostname, ".") {
@@ -813,30 +813,30 @@ func resolveHostname(ip string) string {
 
 func resolveHostnames(clientStats map[string]*ClientStats) {
 	fmt.Println("Resolving hostnames for clients...")
-	
+
 	// Channel to limit concurrent DNS lookups
 	semaphore := make(chan struct{}, 5) // Limit to 5 concurrent lookups
 	var wg sync.WaitGroup
-	
+
 	for ip, stats := range clientStats {
 		// Skip if it's obviously not a valid IPv4 address
 		if strings.Contains(ip, ":") || ip == "" || !isValidIPv4(ip) {
 			continue
 		}
-		
+
 		wg.Add(1)
 		go func(ip string, stats *ClientStats) {
 			defer wg.Done()
-			semaphore <- struct{}{} // Acquire semaphore
+			semaphore <- struct{}{}        // Acquire semaphore
 			defer func() { <-semaphore }() // Release semaphore
-			
+
 			hostname := resolveHostname(ip)
 			if hostname != "" {
 				stats.Hostname = hostname
 			}
 		}(ip, stats)
 	}
-	
+
 	// Wait for all lookups to complete
 	wg.Wait()
 	fmt.Println("Hostname resolution completed")
@@ -846,8 +846,8 @@ func resolveHostnames(clientStats map[string]*ClientStats) {
 func getDefaultExclusions(piholeHost string) *ExclusionConfig {
 	return &ExclusionConfig{
 		ExcludeNetworks: []string{
-			"172.16.0.0/12",  // Docker default networks
-			"127.0.0.0/8",    // Loopback
+			"172.16.0.0/12", // Docker default networks
+			"127.0.0.0/8",   // Loopback
 		},
 		ExcludeIPs: []string{
 			piholeHost, // Exclude the Pi-hole host itself
@@ -864,12 +864,12 @@ func isIPInNetwork(ip, cidr string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	ipAddr := net.ParseIP(ip)
 	if ipAddr == nil {
 		return false
 	}
-	
+
 	return network.Contains(ipAddr)
 }
 
@@ -881,14 +881,14 @@ func shouldExcludeClient(ip, hostname string, exclusions *ExclusionConfig) (bool
 			return true, fmt.Sprintf("IP %s is in exclusion list", ip)
 		}
 	}
-	
+
 	// Check excluded networks
 	for _, network := range exclusions.ExcludeNetworks {
 		if isIPInNetwork(ip, network) {
 			return true, fmt.Sprintf("IP %s is in excluded network %s", ip, network)
 		}
 	}
-	
+
 	// Check excluded hostnames
 	if hostname != "" {
 		for _, excludeHost := range exclusions.ExcludeHosts {
@@ -897,7 +897,7 @@ func shouldExcludeClient(ip, hostname string, exclusions *ExclusionConfig) (bool
 			}
 		}
 	}
-	
+
 	return false, ""
 }
 
@@ -916,10 +916,10 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool)
-	
+
 	// Use exclusion configuration from config
 	exclusions := &config.Exclusions
-	
+
 	// Skip header
 	_, err = reader.Read()
 	if err != nil {
@@ -950,13 +950,13 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 		}
 
 		recordCount++
-		
+
 		// Check if this IP has already been determined to be excluded
 		if excluded, exists := excludedIPs[dnsRecord.Client]; exists && excluded {
 			excludedCount++
 			continue
 		}
-		
+
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
 			// Only apply exclusions if not disabled by config
@@ -979,14 +979,14 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 
 		// Update client statistics
 		updateClientStats(clientStats, dnsRecord)
-		
+
 		if recordCount%100000 == 0 {
 			fmt.Printf("Processed %d records (%d excluded)...\n", recordCount, excludedCount)
 		}
 	}
 
 	fmt.Printf("Total records processed: %d (excluded: %d)\n", recordCount, excludedCount)
-	
+
 	// Calculate average reply times
 	for _, stats := range clientStats {
 		if stats.TotalQueries > 0 {
@@ -1012,10 +1012,10 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool)
-	
+
 	// Get exclusion configuration
 	exclusions := getDefaultExclusions("192.168.2.6") // Default Pi-hole IP
-	
+
 	// Skip header
 	_, err = reader.Read()
 	if err != nil {
@@ -1046,13 +1046,13 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 		}
 
 		recordCount++
-		
+
 		// Check if this IP has already been determined to be excluded
 		if excluded, exists := excludedIPs[dnsRecord.Client]; exists && excluded {
 			excludedCount++
 			continue
 		}
-		
+
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
 			// Only apply exclusions if not disabled by flag
@@ -1075,14 +1075,14 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 
 		// Update client statistics
 		updateClientStats(clientStats, dnsRecord)
-		
+
 		if recordCount%100000 == 0 {
 			fmt.Printf("Processed %d records (%d excluded)...\n", recordCount, excludedCount)
 		}
 	}
 
 	fmt.Printf("Total records processed: %d (excluded: %d)\n", recordCount, excludedCount)
-	
+
 	// Calculate average reply times
 	for _, stats := range clientStats {
 		if stats.TotalQueries > 0 {
@@ -1151,7 +1151,7 @@ func parseRecord(record []string) (*DNSRecord, error) {
 
 func updateClientStats(clientStats map[string]*ClientStats, record *DNSRecord) {
 	client := record.Client
-	
+
 	if clientStats[client] == nil {
 		clientStats[client] = &ClientStats{
 			Client:      client,
@@ -1176,29 +1176,29 @@ func updateClientStats(clientStats map[string]*ClientStats, record *DNSRecord) {
 // checkARPStatus updates the ARP status for all clients
 func checkARPStatus(clientStats map[string]*ClientStats) error {
 	fmt.Println("Checking ARP table for device availability...")
-	
+
 	// First, collect all client IPs
 	var clientIPs []string
 	for ip := range clientStats {
 		clientIPs = append(clientIPs, ip)
 	}
-	
+
 	// Refresh ARP table by sending ARP requests
 	refreshARPTable(clientIPs)
-	
+
 	// Now get the updated ARP table
 	arpMap, err := getLocalARPTable()
 	if err != nil {
 		return fmt.Errorf("failed to get ARP table: %v", err)
 	}
-	
+
 	onlineCount := 0
 	for ip, stats := range clientStats {
 		if arpEntry, exists := arpMap[ip]; exists {
 			stats.IsOnline = true
 			stats.ARPStatus = "online"
 			onlineCount++
-			
+
 			// If we don't have a hardware address from DNS logs but have one from ARP, use it
 			if stats.HWAddr == "" && arpEntry.HWAddr != "" {
 				stats.HWAddr = arpEntry.HWAddr
@@ -1208,10 +1208,10 @@ func checkARPStatus(clientStats map[string]*ClientStats) error {
 			stats.ARPStatus = "offline"
 		}
 	}
-	
+
 	// Resolve hostnames for all clients
 	resolveHostnames(clientStats)
-	
+
 	fmt.Printf("Found %d/%d clients online in ARP table\n", onlineCount, len(clientStats))
 	return nil
 }
@@ -1268,7 +1268,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		if stats.HWAddr != "" {
 			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, stats.HWAddr[:12]+"...") // Show first 12 chars of MAC
 		}
-		
+
 		// Prepare hostname display
 		hostname := stats.Hostname
 		if hostname == "" {
@@ -1276,7 +1276,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		} else if len(hostname) > 18 {
 			hostname = hostname[:15] + "..."
 		}
-		
+
 		onlineStatus := "Unknown"
 		if stats.ARPStatus != "unknown" {
 			if stats.IsOnline {
@@ -1285,11 +1285,11 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 				onlineStatus = "✗ Offline"
 			}
 		}
-		
-		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n", 
-			clientDisplay, 
+
+		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n",
+			clientDisplay,
 			hostname,
-			stats.TotalQueries, 
+			stats.TotalQueries,
 			stats.Uniquedomains,
 			stats.AvgReplyTime,
 			percentage,
@@ -1315,7 +1315,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		if stats.HWAddr != "" {
 			fmt.Printf("   Hardware Address: %s\n", stats.HWAddr)
 		}
-		
+
 		// Show ARP status
 		if stats.ARPStatus != "unknown" {
 			statusIcon := "✗"
@@ -1324,7 +1324,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 			}
 			fmt.Printf("   Network Status: %s %s\n", statusIcon, strings.Title(stats.ARPStatus))
 		}
-		
+
 		fmt.Printf("   Total Queries: %d\n", stats.TotalQueries)
 		fmt.Printf("   Unique Domains: %d\n", stats.Uniquedomains)
 		fmt.Printf("   Average Reply Time: %.6f seconds\n", stats.AvgReplyTime)
@@ -1430,7 +1430,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 		if stats.HWAddr != "" {
 			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, stats.HWAddr[:12]+"...") // Show first 12 chars of MAC
 		}
-		
+
 		// Prepare hostname display
 		hostname := stats.Hostname
 		if hostname == "" {
@@ -1438,7 +1438,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 		} else if len(hostname) > 18 {
 			hostname = hostname[:15] + "..."
 		}
-		
+
 		onlineStatus := "Unknown"
 		if stats.ARPStatus != "unknown" {
 			if stats.IsOnline {
@@ -1447,11 +1447,11 @@ func displayResults(clientStats map[string]*ClientStats) {
 				onlineStatus = "✗ Offline"
 			}
 		}
-		
-		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n", 
-			clientDisplay, 
+
+		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n",
+			clientDisplay,
 			hostname,
-			stats.TotalQueries, 
+			stats.TotalQueries,
 			stats.Uniquedomains,
 			stats.AvgReplyTime,
 			percentage,
@@ -1477,7 +1477,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 		if stats.HWAddr != "" {
 			fmt.Printf("   Hardware Address: %s\n", stats.HWAddr)
 		}
-		
+
 		// Show ARP status
 		if stats.ARPStatus != "unknown" {
 			statusIcon := "✗"
@@ -1486,7 +1486,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 			}
 			fmt.Printf("   Network Status: %s %s\n", statusIcon, strings.Title(stats.ARPStatus))
 		}
-		
+
 		fmt.Printf("   Total Queries: %d\n", stats.TotalQueries)
 		fmt.Printf("   Unique Domains: %d\n", stats.Uniquedomains)
 		fmt.Printf("   Average Reply Time: %.6f seconds\n", stats.AvgReplyTime)
@@ -1608,13 +1608,13 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 	if reportDir == "" {
 		reportDir = "."
 	}
-	
+
 	// Ensure report directory exists
 	if err := os.MkdirAll(reportDir, 0755); err != nil {
 		log.Printf("Error creating report directory: %v", err)
 		return
 	}
-	
+
 	filename := filepath.Join(reportDir, fmt.Sprintf("dns_usage_report_%s.txt", time.Now().Format("20060102_150405")))
 	file, err := os.Create(filename)
 	if err != nil {
@@ -1650,9 +1650,9 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 		if stats.IsOnline {
 			status = "Online"
 		}
-		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%% %-10s\n", 
-			stats.Client, 
-			stats.TotalQueries, 
+		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%% %-10s\n",
+			stats.Client,
+			stats.TotalQueries,
 			stats.Uniquedomains,
 			stats.AvgReplyTime,
 			percentage,
@@ -1685,9 +1685,9 @@ func saveDetailedReport(statsList ClientStatsList, totalQueries int) {
 
 	for _, stats := range statsList {
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%%\n", 
-			stats.Client, 
-			stats.TotalQueries, 
+		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%%\n",
+			stats.Client,
+			stats.TotalQueries,
 			stats.Uniquedomains,
 			stats.AvgReplyTime,
 			percentage)
