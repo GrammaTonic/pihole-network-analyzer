@@ -37,6 +37,8 @@ var (
 	configFlag       = flag.String("config", "", "Configuration file path (default: ~/.dns-analyzer/config.json)")
 	showConfigFlag   = flag.Bool("show-config", false, "Show current configuration and exit")
 	createConfigFlag = flag.Bool("create-config", false, "Create default configuration file and exit")
+	noColorFlag      = flag.Bool("no-color", false, "Disable colored output")
+	noEmojiFlag      = flag.Bool("no-emoji", false, "Disable emoji in output")
 )
 
 // DNSRecord represents a single DNS query record
@@ -117,6 +119,14 @@ func main() {
 	// Parse command-line flags
 	flag.Parse()
 
+	// Configure colors based on flags
+	if *noColorFlag {
+		DisableColors()
+	}
+	if *noEmojiFlag {
+		DisableEmojis()
+	}
+
 	// Handle configuration-related flags first
 	configPath := GetConfigPath()
 	if *configFlag != "" {
@@ -173,7 +183,7 @@ func main() {
 	// Handle Pi-hole analysis
 	if *piholeFlag != "" {
 		configFile := *piholeFlag
-		fmt.Printf("Connecting to Pi-hole using config: %s\n", configFile)
+		fmt.Printf("Connecting to Pi-hole using config: %s\n", Info(configFile))
 		if config.OnlineOnly {
 			fmt.Println("Mode: Online clients only")
 		}
@@ -203,7 +213,7 @@ func main() {
 			err = checkARPStatus(clientStats)
 		}
 		if err != nil {
-			fmt.Printf("Warning: Could not check ARP status: %v\n", err)
+			fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
 		}
 
 		displayResultsWithConfig(clientStats, config)
@@ -251,7 +261,7 @@ func main() {
 	}
 
 	fmt.Printf("Analyzing DNS usage data from: %s\n", csvFile)
-	fmt.Println("Processing large file, please wait...")
+	fmt.Println(ProcessingIndicator("Processing large file, please wait..."))
 	if config.OnlineOnly {
 		fmt.Println("Mode: Online clients only")
 	}
@@ -270,11 +280,11 @@ func main() {
 	} else {
 		err = checkARPStatus(clientStats)
 	}
-	if err != nil {
-		fmt.Printf("Warning: Could not check ARP status: %v\n", err)
-	}
+		if err != nil {
+			fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
+		}
 
-	displayResultsWithConfig(clientStats, config)
+		displayResultsWithConfig(clientStats, config)
 }
 
 func setupPiholeConfig() {
@@ -351,7 +361,7 @@ func setupPiholeConfig() {
 }
 
 func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
-	fmt.Println("Connecting to Pi-hole server...")
+	fmt.Println(ProcessingIndicator("Connecting to Pi-hole server..."))
 
 	// Read configuration
 	configData, err := ioutil.ReadFile(configFile)
@@ -427,7 +437,7 @@ func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 	}
 	defer client.Close()
 
-	fmt.Println("Connected to Pi-hole server successfully!")
+	fmt.Println(Success("Connected to Pi-hole server successfully!"))
 
 	// Copy database file to temporary location for analysis
 	tempDB := fmt.Sprintf("/tmp/pihole-analysis-%d.db", time.Now().Unix())
@@ -553,7 +563,7 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 	excludedCount := 0
 	excludedIPs := make(map[string]bool) // Cache of excluded IPs to avoid repeated checks
 
-	fmt.Println("Processing Pi-hole database records...")
+	fmt.Println(ProcessingIndicator("Processing Pi-hole database records..."))
 
 	for rows.Next() {
 		var record PiholeRecord
@@ -779,7 +789,7 @@ func refreshARPTable(clientIPs []string) {
 
 	// Wait for all pings to complete
 	wg.Wait()
-	fmt.Println("ARP table refresh completed")
+	fmt.Println(Success("ARP table refresh completed"))
 }
 
 func isValidIPv4(ip string) bool {
@@ -839,7 +849,7 @@ func resolveHostnames(clientStats map[string]*ClientStats) {
 
 	// Wait for all lookups to complete
 	wg.Wait()
-	fmt.Println("Hostname resolution completed")
+	fmt.Println(Success("Hostname resolution completed"))
 }
 
 // getDefaultExclusions returns the default exclusion configuration
@@ -926,7 +936,7 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 		return nil, fmt.Errorf("error reading header: %v", err)
 	}
 
-	fmt.Println("Processing CSV records with exclusions...")
+	fmt.Println(ProcessingIndicator("Processing CSV records with exclusions..."))
 
 	for {
 		record, err := reader.Read()
@@ -1022,7 +1032,7 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 		return nil, fmt.Errorf("error reading header: %v", err)
 	}
 
-	fmt.Println("Processing CSV records with exclusions...")
+	fmt.Println(ProcessingIndicator("Processing CSV records with exclusions..."))
 
 	for {
 		record, err := reader.Read()
@@ -1212,7 +1222,7 @@ func checkARPStatus(clientStats map[string]*ClientStats) error {
 	// Resolve hostnames for all clients
 	resolveHostnames(clientStats)
 
-	fmt.Printf("Found %d/%d clients online in ARP table\n", onlineCount, len(clientStats))
+	fmt.Printf("Found %s clients online in ARP table\n", Success(fmt.Sprintf("%d/%d", onlineCount, len(clientStats))))
 	return nil
 }
 
@@ -1234,28 +1244,27 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	// Sort by total queries (descending)
 	sort.Sort(statsList)
 
-	fmt.Println("\n" + strings.Repeat("=", 80))
-	fmt.Println("DNS USAGE ANALYSIS BY CLIENT")
+	fmt.Println(SectionHeader("DNS USAGE ANALYSIS BY CLIENT"))
 	if config.OnlineOnly {
-		fmt.Println("(Showing only online clients)")
+		fmt.Println(Info("(Showing only online clients)"))
 	}
-	fmt.Println(strings.Repeat("=", 80))
 
 	// Summary
-	fmt.Printf("Total unique clients: %d\n", len(statsList))
+	fmt.Printf("Total unique clients: %s\n", BoldCyan(fmt.Sprintf("%d", len(statsList))))
 	totalQueries := 0
 	for _, stats := range statsList {
 		totalQueries += stats.TotalQueries
 	}
-	fmt.Printf("Total DNS queries: %d\n", totalQueries)
+	fmt.Printf("Total DNS queries: %s\n", BoldGreen(fmt.Sprintf("%d", totalQueries)))
 	fmt.Println()
 
 	// Top clients by query count (configurable)
 	maxDisplay := config.Output.MaxClients
-	fmt.Printf("TOP %d CLIENTS BY QUERY COUNT:\n", maxDisplay)
-	fmt.Println(strings.Repeat("-", 110))
-	fmt.Printf("%-25s %-20s %-10s %-12s %-12s %-8s %-8s\n", "Client IP", "Hostname", "Queries", "Domains", "Avg Reply", "% Total", "Online")
-	fmt.Println(strings.Repeat("-", 110))
+	fmt.Println(SubSectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
+	fmt.Printf("%-25s %-20s %-10s %-12s %-12s %-8s %-8s\n", 
+		Bold("Client IP"), Bold("Hostname"), Bold("Queries"), Bold("Domains"), 
+		Bold("Avg Reply"), Bold("% Total"), Bold("Online"))
+	fmt.Println(Cyan(strings.Repeat("-", 110)))
 
 	if len(statsList) < maxDisplay {
 		maxDisplay = len(statsList)
@@ -1264,42 +1273,35 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	for i := 0; i < maxDisplay; i++ {
 		stats := statsList[i]
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		clientDisplay := stats.Client
+		clientDisplay := HighlightIP(stats.Client)
 		if stats.HWAddr != "" {
-			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, stats.HWAddr[:12]+"...") // Show first 12 chars of MAC
+			clientDisplay = fmt.Sprintf("%s (%s)", HighlightIP(stats.Client), Gray(stats.HWAddr[:12]+"...")) // Show first 12 chars of MAC
 		}
 
 		// Prepare hostname display
 		hostname := stats.Hostname
 		if hostname == "" {
-			hostname = "-"
+			hostname = Gray("-")
 		} else if len(hostname) > 18 {
-			hostname = hostname[:15] + "..."
+			hostname = Cyan(hostname[:15] + "...")
+		} else {
+			hostname = Cyan(hostname)
 		}
 
-		onlineStatus := "Unknown"
-		if stats.ARPStatus != "unknown" {
-			if stats.IsOnline {
-				onlineStatus = "✓ Online"
-			} else {
-				onlineStatus = "✗ Offline"
-			}
-		}
+		onlineStatus := OnlineStatus(stats.IsOnline, stats.ARPStatus)
 
-		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n",
+		fmt.Printf("%-34s %-29s %-19s %-21s %-12.6f %-17s %-16s\n",
 			clientDisplay,
 			hostname,
-			stats.TotalQueries,
-			stats.Uniquedomains,
+			ColoredQueryCount(stats.TotalQueries),
+			ColoredDomainCount(stats.Uniquedomains),
 			stats.AvgReplyTime,
-			percentage,
+			ColoredPercentage(percentage),
 			onlineStatus)
 	}
 
 	// Detailed analysis for top 5 clients
-	fmt.Println("\n" + strings.Repeat("=", 80))
-	fmt.Println("DETAILED ANALYSIS - TOP 5 CLIENTS")
-	fmt.Println(strings.Repeat("=", 80))
+	fmt.Println(SectionHeader("DETAILED ANALYSIS - TOP 5 CLIENTS"))
 
 	maxDetailed := 5
 	if len(statsList) < maxDetailed {
@@ -1308,30 +1310,26 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 
 	for i := 0; i < maxDetailed; i++ {
 		stats := statsList[i]
-		fmt.Printf("\n%d. CLIENT: %s\n", i+1, stats.Client)
+		fmt.Printf("\n%s %s: %s\n", BoldYellow(fmt.Sprintf("%d.", i+1)), BoldWhite("CLIENT"), HighlightIP(stats.Client))
 		if stats.Hostname != "" {
-			fmt.Printf("   Hostname: %s\n", stats.Hostname)
+			fmt.Printf("   %s: %s\n", BoldWhite("Hostname"), Cyan(stats.Hostname))
 		}
 		if stats.HWAddr != "" {
-			fmt.Printf("   Hardware Address: %s\n", stats.HWAddr)
+			fmt.Printf("   %s: %s\n", BoldWhite("Hardware Address"), Gray(stats.HWAddr))
 		}
 
 		// Show ARP status
 		if stats.ARPStatus != "unknown" {
-			statusIcon := "✗"
-			if stats.IsOnline {
-				statusIcon = "✓"
-			}
-			fmt.Printf("   Network Status: %s %s\n", statusIcon, strings.Title(stats.ARPStatus))
+			fmt.Printf("   %s: %s\n", BoldWhite("Network Status"), OnlineStatus(stats.IsOnline, stats.ARPStatus))
 		}
 
-		fmt.Printf("   Total Queries: %d\n", stats.TotalQueries)
-		fmt.Printf("   Unique Domains: %d\n", stats.Uniquedomains)
-		fmt.Printf("   Average Reply Time: %.6f seconds\n", stats.AvgReplyTime)
+		fmt.Printf("   %s: %s\n", BoldWhite("Total Queries"), ColoredQueryCount(stats.TotalQueries))
+		fmt.Printf("   %s: %s\n", BoldWhite("Unique Domains"), ColoredDomainCount(stats.Uniquedomains))
+		fmt.Printf("   %s: %.6f seconds\n", BoldWhite("Average Reply Time"), stats.AvgReplyTime)
 
 		// Top domains for this client (configurable)
 		maxDomains := config.Output.MaxDomains
-		fmt.Printf("   Top %d Domains:\n", maxDomains)
+		fmt.Printf("   %s:\n", BoldWhite(fmt.Sprintf("Top %d Domains", maxDomains)))
 		domainList := make([]struct {
 			domain string
 			count  int
@@ -1353,7 +1351,9 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		}
 
 		for j := 0; j < maxDomains; j++ {
-			fmt.Printf("     %s: %d queries\n", domainList[j].domain, domainList[j].count)
+			fmt.Printf("     %s: %s queries\n", 
+				HighlightDomain(domainList[j].domain), 
+				ColoredQueryCount(domainList[j].count))
 		}
 
 		// Query types distribution
