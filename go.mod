@@ -1,4 +1,4 @@
-module omg-usage-analyzer
+module pihole-network-analyzer
 
 go 1.23.0
 
