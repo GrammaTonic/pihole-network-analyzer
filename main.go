@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/csv"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -27,10 +28,15 @@ import (
 
 // Command-line flags
 var (
-	onlineOnlyFlag = flag.Bool("online-only", false, "Show only clients that are currently online (have MAC addresses in ARP table)")
-	noExcludeFlag  = flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)")
-	piholeFlag     = flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file")
+	onlineOnlyFlag  = flag.Bool("online-only", false, "Show only clients that are currently online (have MAC addresses in ARP table)")
+	noExcludeFlag   = flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)")
+	piholeFlag      = flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file")
 	piholeSetupFlag = flag.Bool("pihole-setup", false, "Setup Pi-hole configuration")
+	testFlag        = flag.Bool("test", false, "Run test suite with mock data")
+	testModeFlag    = flag.Bool("test-mode", false, "Enable test mode for development (uses mock data)")
+	configFlag      = flag.String("config", "", "Configuration file path (default: ~/.dns-analyzer/config.json)")
+	showConfigFlag  = flag.Bool("show-config", false, "Show current configuration and exit")
+	createConfigFlag = flag.Bool("create-config", false, "Create default configuration file and exit")
 )
 
 // DNSRecord represents a single DNS query record
@@ -61,19 +67,19 @@ type PiholeRecord struct {
 
 // PiholeConfig holds SSH connection details for Pi-hole
 type PiholeConfig struct {
-	Host       string
-	Port       string
-	Username   string
-	Password   string
-	KeyFile    string
-	DBPath     string
+	Host       string `json:"host"`
+	Port       string `json:"port"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	KeyFile    string `json:"keyfile"`
+	DBPath     string `json:"dbpath"`
 }
 
 // ExclusionConfig holds the exclusion rules
 type ExclusionConfig struct {
-	ExcludeNetworks []string // CIDR networks to exclude
-	ExcludeIPs      []string // Specific IPs to exclude
-	ExcludeHosts    []string // Hostnames to exclude
+	ExcludeNetworks []string `json:"exclude_networks"` // CIDR networks to exclude
+	ExcludeIPs      []string `json:"exclude_ips"`      // Specific IPs to exclude
+	ExcludeHosts    []string `json:"exclude_hosts"`    // Hostnames to exclude
 }
 
 // ARPEntry represents an entry from the ARP table
@@ -111,6 +117,50 @@ func main() {
 	// Parse command-line flags
 	flag.Parse()
 	
+	// Handle configuration-related flags first
+	configPath := GetConfigPath()
+	if *configFlag != "" {
+		configPath = *configFlag
+	}
+	
+	if *createConfigFlag {
+		err := CreateDefaultConfigFile(configPath)
+		if err != nil {
+			log.Fatalf("Error creating config file: %v", err)
+		}
+		fmt.Printf("Default configuration created at: %s\n", configPath)
+		return
+	}
+	
+	// Load configuration
+	config, err := LoadConfig(configPath)
+	if err != nil {
+		log.Fatalf("Error loading configuration: %v", err)
+	}
+	
+	// Merge command line flags with config
+	MergeFlags(config)
+	
+	if *showConfigFlag {
+		ShowConfig(config)
+		return
+	}
+	
+	// Handle test mode first
+	if *testFlag {
+		RunTests()
+		return
+	}
+	
+	if config.TestMode {
+		fmt.Println("🧪 Test Mode Enabled - Using Mock Data")
+		err := InitTestMode()
+		if err != nil {
+			log.Fatalf("Failed to initialize test mode: %v", err)
+		}
+		defer CleanupTestEnvironment()
+	}
+	
 	// Get non-flag arguments
 	args := flag.Args()
 	
@@ -124,24 +174,39 @@ func main() {
 	if *piholeFlag != "" {
 		configFile := *piholeFlag
 		fmt.Printf("Connecting to Pi-hole using config: %s\n", configFile)
-		if *onlineOnlyFlag {
+		if config.OnlineOnly {
 			fmt.Println("Mode: Online clients only")
 		}
-		if *noExcludeFlag {
+		if config.NoExclude {
 			fmt.Println("Mode: No exclusions applied")
 		}
 		
-		clientStats, err := analyzePiholeData(configFile)
+		var clientStats map[string]*ClientStats
+		var err error
+		
+		if config.TestMode {
+			// Use mock Pi-hole database in test mode
+			dbFile := filepath.Join("test_data", "mock_pihole.db")
+			clientStats, err = analyzePiholeDatabase(dbFile)
+		} else {
+			clientStats, err = analyzePiholeData(configFile)
+		}
+		
 		if err != nil {
 			log.Fatalf("Error analyzing Pi-hole data: %v", err)
 		}
 		
 		// Check ARP status for all clients
-		if err := checkARPStatus(clientStats); err != nil {
+		if config.TestMode {
+			err = mockCheckARPStatus(clientStats)
+		} else {
+			err = checkARPStatus(clientStats)
+		}
+		if err != nil {
 			fmt.Printf("Warning: Could not check ARP status: %v\n", err)
 		}
 		
-		displayResults(clientStats)
+		displayResultsWithConfig(clientStats, config)
 		return
 	}
 
@@ -152,52 +217,76 @@ func main() {
 		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
 		fmt.Println("  dns-analyzer --pihole <config_file> [flags]        # Analyze Pi-hole live data")
 		fmt.Println("  dns-analyzer --pihole-setup                       # Setup Pi-hole configuration")
+		fmt.Println("  dns-analyzer --test                               # Run test suite")
+		fmt.Println("  dns-analyzer --test-mode [other flags]           # Use mock data for testing")
+		fmt.Println("  dns-analyzer --create-config                     # Create default config file")
+		fmt.Println("  dns-analyzer --show-config                       # Show current configuration")
 		fmt.Println()
 		fmt.Println("Flags:")
 		fmt.Println("  --online-only    Show only clients currently online (with MAC addresses in ARP)")
 		fmt.Println("  --no-exclude     Disable default exclusions (Docker networks, Pi-hole host)")
+		fmt.Println("  --test-mode      Enable test mode (uses mock data instead of real network)")
+		fmt.Println("  --config <path>  Use specific configuration file")
+		fmt.Println()
+		fmt.Println("Configuration:")
+		fmt.Printf("  Default config: %s\n", configPath)
+		fmt.Println("  Use --create-config to generate default configuration")
+		fmt.Println("  Use --show-config to view current settings")
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  dns-analyzer test.csv")
-		fmt.Println("  dns-analyzer --online-only --pihole pihole-config.json")
+		fmt.Println("  dns-analyzer --online-only --config my-config.json test.csv")
 		fmt.Println("  dns-analyzer --no-exclude test.csv")
+		fmt.Println("  dns-analyzer --test-mode --online-only test_data/mock_dns_data.csv")
+		fmt.Println("  dns-analyzer --config my-config.json test.csv")
 		os.Exit(1)
 	}
 
 	// Default: CSV analysis
 	csvFile := args[0]
+	
+	// In test mode, use mock CSV file if original file doesn't exist
+	if config.TestMode && csvFile == "test.csv" {
+		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
+	}
+	
 	fmt.Printf("Analyzing DNS usage data from: %s\n", csvFile)
 	fmt.Println("Processing large file, please wait...")
-	if *onlineOnlyFlag {
+	if config.OnlineOnly {
 		fmt.Println("Mode: Online clients only")
 	}
-	if *noExcludeFlag {
+	if config.NoExclude {
 		fmt.Println("Mode: No exclusions applied")
 	}
 	
-	clientStats, err := analyzeDNSData(csvFile)
+	clientStats, err := analyzeDNSDataWithConfig(csvFile, config)
 	if err != nil {
 		log.Fatalf("Error analyzing data: %v", err)
 	}
 
 	// Check ARP status for all clients
-	if err := checkARPStatus(clientStats); err != nil {
+	if config.TestMode {
+		err = mockCheckARPStatus(clientStats)
+	} else {
+		err = checkARPStatus(clientStats)
+	}
+	if err != nil {
 		fmt.Printf("Warning: Could not check ARP status: %v\n", err)
 	}
 
-	displayResults(clientStats)
+	displayResultsWithConfig(clientStats, config)
 }
 
 func setupPiholeConfig() {
 	fmt.Println("Pi-hole Configuration Setup")
 	fmt.Println("============================")
 	
-	config := PiholeConfig{}
+	piholeConfig := PiholeConfig{}
 	reader := bufio.NewReader(os.Stdin)
 	
 	fmt.Print("Pi-hole server IP/hostname: ")
-	config.Host, _ = reader.ReadString('\n')
-	config.Host = strings.TrimSpace(config.Host)
+	piholeConfig.Host, _ = reader.ReadString('\n')
+	piholeConfig.Host = strings.TrimSpace(piholeConfig.Host)
 	
 	fmt.Print("SSH port (default 22): ")
 	port, _ := reader.ReadString('\n')
@@ -205,13 +294,13 @@ func setupPiholeConfig() {
 	if port == "" {
 		port = "22"
 	}
-	config.Port = port
+	piholeConfig.Port = port
 	
 	fmt.Print("SSH username (default pi): ")
-	config.Username, _ = reader.ReadString('\n')
-	config.Username = strings.TrimSpace(config.Username)
-	if config.Username == "" {
-		config.Username = "pi"
+	piholeConfig.Username, _ = reader.ReadString('\n')
+	piholeConfig.Username = strings.TrimSpace(piholeConfig.Username)
+	if piholeConfig.Username == "" {
+		piholeConfig.Username = "pi"
 	}
 	
 	fmt.Print("Use SSH key authentication? (y/n): ")
@@ -220,42 +309,45 @@ func setupPiholeConfig() {
 	
 	if authChoice == "y" || authChoice == "yes" {
 		fmt.Print("SSH private key file path (default ~/.ssh/id_rsa): ")
-		config.KeyFile, _ = reader.ReadString('\n')
-		config.KeyFile = strings.TrimSpace(config.KeyFile)
-		if config.KeyFile == "" {
+		piholeConfig.KeyFile, _ = reader.ReadString('\n')
+		piholeConfig.KeyFile = strings.TrimSpace(piholeConfig.KeyFile)
+		if piholeConfig.KeyFile == "" {
 			homeDir, _ := os.UserHomeDir()
-			config.KeyFile = filepath.Join(homeDir, ".ssh", "id_rsa")
+			piholeConfig.KeyFile = filepath.Join(homeDir, ".ssh", "id_rsa")
 		}
 	} else {
 		fmt.Print("SSH password: ")
-		config.Password, _ = reader.ReadString('\n')
-		config.Password = strings.TrimSpace(config.Password)
+		piholeConfig.Password, _ = reader.ReadString('\n')
+		piholeConfig.Password = strings.TrimSpace(piholeConfig.Password)
 	}
 	
 	fmt.Print("Pi-hole database path (default /etc/pihole/pihole-FTL.db): ")
-	config.DBPath, _ = reader.ReadString('\n')
-	config.DBPath = strings.TrimSpace(config.DBPath)
-	if config.DBPath == "" {
-		config.DBPath = "/etc/pihole/pihole-FTL.db"
+	piholeConfig.DBPath, _ = reader.ReadString('\n')
+	piholeConfig.DBPath = strings.TrimSpace(piholeConfig.DBPath)
+	if piholeConfig.DBPath == "" {
+		piholeConfig.DBPath = "/etc/pihole/pihole-FTL.db"
 	}
 	
-	// Save configuration
-	configJSON := fmt.Sprintf(`{
-  "host": "%s",
-  "port": "%s",
-  "username": "%s",
-  "password": "%s",
-  "keyfile": "%s",
-  "dbpath": "%s"
-}`, config.Host, config.Port, config.Username, config.Password, config.KeyFile, config.DBPath)
+	// Load or create the main configuration
+	configPath := GetConfigPath()
+	config := DefaultConfig()
 	
-	err := ioutil.WriteFile("pihole-config.json", []byte(configJSON), 0600)
-	if err != nil {
+	// Try to load existing config
+	if data, err := ioutil.ReadFile(configPath); err == nil {
+		json.Unmarshal(data, config)
+	}
+	
+	// Update Pi-hole configuration
+	config.Pihole = piholeConfig
+	
+	// Save updated configuration
+	if err := SaveConfig(config, configPath); err != nil {
 		log.Fatalf("Error saving configuration: %v", err)
 	}
 	
-	fmt.Println("\nConfiguration saved to pihole-config.json")
-	fmt.Println("You can now run: go run main.go --pihole pihole-config.json")
+	fmt.Printf("\nPi-hole configuration updated in: %s\n", configPath)
+	fmt.Println("You can now run: dns-analyzer --config config.json test.csv")
+	fmt.Println("Or use: dns-analyzer --show-config to view all settings")
 }
 
 func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
@@ -809,6 +901,103 @@ func shouldExcludeClient(ip, hostname string, exclusions *ExclusionConfig) (bool
 	return false, ""
 }
 
+// analyzeDNSDataWithConfig analyzes DNS data using configuration settings
+func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*ClientStats, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(bufio.NewReader(file))
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
+
+	clientStats := make(map[string]*ClientStats)
+	recordCount := 0
+	excludedCount := 0
+	excludedIPs := make(map[string]bool)
+	
+	// Use exclusion configuration from config
+	exclusions := &config.Exclusions
+	
+	// Skip header
+	_, err = reader.Read()
+	if err != nil {
+		return nil, fmt.Errorf("error reading header: %v", err)
+	}
+
+	fmt.Println("Processing CSV records with exclusions...")
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Printf("Error reading record %d: %v", recordCount, err)
+			continue
+		}
+
+		if len(record) < 6 {
+			continue // Skip malformed records
+		}
+
+		// Parse the record
+		dnsRecord, err := parseRecord(record)
+		if err != nil {
+			log.Printf("Error parsing record %d: %v", recordCount, err)
+			continue
+		}
+
+		recordCount++
+		
+		// Check if this IP has already been determined to be excluded
+		if excluded, exists := excludedIPs[dnsRecord.Client]; exists && excluded {
+			excludedCount++
+			continue
+		}
+		
+		// Check if this client should be excluded (only check once per IP)
+		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
+			// Only apply exclusions if not disabled by config
+			if !config.NoExclude {
+				if shouldExclude, reason := shouldExcludeClient(dnsRecord.Client, "", exclusions); shouldExclude {
+					excludedIPs[dnsRecord.Client] = true
+					excludedCount++
+					if excludedCount <= 10 {
+						fmt.Printf("Excluded: %s\n", reason)
+					}
+					continue
+				} else {
+					excludedIPs[dnsRecord.Client] = false
+				}
+			} else {
+				// When exclusions are disabled, mark all IPs as not excluded
+				excludedIPs[dnsRecord.Client] = false
+			}
+		}
+
+		// Update client statistics
+		updateClientStats(clientStats, dnsRecord)
+		
+		if recordCount%100000 == 0 {
+			fmt.Printf("Processed %d records (%d excluded)...\n", recordCount, excludedCount)
+		}
+	}
+
+	fmt.Printf("Total records processed: %d (excluded: %d)\n", recordCount, excludedCount)
+	
+	// Calculate average reply times
+	for _, stats := range clientStats {
+		if stats.TotalQueries > 0 {
+			stats.AvgReplyTime = stats.TotalReplyTime / float64(stats.TotalQueries)
+			stats.Uniquedomains = len(stats.Domains)
+		}
+	}
+
+	return clientStats, nil
+}
+
 func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -1025,6 +1214,169 @@ func checkARPStatus(clientStats map[string]*ClientStats) error {
 	
 	fmt.Printf("Found %d/%d clients online in ARP table\n", onlineCount, len(clientStats))
 	return nil
+}
+
+// displayResultsWithConfig displays results using configuration settings
+func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Config) {
+	// Convert to slice for sorting
+	var statsList ClientStatsList
+	for _, stats := range clientStats {
+		// If online-only is enabled, only include clients that are online
+		if config.OnlineOnly {
+			if stats.IsOnline {
+				statsList = append(statsList, *stats)
+			}
+		} else {
+			statsList = append(statsList, *stats)
+		}
+	}
+
+	// Sort by total queries (descending)
+	sort.Sort(statsList)
+
+	fmt.Println("\n" + strings.Repeat("=", 80))
+	fmt.Println("DNS USAGE ANALYSIS BY CLIENT")
+	if config.OnlineOnly {
+		fmt.Println("(Showing only online clients)")
+	}
+	fmt.Println(strings.Repeat("=", 80))
+
+	// Summary
+	fmt.Printf("Total unique clients: %d\n", len(statsList))
+	totalQueries := 0
+	for _, stats := range statsList {
+		totalQueries += stats.TotalQueries
+	}
+	fmt.Printf("Total DNS queries: %d\n", totalQueries)
+	fmt.Println()
+
+	// Top clients by query count (configurable)
+	maxDisplay := config.Output.MaxClients
+	fmt.Printf("TOP %d CLIENTS BY QUERY COUNT:\n", maxDisplay)
+	fmt.Println(strings.Repeat("-", 110))
+	fmt.Printf("%-25s %-20s %-10s %-12s %-12s %-8s %-8s\n", "Client IP", "Hostname", "Queries", "Domains", "Avg Reply", "% Total", "Online")
+	fmt.Println(strings.Repeat("-", 110))
+
+	if len(statsList) < maxDisplay {
+		maxDisplay = len(statsList)
+	}
+
+	for i := 0; i < maxDisplay; i++ {
+		stats := statsList[i]
+		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
+		clientDisplay := stats.Client
+		if stats.HWAddr != "" {
+			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, stats.HWAddr[:12]+"...") // Show first 12 chars of MAC
+		}
+		
+		// Prepare hostname display
+		hostname := stats.Hostname
+		if hostname == "" {
+			hostname = "-"
+		} else if len(hostname) > 18 {
+			hostname = hostname[:15] + "..."
+		}
+		
+		onlineStatus := "Unknown"
+		if stats.ARPStatus != "unknown" {
+			if stats.IsOnline {
+				onlineStatus = "✓ Online"
+			} else {
+				onlineStatus = "✗ Offline"
+			}
+		}
+		
+		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n", 
+			clientDisplay, 
+			hostname,
+			stats.TotalQueries, 
+			stats.Uniquedomains,
+			stats.AvgReplyTime,
+			percentage,
+			onlineStatus)
+	}
+
+	// Detailed analysis for top 5 clients
+	fmt.Println("\n" + strings.Repeat("=", 80))
+	fmt.Println("DETAILED ANALYSIS - TOP 5 CLIENTS")
+	fmt.Println(strings.Repeat("=", 80))
+
+	maxDetailed := 5
+	if len(statsList) < maxDetailed {
+		maxDetailed = len(statsList)
+	}
+
+	for i := 0; i < maxDetailed; i++ {
+		stats := statsList[i]
+		fmt.Printf("\n%d. CLIENT: %s\n", i+1, stats.Client)
+		if stats.Hostname != "" {
+			fmt.Printf("   Hostname: %s\n", stats.Hostname)
+		}
+		if stats.HWAddr != "" {
+			fmt.Printf("   Hardware Address: %s\n", stats.HWAddr)
+		}
+		
+		// Show ARP status
+		if stats.ARPStatus != "unknown" {
+			statusIcon := "✗"
+			if stats.IsOnline {
+				statusIcon = "✓"
+			}
+			fmt.Printf("   Network Status: %s %s\n", statusIcon, strings.Title(stats.ARPStatus))
+		}
+		
+		fmt.Printf("   Total Queries: %d\n", stats.TotalQueries)
+		fmt.Printf("   Unique Domains: %d\n", stats.Uniquedomains)
+		fmt.Printf("   Average Reply Time: %.6f seconds\n", stats.AvgReplyTime)
+
+		// Top domains for this client (configurable)
+		maxDomains := config.Output.MaxDomains
+		fmt.Printf("   Top %d Domains:\n", maxDomains)
+		domainList := make([]struct {
+			domain string
+			count  int
+		}, 0, len(stats.Domains))
+
+		for domain, count := range stats.Domains {
+			domainList = append(domainList, struct {
+				domain string
+				count  int
+			}{domain, count})
+		}
+
+		sort.Slice(domainList, func(i, j int) bool {
+			return domainList[i].count > domainList[j].count
+		})
+
+		if len(domainList) < maxDomains {
+			maxDomains = len(domainList)
+		}
+
+		for j := 0; j < maxDomains; j++ {
+			fmt.Printf("     %s: %d queries\n", domainList[j].domain, domainList[j].count)
+		}
+
+		// Query types distribution
+		if config.Output.VerboseOutput {
+			fmt.Println("   Query Types:")
+			for queryType, count := range stats.QueryTypes {
+				queryTypeName := getQueryTypeName(queryType)
+				fmt.Printf("     %s (%d): %d queries\n", queryTypeName, queryType, count)
+			}
+
+			// Status codes distribution
+			fmt.Println("   Status Codes:")
+			for status, count := range stats.StatusCodes {
+				statusName := getStatusName(status)
+				fmt.Printf("     %s (%d): %d queries\n", statusName, status, count)
+			}
+		}
+	}
+
+	// Save detailed report to file if configured
+	if config.Output.SaveReports {
+		saveDetailedReportWithConfig(statsList, totalQueries, config)
+	}
 }
 
 func displayResults(clientStats map[string]*ClientStats) {
@@ -1249,6 +1601,65 @@ func getStatusName(status int) string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, config *Config) {
+	reportDir := config.Output.ReportDir
+	if reportDir == "" {
+		reportDir = "."
+	}
+	
+	// Ensure report directory exists
+	if err := os.MkdirAll(reportDir, 0755); err != nil {
+		log.Printf("Error creating report directory: %v", err)
+		return
+	}
+	
+	filename := filepath.Join(reportDir, fmt.Sprintf("dns_usage_report_%s.txt", time.Now().Format("20060102_150405")))
+	file, err := os.Create(filename)
+	if err != nil {
+		log.Printf("Error creating report file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	fmt.Fprintf(file, "DNS USAGE ANALYSIS REPORT\n")
+	fmt.Fprintf(file, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(file, strings.Repeat("=", 80)+"\n\n")
+
+	// Include configuration info in report
+	fmt.Fprintf(file, "CONFIGURATION:\n")
+	fmt.Fprintf(file, "Online Only: %t\n", config.OnlineOnly)
+	fmt.Fprintf(file, "No Exclude: %t\n", config.NoExclude)
+	fmt.Fprintf(file, "Test Mode: %t\n", config.TestMode)
+	fmt.Fprintf(file, "Max Clients Display: %d\n", config.Output.MaxClients)
+	fmt.Fprintf(file, "Max Domains Display: %d\n", config.Output.MaxDomains)
+	fmt.Fprintf(file, "Verbose Output: %t\n\n", config.Output.VerboseOutput)
+
+	fmt.Fprintf(file, "SUMMARY:\n")
+	fmt.Fprintf(file, "Total unique clients: %d\n", len(statsList))
+	fmt.Fprintf(file, "Total DNS queries: %d\n\n", totalQueries)
+
+	fmt.Fprintf(file, "ALL CLIENTS (sorted by query count):\n")
+	fmt.Fprintf(file, "%-20s %-10s %-15s %-15s %-10s %-10s\n", "Client IP", "Queries", "Unique Domains", "Avg Reply Time", "% of Total", "Status")
+	fmt.Fprintf(file, strings.Repeat("-", 90)+"\n")
+
+	for _, stats := range statsList {
+		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
+		status := "Offline"
+		if stats.IsOnline {
+			status = "Online"
+		}
+		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%% %-10s\n", 
+			stats.Client, 
+			stats.TotalQueries, 
+			stats.Uniquedomains,
+			stats.AvgReplyTime,
+			percentage,
+			status)
+	}
+
+	fmt.Printf("\nDetailed report saved to: %s\n", filename)
 }
 
 func saveDetailedReport(statsList ClientStatsList, totalQueries int) {

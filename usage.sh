@@ -14,40 +14,58 @@ USAGE MODES:
 
 1. CSV FILE ANALYSIS:
    ./dns-analyzer test.csv
-   go run main.go test.csv
-   make run
+   ./dns-analyzer --online-only test.csv
+   ./dns-analyzer --no-exclude test.csv
 
 2. PI-HOLE LIVE DATA ANALYSIS:
    
    a) First-time setup:
-      go run main.go --pihole-setup
+      ./dns-analyzer --pihole-setup
       (This creates pihole-config.json with your SSH credentials)
       
    b) Analyze Pi-hole data:
-      go run main.go --pihole pihole-config.json
+      ./dns-analyzer --pihole pihole-config.json
+      ./dns-analyzer --online-only --pihole pihole-config.json
 
-3. MAKEFILE COMMANDS:
-   make help              # Show all available commands
-   make build             # Build the application
-   make run               # Run with test.csv
-   make install-deps      # Install Go dependencies
-   make clean             # Clean build artifacts
+3. TEST SUITE AND DEVELOPMENT:
+   ./dns-analyzer --test                    # Run complete test suite
+   ./dns-analyzer --test-mode [flags] file  # Use mock data for development
+   ./test.sh all                           # Run all test scenarios
+   ./test.sh csv                           # Test CSV analysis
+   ./test.sh pihole                        # Test Pi-hole analysis
+
+COMMAND LINE FLAGS:
+   --online-only     Show only clients currently online (with MAC addresses in ARP)
+   --no-exclude      Disable default exclusions (Docker networks, Pi-hole host)
+   --test-mode       Enable test mode (uses mock data instead of real network)
+   --test            Run automated test suite
+   --pihole-setup    Setup Pi-hole configuration interactively
 
 PI-HOLE SETUP REQUIREMENTS:
 - SSH access to Pi-hole server
 - Pi-hole database at /etc/pihole/pihole-FTL.db (or custom path)
-- Either SSH key authentication or password
+- Either SSH key authentication, SSH agent, or password
 - Sudo access to read Pi-hole database
 
 CONFIGURATION FILE (pihole-config.json):
 {
-  "host": "192.168.1.100",
+  "host": "192.168.2.6",
   "port": "22",
-  "username": "pi",
-  "password": "your_password",
-  "keyfile": "/path/to/private/key",
+  "username": "grammatonic",
+  "password": "",
+  "keyfile": "",
   "dbpath": "/etc/pihole/pihole-FTL.db"
 }
+
+Note: Configuration supports SSH agent authentication (recommended for security).
+Leave password and keyfile empty to use SSH agent with tools like 1Password.
+
+EXCLUSION CONFIGURATION:
+By default, the analyzer excludes:
+- Docker networks (172.16.0.0/12)
+- Loopback addresses (127.0.0.0/8) 
+- Pi-hole host itself
+- Use --no-exclude flag to disable all exclusions
 
 FEATURES:
 ✓ CSV file analysis (supports large files 90MB+)
@@ -57,33 +75,79 @@ FEATURES:
 ✓ Query type distribution (A, AAAA, CNAME, etc.)
 ✓ Status code analysis (blocked, cached, forwarded)
 ✓ Hardware address mapping (Pi-hole mode)
+✓ ARP table checking for online/offline status
+✓ Hostname resolution for friendly device names
 ✓ Performance metrics (reply times)
 ✓ Detailed report generation
+✓ Configurable exclusions and filtering
+✓ Comprehensive test suite for offline development
 
 OUTPUT:
 - Console display with top clients and detailed analysis
 - Timestamped report files (dns_usage_report_YYYYMMDD_HHMMSS.txt)
-- Client statistics with hardware addresses (Pi-hole mode)
+- Client statistics with hardware addresses and online status
+- ARP table status (online/offline indicators)
+- Hostname resolution results
 
 EXAMPLES:
 
-# Analyze CSV file
-./analyze.sh test.csv
+# Basic CSV analysis
+./dns-analyzer test.csv
+
+# CSV analysis without exclusions (show Docker containers, etc.)
+./dns-analyzer --no-exclude test.csv
+
+# Show only currently online devices
+./dns-analyzer --online-only test.csv
+
+# Combined flags
+./dns-analyzer --online-only --no-exclude test.csv
 
 # Setup Pi-hole connection
-go run main.go --pihole-setup
+./dns-analyzer --pihole-setup
 
 # Analyze live Pi-hole data
-go run main.go --pihole pihole-config.json
+./dns-analyzer --pihole pihole-config.json
 
-# Build and run with specific CSV
-make run-with-file CSV_FILE=my-dns-logs.csv
+# Pi-hole analysis with filtering
+./dns-analyzer --online-only --pihole pihole-config.json
+
+# Development and testing
+./dns-analyzer --test                              # Run test suite
+./dns-analyzer --test-mode test_data/mock_dns_data.csv  # Use mock data
+./test.sh csv                                      # Quick CSV test
+./test.sh pihole-online                           # Quick Pi-hole test
+./test.sh all                                     # All test scenarios
+
+DEVELOPMENT WORKFLOW:
+1. Use test mode for feature development:
+   ./dns-analyzer --test-mode --your-new-flag test_data/mock_dns_data.csv
+
+2. Run tests before committing:
+   ./dns-analyzer --test
+
+3. Quick scenario testing:
+   ./test.sh csv-online    # Test online-only filtering
+   ./test.sh pihole        # Test Pi-hole functionality
 
 TROUBLESHOOTING:
 - Ensure Go 1.21+ is installed
 - For Pi-hole: verify SSH access and database permissions
 - Large CSV files may take several minutes to process
 - Check network connectivity for Pi-hole connections
+- Use --test-mode for development without network dependencies
+- SSH agent authentication is recommended for security
+- ARP table functionality requires appropriate network permissions
+- Hostname resolution may be slow on some networks
+
+TEST SUITE:
+The analyzer includes a comprehensive test suite for offline development:
+- 9 automated test scenarios covering all functionality
+- Mock data simulating real network environments
+- Performance benchmarking capabilities
+- No network dependencies required for testing
+
+For detailed test documentation, see TEST_README.md
 
 =============================================================================
 EOF
