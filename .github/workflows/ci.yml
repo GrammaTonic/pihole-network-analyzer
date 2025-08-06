@@ -39,10 +39,10 @@ jobs:
       
     - name: Run tests
       run: |
-        echo "Building DNS analyzer..."
-        go build -o dns-analyzer .
+        echo "Building Pi-hole Network Analyzer..."
+        go build -o pihole-network-analyzer .
         echo "Running test suite..."
-        ./dns-analyzer --test
+        ./pihole-network-analyzer --test
       timeout-minutes: 6
         
     - name: Check code formatting
@@ -112,22 +112,22 @@ jobs:
       run: |
         echo "Building for multiple platforms..."
         # Linux builds
-        GOOS=linux GOARCH=amd64 go build -o dns-analyzer-linux-amd64 .
-        GOOS=linux GOARCH=arm64 go build -o dns-analyzer-linux-arm64 .
+        GOOS=linux GOARCH=amd64 go build -o pihole-network-analyzer-linux-amd64 .
+        GOOS=linux GOARCH=arm64 go build -o pihole-network-analyzer-linux-arm64 .
         # Windows builds
-        GOOS=windows GOARCH=amd64 go build -o dns-analyzer-windows-amd64.exe .
-        GOOS=windows GOARCH=arm64 go build -o dns-analyzer-windows-arm64.exe .
+        GOOS=windows GOARCH=amd64 go build -o pihole-network-analyzer-windows-amd64.exe .
+        GOOS=windows GOARCH=arm64 go build -o pihole-network-analyzer-windows-arm64.exe .
         # macOS builds
-        GOOS=darwin GOARCH=amd64 go build -o dns-analyzer-darwin-amd64 .
-        GOOS=darwin GOARCH=arm64 go build -o dns-analyzer-darwin-arm64 .
+        GOOS=darwin GOARCH=amd64 go build -o pihole-network-analyzer-darwin-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -o pihole-network-analyzer-darwin-arm64 .
         echo "All platform builds completed"
       timeout-minutes: 8
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: dns-analyzer-binaries
+        name: pihole-network-analyzer-binaries
         path: |
-          dns-analyzer-linux-*
-          dns-analyzer-windows-*.exe
-          dns-analyzer-darwin-*
+          pihole-network-analyzer-linux-*
+          pihole-network-analyzer-windows-*.exe
+          pihole-network-analyzer-darwin-*

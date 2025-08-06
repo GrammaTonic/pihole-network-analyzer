@@ -1,10 +1,9 @@
-# OMG - DNS Usage Analyzer
+# Pi-hole Network Analyzer
 
-[![Test Suite](https://github.com/GrammaTonic/OMG/actions/workflows/test.yml/badge.svg)](https://github.com/GrammaTonic/OMG/actions/workflows/test.yml)
-[![Build Status](https://github.com/GrammaTonic/OMG/actions/workflows/simple-ci.yml/badge.svg)](https://github.com/GrammaTonic/OMG/actions/workflows/simple-ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/GrammaTonic/OMG)](https://goreportcard.com/report/github.com/GrammaTonic/OMG)
+[![CI/CD Pipeline](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/GrammaTonic/pihole-network-analyzer)](https://goreportcard.com/report/github.com/GrammaTonic/pihole-network-analyzer)
 
-A Go application to analyze DNS usage patterns per client from CSV log files or directly from Pi-hole servers via SSH.
+A professional Go application to analyze DNS usage patterns and network traffic from Pi-hole servers. Supports both CSV log file analysis and direct Pi-hole server connections via SSH.
 
 ## Features
 
