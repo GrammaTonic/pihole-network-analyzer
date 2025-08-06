@@ -1,0 +1,32 @@
+{
+  "online_only": true,
+  "no_exclude": false,
+  "test_mode": true,
+  "pihole": {
+    "Host": "192.168.2.6",
+    "Port": "22",
+    "Username": "grammatonic",
+    "Password": "",
+    "KeyFile": "",
+    "DBPath": "/etc/pihole/pihole-FTL.db"
+  },
+  "exclusions": {
+    "ExcludeNetworks": [
+      "172.16.0.0/12",
+      "127.0.0.0/8"
+    ],
+    "ExcludeIPs": [
+      "192.168.2.6"
+    ],
+    "ExcludeHosts": [
+      "pi.hole"
+    ]
+  },
+  "output": {
+    "save_reports": true,
+    "report_dir": "./reports",
+    "verbose_output": true,
+    "max_clients_display": 15,
+    "max_domains_display": 5
+  }
+}
