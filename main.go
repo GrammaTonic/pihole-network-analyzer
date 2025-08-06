@@ -29,6 +29,8 @@ import (
 var (
 	onlineOnlyFlag = flag.Bool("online-only", false, "Show only clients that are currently online (have MAC addresses in ARP table)")
 	noExcludeFlag  = flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)")
+	piholeFlag     = flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file")
+	piholeSetupFlag = flag.Bool("pihole-setup", false, "Setup Pi-hole configuration")
 )
 
 // DNSRecord represents a single DNS query record
@@ -112,37 +114,15 @@ func main() {
 	// Get non-flag arguments
 	args := flag.Args()
 	
-	if len(args) < 1 {
-		fmt.Println("DNS Usage Analyzer")
-		fmt.Println("Usage:")
-		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
-		fmt.Println("  dns-analyzer [flags] --pihole <config_file>        # Analyze Pi-hole live data")
-		fmt.Println("  dns-analyzer --pihole-setup                       # Setup Pi-hole configuration")
-		fmt.Println()
-		fmt.Println("Flags:")
-		fmt.Println("  --online-only    Show only clients currently online (with MAC addresses in ARP)")
-		fmt.Println("  --no-exclude     Disable default exclusions (Docker networks, Pi-hole host)")
-		fmt.Println()
-		fmt.Println("Examples:")
-		fmt.Println("  dns-analyzer test.csv")
-		fmt.Println("  dns-analyzer --online-only --pihole pihole-config.json")
-		fmt.Println("  dns-analyzer --no-exclude test.csv")
-		os.Exit(1)
-	}
-
-	if args[0] == "--pihole-setup" {
+	// Handle Pi-hole setup first
+	if *piholeSetupFlag {
 		setupPiholeConfig()
 		return
 	}
-
-	if args[0] == "--pihole" {
-		if len(args) < 2 {
-			fmt.Println("Error: Please specify config file for Pi-hole connection")
-			fmt.Println("Usage: dns-analyzer [flags] --pihole <config_file>")
-			os.Exit(1)
-		}
-		
-		configFile := args[1]
+	
+	// Handle Pi-hole analysis
+	if *piholeFlag != "" {
+		configFile := *piholeFlag
 		fmt.Printf("Connecting to Pi-hole using config: %s\n", configFile)
 		if *onlineOnlyFlag {
 			fmt.Println("Mode: Online clients only")
@@ -163,6 +143,25 @@ func main() {
 		
 		displayResults(clientStats)
 		return
+	}
+
+	// Require CSV file if no Pi-hole flags specified
+	if len(args) < 1 {
+		fmt.Println("DNS Usage Analyzer")
+		fmt.Println("Usage:")
+		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
+		fmt.Println("  dns-analyzer --pihole <config_file> [flags]        # Analyze Pi-hole live data")
+		fmt.Println("  dns-analyzer --pihole-setup                       # Setup Pi-hole configuration")
+		fmt.Println()
+		fmt.Println("Flags:")
+		fmt.Println("  --online-only    Show only clients currently online (with MAC addresses in ARP)")
+		fmt.Println("  --no-exclude     Disable default exclusions (Docker networks, Pi-hole host)")
+		fmt.Println()
+		fmt.Println("Examples:")
+		fmt.Println("  dns-analyzer test.csv")
+		fmt.Println("  dns-analyzer --online-only --pihole pihole-config.json")
+		fmt.Println("  dns-analyzer --no-exclude test.csv")
+		os.Exit(1)
 	}
 
 	// Default: CSV analysis
@@ -482,12 +481,18 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 		
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[record.Client]; !exists {
-			if shouldExclude, reason := shouldExcludeClient(record.Client, "", exclusions); shouldExclude {
-				excludedIPs[record.Client] = true
-				excludedCount++
-				fmt.Printf("Excluded: %s\n", reason)
-				continue
+			// Only apply exclusions if not disabled by flag
+			if !*noExcludeFlag {
+				if shouldExclude, reason := shouldExcludeClient(record.Client, "", exclusions); shouldExclude {
+					excludedIPs[record.Client] = true
+					excludedCount++
+					fmt.Printf("Excluded: %s\n", reason)
+					continue
+				} else {
+					excludedIPs[record.Client] = false
+				}
 			} else {
+				// When exclusions are disabled, mark all IPs as not excluded
 				excludedIPs[record.Client] = false
 			}
 		}
@@ -861,14 +866,20 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 		
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
-			if shouldExclude, reason := shouldExcludeClient(dnsRecord.Client, "", exclusions); shouldExclude {
-				excludedIPs[dnsRecord.Client] = true
-				excludedCount++
-				if excludedCount <= 10 {
-					fmt.Printf("Excluded: %s\n", reason)
+			// Only apply exclusions if not disabled by flag
+			if !*noExcludeFlag {
+				if shouldExclude, reason := shouldExcludeClient(dnsRecord.Client, "", exclusions); shouldExclude {
+					excludedIPs[dnsRecord.Client] = true
+					excludedCount++
+					if excludedCount <= 10 {
+						fmt.Printf("Excluded: %s\n", reason)
+					}
+					continue
+				} else {
+					excludedIPs[dnsRecord.Client] = false
 				}
-				continue
 			} else {
+				// When exclusions are disabled, mark all IPs as not excluded
 				excludedIPs[dnsRecord.Client] = false
 			}
 		}
@@ -1020,7 +1031,14 @@ func displayResults(clientStats map[string]*ClientStats) {
 	// Convert to slice for sorting
 	var statsList ClientStatsList
 	for _, stats := range clientStats {
-		statsList = append(statsList, *stats)
+		// If online-only flag is set, only include clients that are online
+		if *onlineOnlyFlag {
+			if stats.IsOnline {
+				statsList = append(statsList, *stats)
+			}
+		} else {
+			statsList = append(statsList, *stats)
+		}
 	}
 
 	// Sort by total queries (descending)
@@ -1028,6 +1046,9 @@ func displayResults(clientStats map[string]*ClientStats) {
 
 	fmt.Println("\n" + strings.Repeat("=", 80))
 	fmt.Println("DNS USAGE ANALYSIS BY CLIENT")
+	if *onlineOnlyFlag {
+		fmt.Println("(Showing only online clients)")
+	}
 	fmt.Println(strings.Repeat("=", 80))
 
 	// Summary
