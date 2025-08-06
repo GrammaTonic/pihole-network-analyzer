@@ -1515,7 +1515,9 @@ func displayResults(clientStats map[string]*ClientStats) {
 		}
 
 		for j := 0; j < maxDomains; j++ {
-			fmt.Printf("     %s: %d queries\n", domainList[j].domain, domainList[j].count)
+			fmt.Printf("     %s: %s queries\n", 
+				HighlightDomain(domainList[j].domain), 
+				ColoredQueryCount(domainList[j].count))
 		}
 
 		// Query types distribution

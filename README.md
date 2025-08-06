@@ -188,6 +188,62 @@ The application provides:
    - Complete analysis of all clients saved to `dns_usage_report_YYYYMMDD_HHMMSS.txt`
    - Sorted by query volume for easy analysis
 
+## 🎨 Colorized Output
+
+The analyzer features **rich terminal output** with colors and emojis for enhanced readability:
+
+### Color Scheme
+- **🔵 Blue**: Processing indicators and informational messages
+- **🟢 Green**: Success messages, high query counts, online clients
+- **🟡 Yellow**: Section headers, moderate activity levels  
+- **🔴 Red**: Warnings, offline clients, blocked content
+- **🟠 Orange**: IP addresses and important identifiers
+- **🟣 Cyan**: Domain names and hostnames
+- **⚪ Gray**: Hardware addresses and secondary information
+
+### Visual Elements
+- **✅ Online Status**: Green checkmark for active devices
+- **❌ Offline Status**: Red X for inactive devices  
+- **🔄 Processing**: Blue progress indicators with emojis
+- **🎯 Highlights**: Color-coded statistics and percentages
+- **📊 Tables**: Properly aligned columns with colored headers
+
+### Customization
+Control the visual output with command-line flags:
+```bash
+# Disable colors (for scripts or non-color terminals)
+go run main.go --no-color test.csv
+
+# Disable emojis (for compatibility or preference)
+go run main.go --no-emoji test.csv
+
+# Disable both colors and emojis
+go run main.go --no-color --no-emoji test.csv
+```
+
+### Examples
+```bash
+# Standard colorized output
+🔄 Processing large file, please wait...
+🔄 Processing CSV records with exclusions...
+✅ ARP table refresh completed
+✅ Hostname resolution completed
+
+# Client statistics with colors
+192.168.2.6 (E0:69:95:4F:...)  pi.hole              115211   322    ✅ Online
+192.168.2.210                  s21-van-marloes...   114690   1301   ❌ Offline
+
+# Top domains with highlighting  
+     api.spotify.com: 17731 queries
+     mobile.events.data.microsoft.com: 15749 queries
+```
+
+The colorized output makes it easier to:
+- **Quickly identify** online vs offline devices
+- **Spot patterns** in DNS usage with visual cues
+- **Track progress** during large file processing
+- **Distinguish** between different types of information
+
 ## Query Types
 
 - A (1) - IPv4 address
