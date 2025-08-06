@@ -17,9 +17,10 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.21'
+        cache: true
         
     - name: Get dependencies
       run: |
@@ -34,12 +35,12 @@ jobs:
     - name: Test
       run: |
         echo "Running DNS Analyzer tests..."
-        ./dns-analyzer --test
+        ./omg-usage-analyzer --test
       timeout-minutes: 3
       
     - name: Verify
       run: |
         echo "Verifying application..."
-        ./dns-analyzer --help
-        ./dns-analyzer --create-config
+        ./omg-usage-analyzer --help
+        ./omg-usage-analyzer --create-config
       timeout-minutes: 1
