@@ -25,6 +25,10 @@ dns_usage_report_*.txt
 pihole-config.json
 pihole-data-*.db
 
+# CI/CD test artifacts
+/tmp/test-*
+test_data/
+
 # IDE files
 .vscode/
 .idea/

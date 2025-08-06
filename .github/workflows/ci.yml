@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ '**' ]  # Run on all branches
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]  # Accept PRs to main/master
 
 jobs:
   test:
@@ -48,7 +48,7 @@ jobs:
     - name: Check code formatting
       run: |
         if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-          echo "Code is not properly formatted:"
+          echo "Code formatting issues found:"
           gofmt -s -l .
           exit 1
         fi
@@ -82,11 +82,51 @@ jobs:
         govulncheck ./... || echo "⚠️ Vulnerabilities found but continuing build"
       timeout-minutes: 5
 
+  build-check:
+    name: Build Check (Feature Branches)
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 10
+    # Only run build check on non-main/master branches
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.x'
+        
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Download dependencies
+      run: go mod download
+      timeout-minutes: 3
+      
+    - name: Build verification (no artifacts)
+      run: |
+        echo "🔍 Verifying build compatibility for feature branch..."
+        echo "Building for Linux AMD64..."
+        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build .
+        echo "✅ Build verification successful - ready for merge!"
+        rm -f /tmp/test-build
+      timeout-minutes: 5
+
   build:
-    name: Build
+    name: Build and Release
     runs-on: ubuntu-latest
     needs: [test, security]
     timeout-minutes: 15
+    # Only run builds on main/master branch
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         
     steps:
     - name: Checkout code
@@ -109,26 +149,66 @@ jobs:
       run: go mod download
       timeout-minutes: 3
       
+    - name: Generate version info
+      id: version
+      run: |
+        # Generate version based on commit hash and date
+        VERSION="v$(date +%Y.%m.%d)-$(git rev-parse --short HEAD)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "🏷️ Version: $VERSION"
+      
     - name: Build multi-platform binaries
       run: |
-        echo "Building for multiple platforms..."
+        echo "🚀 Building production binaries for version ${{ steps.version.outputs.version }}..."
+        VERSION="${{ steps.version.outputs.version }}"
+        
         # Linux builds
-        GOOS=linux GOARCH=amd64 go build -o pihole-network-analyzer-linux-amd64 .
-        GOOS=linux GOARCH=arm64 go build -o pihole-network-analyzer-linux-arm64 .
+        echo "Building Linux AMD64..."
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-amd64 .
+        echo "Building Linux ARM64..."
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-arm64 .
+        
         # Windows builds
-        GOOS=windows GOARCH=amd64 go build -o pihole-network-analyzer-windows-amd64.exe .
-        GOOS=windows GOARCH=arm64 go build -o pihole-network-analyzer-windows-arm64.exe .
+        echo "Building Windows AMD64..."
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-amd64.exe .
+        echo "Building Windows ARM64..."
+        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-arm64.exe .
+        
         # macOS builds
-        GOOS=darwin GOARCH=amd64 go build -o pihole-network-analyzer-darwin-amd64 .
-        GOOS=darwin GOARCH=arm64 go build -o pihole-network-analyzer-darwin-arm64 .
-        echo "All platform builds completed"
+        echo "Building macOS AMD64..."
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-amd64 .
+        echo "Building macOS ARM64..."
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-arm64 .
+        
+        echo "✅ All platform builds completed successfully!"
+        
+        # Create checksums
+        echo "📋 Generating checksums..."
+        sha256sum pihole-network-analyzer-* > checksums.txt
+        
+        # List all files
+        echo "📦 Build artifacts:"
+        ls -la pihole-network-analyzer-* checksums.txt
       timeout-minutes: 8
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pihole-network-analyzer-binaries
+        name: pihole-network-analyzer-${{ steps.version.outputs.version }}
         path: |
           pihole-network-analyzer-linux-*
           pihole-network-analyzer-windows-*.exe
           pihole-network-analyzer-darwin-*
+          checksums.txt
+        retention-days: 90
+        
+    - name: Create Release (if tag)
+      uses: actions/create-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false

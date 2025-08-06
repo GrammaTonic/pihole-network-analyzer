@@ -3,7 +3,7 @@ SOURCE_FILE=main.go
 CSV_FILE=test.csv
 PIHOLE_CONFIG=pihole-config.json
 
-.PHONY: build run clean install-deps help setup-pihole analyze-pihole
+.PHONY: build run clean install-deps help setup-pihole analyze-pihole pre-push ci-test
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -53,3 +53,38 @@ vet: ## Run go vet
 	go vet ./...
 
 all: install-deps fmt vet build ## Install deps, format, vet, and build
+
+pre-push: ## Run pre-push validation tests (same as CI)
+	./pre-push-test.sh
+
+ci-test: ## Run the same tests as CI locally
+	@echo "🧪 Running CI tests locally..."
+	go mod tidy
+	go mod verify
+	go mod download
+	go build -o pihole-network-analyzer .
+	./pihole-network-analyzer --test
+	@if [ "$$(gofmt -s -l . | wc -l)" -gt 0 ]; then \
+		echo "❌ Code formatting issues found:"; \
+		gofmt -s -l .; \
+		echo "Fix with: make fmt"; \
+		exit 1; \
+	fi
+	go vet ./...
+	@echo "✅ All CI tests passed!"
+
+multi-build: build ## Test multi-platform builds (like CI)
+	@echo "🏗️ Testing multi-platform builds..."
+	GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 .
+	GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe .
+	GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 .
+	@echo "✅ All platform builds successful!"
+	rm -f /tmp/test-*
+
+feature-branch: ci-test ## Validate feature branch (run before push)
+	@echo "🌿 Feature branch validation complete!"
+	@echo "Your code is ready to push to a feature branch."
+
+release-build: ci-test multi-build ## Full release build validation
+	@echo "🚀 Release build validation complete!"
+	@echo "Your code is ready for main/master branch."

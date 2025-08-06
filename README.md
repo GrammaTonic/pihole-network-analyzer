@@ -5,6 +5,35 @@
 
 A professional Go application to analyze DNS usage patterns and network traffic from Pi-hole servers. Supports both CSV log file analysis and direct Pi-hole server connections via SSH.
 
+## 🚀 Development Workflow
+
+This project uses **feature branch development** with automated CI/CD:
+
+- **🌿 Feature Branches**: Tests run, builds verify, no artifacts created
+- **🏗️ Main Branch**: Full builds with multi-platform binaries and releases  
+- **⚡ Quick Feedback**: Fast validation for rapid development
+
+See [FEATURE_WORKFLOW.md](FEATURE_WORKFLOW.md) for detailed workflow guide.
+
+### Quick Start for Developers
+```bash
+# Test your changes before pushing
+make ci-test           # Run same tests as CI
+./pre-push-test.sh     # Full pre-push validation
+make feature-branch    # Validate feature branch ready for push
+```
+
+## 🔮 Coming Soon: Monitoring & Docker Support
+
+**🐳 Docker + Prometheus + Grafana Integration** is planned! 
+
+- **Docker Containerization**: Easy deployment with Docker Compose
+- **Prometheus Metrics**: Real-time DNS analytics and monitoring  
+- **Grafana Dashboards**: Beautiful visualizations and alerting
+- **Multi-Platform**: ARM64 support for Raspberry Pi deployments
+
+See our comprehensive [TODO list](TODO_DOCKER_PROMETHEUS_GRAFANA.md) and [implementation roadmap](ROADMAP_DOCKER_MONITORING.md) for details.
+
 ## Features
 
 - **CSV Analysis**: Analyzes DNS query logs from CSV files
