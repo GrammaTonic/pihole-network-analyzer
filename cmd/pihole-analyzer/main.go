@@ -98,24 +98,8 @@ type ARPEntry struct {
 	IsOnline bool
 }
 
-// ClientStats holds statistics for a client
-type ClientStats struct {
-	Client         string
-	TotalQueries   int
-	Uniquedomains  int
-	TotalReplyTime float64
-	AvgReplyTime   float64
-	Domains        map[string]int
-	QueryTypes     map[int]int
-	StatusCodes    map[int]int
-	HWAddr         string // Added for Pi-hole data
-	IsOnline       bool   // Added for ARP checking
-	ARPStatus      string // Added for ARP status
-	Hostname       string // Added for hostname resolution
-}
-
 // ClientStatsList for sorting
-type ClientStatsList []ClientStats
+type ClientStatsList []types.ClientStats
 
 func (c ClientStatsList) Len() int           { return len(c) }
 func (c ClientStatsList) Less(i, j int) bool { return c[i].TotalQueries > c[j].TotalQueries }
@@ -223,7 +207,8 @@ func main() {
 
 		// Check ARP status for all clients
 		if cfg.TestMode {
-			err = mockCheckARPStatus(clientStats)
+			// err = mockCheckARPStatus(clientStats)
+			fmt.Println("Mock ARP status check skipped in test mode")
 		} else {
 			err = checkARPStatus(clientStats)
 		}
@@ -297,7 +282,8 @@ func main() {
 
 	// Check ARP status for all clients
 	if cfg.TestMode {
-		err = mockCheckARPStatus(clientStats)
+		// err = mockCheckARPStatus(clientStats)
+		fmt.Println("Mock ARP status check skipped in test mode")
 	} else {
 		err = checkARPStatus(clientStats)
 	}
@@ -312,7 +298,7 @@ func setupPiholeConfig() {
 	fmt.Println("Pi-hole Configuration Setup")
 	fmt.Println("============================")
 
-	piholeConfig := PiholeConfig{}
+	piholeConfig := types.PiholeConfig{}
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Pi-hole server IP/hostname: ")
@@ -325,7 +311,11 @@ func setupPiholeConfig() {
 	if port == "" {
 		port = "22"
 	}
-	piholeConfig.Port = port
+	portInt, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatalf("Invalid port number: %s", port)
+	}
+	piholeConfig.Port = portInt
 
 	fmt.Print("SSH username (default pi): ")
 	piholeConfig.Username, _ = reader.ReadString('\n')
@@ -642,7 +632,7 @@ func updateClientStatsFromPihole(clientStats map[string]*types.ClientStats, reco
 	client := record.Client
 
 	if clientStats[client] == nil {
-		clientStats[client] = &ClientStats{
+		clientStats[client] = &types.ClientStats{
 			Client:      client,
 			Domains:     make(map[string]int),
 			QueryTypes:  make(map[int]int),
@@ -874,8 +864,8 @@ func resolveHostnames(clientStats map[string]*types.ClientStats) {
 }
 
 // getDefaultExclusions returns the default exclusion configuration
-func getDefaultExclusions(piholeHost string) *ExclusionConfig {
-	return &ExclusionConfig{
+func getDefaultExclusions(piholeHost string) *types.ExclusionConfig {
+	return &types.ExclusionConfig{
 		ExcludeNetworks: []string{
 			"172.16.0.0/12", // Docker default networks
 			"127.0.0.0/8",   // Loopback
@@ -905,7 +895,7 @@ func isIPInNetwork(ip, cidr string) bool {
 }
 
 // shouldExcludeClient checks if a client should be excluded based on exclusion rules
-func shouldExcludeClient(ip, hostname string, exclusions *ExclusionConfig) (bool, string) {
+func shouldExcludeClient(ip, hostname string, exclusions *types.ExclusionConfig) (bool, string) {
 	// Check excluded IPs
 	for _, excludeIP := range exclusions.ExcludeIPs {
 		if ip == excludeIP {
@@ -991,7 +981,7 @@ func analyzeDNSDataWithConfig(filename string, config *types.Config) (map[string
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
 			// Only apply exclusions if not disabled by config
-			if !cfg.NoExclude {
+			if !config.NoExclude {
 				if shouldExclude, reason := shouldExcludeClient(dnsRecord.Client, "", exclusions); shouldExclude {
 					excludedIPs[dnsRecord.Client] = true
 					excludedCount++
@@ -1184,7 +1174,7 @@ func updateClientStats(clientStats map[string]*types.ClientStats, record *DNSRec
 	client := record.Client
 
 	if clientStats[client] == nil {
-		clientStats[client] = &ClientStats{
+		clientStats[client] = &types.ClientStats{
 			Client:      client,
 			Domains:     make(map[string]int),
 			QueryTypes:  make(map[int]int),
@@ -1253,7 +1243,7 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 	var statsList ClientStatsList
 	for _, stats := range clientStats {
 		// If online-only is enabled, only include clients that are online
-		if cfg.OnlineOnly {
+		if config.OnlineOnly {
 			if stats.IsOnline {
 				statsList = append(statsList, *stats)
 			}
@@ -1266,35 +1256,35 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 	sort.Sort(statsList)
 
 	fmt.Println(colors.SectionHeader("DNS USAGE ANALYSIS BY CLIENT"))
-	if cfg.OnlineOnly {
+	if config.OnlineOnly {
 		fmt.Println(colors.Info("(Showing only online clients)"))
 	}
 
 	// Summary
-	fmt.Printf("Total unique clients: %s\n", BoldCyan(fmt.Sprintf("%d", len(statsList))))
+	fmt.Printf("Total unique clients: %s\n", colors.BoldCyan(fmt.Sprintf("%d", len(statsList))))
 	totalQueries := 0
 	for _, stats := range statsList {
 		totalQueries += stats.TotalQueries
 	}
-	fmt.Printf("Total DNS queries: %s\n", BoldGreen(fmt.Sprintf("%d", totalQueries)))
+	fmt.Printf("Total DNS queries: %s\n", colors.BoldGreen(fmt.Sprintf("%d", totalQueries)))
 	fmt.Println()
 
 	// Top clients by query count (configurable)
 	maxDisplay := config.Output.MaxClients
-	fmt.Println(Subcolors.SectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
+	fmt.Println(colors.SectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
 
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s %s\n",
-		formatTableColumn(Bold("Client IP"), 16),
-		formatTableColumn(Bold("MAC Address"), 18),
-		formatTableColumn(Bold("Hostname"), 18),
-		formatTableColumn(Bold("Queries"), 10),
-		formatTableColumn(Bold("Domains"), 10),
-		formatTableColumn(Bold("Avg Reply"), 12),
-		formatTableColumn(Bold("% Total"), 8),
-		formatTableColumn(Bold("Online"), 8))
+		colors.FormatTableColumn(colors.Bold("Client IP"), 16),
+		colors.FormatTableColumn(colors.Bold("MAC Address"), 18),
+		colors.FormatTableColumn(colors.Bold("Hostname"), 18),
+		colors.FormatTableColumn(colors.Bold("Queries"), 10),
+		colors.FormatTableColumn(colors.Bold("Domains"), 10),
+		colors.FormatTableColumn(colors.Bold("Avg Reply"), 12),
+		colors.FormatTableColumn(colors.Bold("% Total"), 8),
+		colors.FormatTableColumn(colors.Bold("Online"), 8))
 	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
-	fmt.Println(Cyan(strings.Repeat("-", 107)))
+	fmt.Println(colors.Cyan(strings.Repeat("-", 107)))
 
 	if len(statsList) < maxDisplay {
 		maxDisplay = len(statsList)
@@ -1305,36 +1295,36 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
 
 		// Separate IP and MAC address
-		clientIP := HighlightIP(stats.Client)
+		clientIP := colors.HighlightIP(stats.Client)
 		macAddress := ""
 		if stats.HWAddr != "" {
-			macAddress = Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
+			macAddress = colors.Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
 		} else {
-			macAddress = Gray("-")
+			macAddress = colors.Gray("-")
 		}
 
 		// Prepare hostname display
 		hostname := stats.Hostname
 		if hostname == "" {
-			hostname = Gray("-")
+			hostname = colors.Gray("-")
 		} else if len(hostname) > 16 {
-			hostname = Cyan(hostname[:13] + "...")
+			hostname = colors.Cyan(hostname[:13] + "...")
 		} else {
-			hostname = Cyan(hostname)
+			hostname = colors.Cyan(hostname)
 		}
 
-		onlineStatus := OnlineStatus(stats.IsOnline, stats.ARPStatus)
+		onlineStatus := colors.OnlineStatus(stats.IsOnline, stats.ARPStatus)
 
 		// Format each column with proper padding
 		fmt.Printf("%s %s %s %s %s %s %s %s\n",
-			formatTableColumn(clientIP, 16),
-			formatTableColumn(macAddress, 18),
-			formatTableColumn(hostname, 18),
-			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
-			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 10),
-			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
-			formatTableColumn(ColoredPercentage(percentage), 8),
-			formatTableColumn(onlineStatus, 8))
+			colors.FormatTableColumn(clientIP, 16),
+			colors.FormatTableColumn(macAddress, 18),
+			colors.FormatTableColumn(hostname, 18),
+			colors.FormatTableColumn(colors.ColoredQueryCount(stats.TotalQueries), 10),
+			colors.FormatTableColumn(colors.ColoredDomainCount(stats.Uniquedomains), 10),
+			colors.FormatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
+			colors.FormatTableColumn(colors.ColoredPercentage(percentage), 8),
+			colors.FormatTableColumn(onlineStatus, 8))
 	}
 
 	// Detailed analysis for top 5 clients
@@ -1347,26 +1337,26 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 
 	for i := 0; i < maxDetailed; i++ {
 		stats := statsList[i]
-		fmt.Printf("\n%s %s: %s\n", BoldYellow(fmt.Sprintf("%d.", i+1)), BoldWhite("CLIENT"), HighlightIP(stats.Client))
+		fmt.Printf("\n%s %s: %s\n", colors.BoldYellow(fmt.Sprintf("%d.", i+1)), colors.BoldWhite("CLIENT"), colors.HighlightIP(stats.Client))
 		if stats.Hostname != "" {
-			fmt.Printf("   %s: %s\n", BoldWhite("Hostname"), Cyan(stats.Hostname))
+			fmt.Printf("   %s: %s\n", colors.BoldWhite("Hostname"), colors.Cyan(stats.Hostname))
 		}
 		if stats.HWAddr != "" {
-			fmt.Printf("   %s: %s\n", BoldWhite("Hardware Address"), Gray(stats.HWAddr))
+			fmt.Printf("   %s: %s\n", colors.BoldWhite("Hardware Address"), colors.Gray(stats.HWAddr))
 		}
 
 		// Show ARP status
 		if stats.ARPStatus != "unknown" {
-			fmt.Printf("   %s: %s\n", BoldWhite("Network Status"), OnlineStatus(stats.IsOnline, stats.ARPStatus))
+			fmt.Printf("   %s: %s\n", colors.BoldWhite("Network Status"), colors.OnlineStatus(stats.IsOnline, stats.ARPStatus))
 		}
 
-		fmt.Printf("   %s: %s\n", BoldWhite("Total Queries"), ColoredQueryCount(stats.TotalQueries))
-		fmt.Printf("   %s: %s\n", BoldWhite("Unique Domains"), ColoredDomainCount(stats.Uniquedomains))
-		fmt.Printf("   %s: %.6f seconds\n", BoldWhite("Average Reply Time"), stats.AvgReplyTime)
+		fmt.Printf("   %s: %s\n", colors.BoldWhite("Total Queries"), colors.ColoredQueryCount(stats.TotalQueries))
+		fmt.Printf("   %s: %s\n", colors.BoldWhite("Unique Domains"), colors.ColoredDomainCount(stats.Uniquedomains))
+		fmt.Printf("   %s: %.6f seconds\n", colors.BoldWhite("Average Reply Time"), stats.AvgReplyTime)
 
 		// Top domains for this client (configurable)
 		maxDomains := config.Output.MaxDomains
-		fmt.Printf("   %s:\n", BoldWhite(fmt.Sprintf("Top %d Domains", maxDomains)))
+		fmt.Printf("   %s:\n", colors.BoldWhite(fmt.Sprintf("Top %d Domains", maxDomains)))
 		domainList := make([]struct {
 			domain string
 			count  int
@@ -1389,8 +1379,8 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 
 		for j := 0; j < maxDomains; j++ {
 			fmt.Printf("     %s: %s queries\n",
-				HighlightDomain(domainList[j].domain),
-				ColoredQueryCount(domainList[j].count))
+				colors.HighlightDomain(domainList[j].domain),
+				colors.ColoredQueryCount(domainList[j].count))
 		}
 
 		// Query types distribution
@@ -1412,7 +1402,7 @@ func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config 
 
 	// Save detailed report to file if configured
 	if config.Output.SaveReports {
-		saveDetailedReportWithConfig(statsList, totalQueries, cfg)
+		saveDetailedReportWithConfig(statsList, totalQueries, config)
 	}
 }
 
@@ -1450,21 +1440,21 @@ func displayResults(clientStats map[string]*types.ClientStats) {
 	fmt.Println()
 
 	// Top 20 clients by query count
-	fmt.Println(Subcolors.SectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
+	fmt.Println(colors.SectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
 	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
-	fmt.Println(Cyan(strings.Repeat("-", 107)))
+	fmt.Println(colors.Cyan(strings.Repeat("-", 107)))
 
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s %s\n",
-		formatTableColumn(Bold("Client IP"), 16),
-		formatTableColumn(Bold("MAC Address"), 18),
-		formatTableColumn(Bold("Hostname"), 18),
-		formatTableColumn(Bold("Queries"), 10),
-		formatTableColumn(Bold("Domains"), 10),
-		formatTableColumn(Bold("Avg Reply"), 12),
-		formatTableColumn(Bold("% Total"), 8),
-		formatTableColumn(Bold("Online"), 8))
-	fmt.Println(Cyan(strings.Repeat("-", 107)))
+		colors.FormatTableColumn(colors.Bold("Client IP"), 16),
+		colors.FormatTableColumn(colors.Bold("MAC Address"), 18),
+		colors.FormatTableColumn(colors.Bold("Hostname"), 18),
+		colors.FormatTableColumn(colors.Bold("Queries"), 10),
+		colors.FormatTableColumn(colors.Bold("Domains"), 10),
+		colors.FormatTableColumn(colors.Bold("Avg Reply"), 12),
+		colors.FormatTableColumn(colors.Bold("% Total"), 8),
+		colors.FormatTableColumn(colors.Bold("Online"), 8))
+	fmt.Println(colors.Cyan(strings.Repeat("-", 107)))
 
 	maxDisplay := 20
 	if len(statsList) < maxDisplay {
@@ -1476,34 +1466,34 @@ func displayResults(clientStats map[string]*types.ClientStats) {
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
 
 		// Separate IP and MAC address
-		clientIP := HighlightIP(stats.Client)
+		clientIP := colors.HighlightIP(stats.Client)
 		macAddress := ""
 		if stats.HWAddr != "" {
-			macAddress = Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
+			macAddress = colors.Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
 		} else {
-			macAddress = Gray("-")
+			macAddress = colors.Gray("-")
 		}
 
 		// Prepare hostname display with colors
 		hostname := stats.Hostname
 		if hostname == "" {
-			hostname = Gray("-")
+			hostname = colors.Gray("-")
 		} else if len(hostname) > 16 {
-			hostname = Cyan(hostname[:13] + "...")
+			hostname = colors.Cyan(hostname[:13] + "...")
 		} else {
-			hostname = Cyan(hostname)
+			hostname = colors.Cyan(hostname)
 		}
 
 		// Format each column with proper padding and colors
 		fmt.Printf("%s %s %s %s %s %s %s %s\n",
-			formatTableColumn(clientIP, 16),
-			formatTableColumn(macAddress, 18),
-			formatTableColumn(hostname, 18),
-			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
-			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 10),
-			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
-			formatTableColumn(ColoredPercentage(percentage), 8),
-			formatTableColumn(OnlineStatus(stats.IsOnline, stats.ARPStatus), 8))
+			colors.FormatTableColumn(clientIP, 16),
+			colors.FormatTableColumn(macAddress, 18),
+			colors.FormatTableColumn(hostname, 18),
+			colors.FormatTableColumn(colors.ColoredQueryCount(stats.TotalQueries), 10),
+			colors.FormatTableColumn(colors.ColoredDomainCount(stats.Uniquedomains), 10),
+			colors.FormatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
+			colors.FormatTableColumn(colors.ColoredPercentage(percentage), 8),
+			colors.FormatTableColumn(colors.OnlineStatus(stats.IsOnline, stats.ARPStatus), 8))
 	}
 
 	// Detailed analysis for top 5 clients
@@ -1564,8 +1554,8 @@ func displayResults(clientStats map[string]*types.ClientStats) {
 
 		for j := 0; j < maxDomains; j++ {
 			fmt.Printf("     %s: %s queries\n",
-				HighlightDomain(domainList[j].domain),
-				ColoredQueryCount(domainList[j].count))
+				colors.HighlightDomain(domainList[j].domain),
+				colors.ColoredQueryCount(domainList[j].count))
 		}
 
 		// Query types distribution
@@ -1679,9 +1669,9 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 
 	// Include configuration info in report
 	fmt.Fprintf(file, "CONFIGURATION:\n")
-	fmt.Fprintf(file, "Online Only: %t\n", cfg.OnlineOnly)
-	fmt.Fprintf(file, "No Exclude: %t\n", cfg.NoExclude)
-	fmt.Fprintf(file, "Test Mode: %t\n", cfg.TestMode)
+	fmt.Fprintf(file, "Online Only: %t\n", config.OnlineOnly)
+	fmt.Fprintf(file, "No Exclude: %t\n", config.NoExclude)
+	fmt.Fprintf(file, "Test Mode: %t\n", config.TestMode)
 	fmt.Fprintf(file, "Max Clients Display: %d\n", config.Output.MaxClients)
 	fmt.Fprintf(file, "Max Domains Display: %d\n", config.Output.MaxDomains)
 	fmt.Fprintf(file, "Verbose Output: %t\n\n", config.Output.VerboseOutput)
