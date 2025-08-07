@@ -1654,7 +1654,7 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 
 	fmt.Fprintf(file, "DNS USAGE ANALYSIS REPORT\n")
 	fmt.Fprintf(file, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(file, strings.Repeat("=", 80)+"\n\n")
+	fmt.Fprintf(file, "%s\n\n", strings.Repeat("=", 80))
 
 	// Include configuration info in report
 	fmt.Fprintf(file, "CONFIGURATION:\n")
@@ -1671,7 +1671,7 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 
 	fmt.Fprintf(file, "ALL CLIENTS (sorted by query count):\n")
 	fmt.Fprintf(file, "%-20s %-10s %-15s %-15s %-10s %-10s\n", "Client IP", "Queries", "Unique Domains", "Avg Reply Time", "% of Total", "Status")
-	fmt.Fprintf(file, strings.Repeat("-", 90)+"\n")
+	fmt.Fprintf(file, "%s\n", strings.Repeat("-", 90))
 
 	for _, stats := range statsList {
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
@@ -1702,7 +1702,7 @@ func saveDetailedReport(statsList ClientStatsList, totalQueries int) {
 
 	fmt.Fprintf(file, "DNS USAGE ANALYSIS REPORT\n")
 	fmt.Fprintf(file, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(file, strings.Repeat("=", 80)+"\n\n")
+	fmt.Fprintf(file, "%s\n\n", strings.Repeat("=", 80))
 
 	fmt.Fprintf(file, "SUMMARY:\n")
 	fmt.Fprintf(file, "Total unique clients: %d\n", len(statsList))
@@ -1710,7 +1710,7 @@ func saveDetailedReport(statsList ClientStatsList, totalQueries int) {
 
 	fmt.Fprintf(file, "ALL CLIENTS (sorted by query count):\n")
 	fmt.Fprintf(file, "%-20s %-10s %-15s %-15s %-10s\n", "Client IP", "Queries", "Unique Domains", "Avg Reply Time", "% of Total")
-	fmt.Fprintf(file, strings.Repeat("-", 80)+"\n")
+	fmt.Fprintf(file, "%s\n", strings.Repeat("-", 80))
 
 	for _, stats := range statsList {
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100

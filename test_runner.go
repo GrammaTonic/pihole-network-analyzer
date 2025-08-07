@@ -68,7 +68,7 @@ func RunTests() {
 		}
 	}
 
-	fmt.Printf("\n" + strings.Repeat("=", 50))
+	fmt.Printf("\n%s", strings.Repeat("=", 50))
 	fmt.Printf("\nTest Results: %d/%d tests passed\n", successCount, len(testScenarios))
 
 	if successCount == len(testScenarios) {
