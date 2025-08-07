@@ -1261,9 +1261,16 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	// Top clients by query count (configurable)
 	maxDisplay := config.Output.MaxClients
 	fmt.Println(SubSectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
-	fmt.Printf("%-25s %-20s %-10s %-12s %-12s %-8s %-8s\n", 
-		Bold("Client IP"), Bold("Hostname"), Bold("Queries"), Bold("Domains"), 
-		Bold("Avg Reply"), Bold("% Total"), Bold("Online"))
+	
+	// Table headers with proper spacing
+	fmt.Printf("%s %s %s %s %s %s %s\n",
+		formatTableColumn(Bold("Client IP"), 25),
+		formatTableColumn(Bold("Hostname"), 20),
+		formatTableColumn(Bold("Queries"), 10),
+		formatTableColumn(Bold("Domains"), 12),
+		formatTableColumn(Bold("Avg Reply"), 12),
+		formatTableColumn(Bold("% Total"), 8),
+		formatTableColumn(Bold("Online"), 8))
 	fmt.Println(Cyan(strings.Repeat("-", 110)))
 
 	if len(statsList) < maxDisplay {
@@ -1290,14 +1297,15 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 
 		onlineStatus := OnlineStatus(stats.IsOnline, stats.ARPStatus)
 
-		fmt.Printf("%-34s %-29s %-19s %-21s %-12.6f %-17s %-16s\n",
-			clientDisplay,
-			hostname,
-			ColoredQueryCount(stats.TotalQueries),
-			ColoredDomainCount(stats.Uniquedomains),
-			stats.AvgReplyTime,
-			ColoredPercentage(percentage),
-			onlineStatus)
+		// Format each column with proper padding
+		fmt.Printf("%s %s %s %s %s %s %s\n",
+			formatTableColumn(clientDisplay, 25),
+			formatTableColumn(hostname, 20),
+			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
+			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 12),
+			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
+			formatTableColumn(ColoredPercentage(percentage), 8),
+			formatTableColumn(onlineStatus, 8))
 	}
 
 	// Detailed analysis for top 5 clients
@@ -1413,10 +1421,19 @@ func displayResults(clientStats map[string]*ClientStats) {
 	fmt.Println()
 
 	// Top 20 clients by query count
-	fmt.Println("TOP 20 CLIENTS BY QUERY COUNT:")
-	fmt.Println(strings.Repeat("-", 110))
-	fmt.Printf("%-25s %-20s %-10s %-12s %-12s %-8s %-8s\n", "Client IP", "Hostname", "Queries", "Domains", "Avg Reply", "% Total", "Online")
-	fmt.Println(strings.Repeat("-", 110))
+	fmt.Println(SubSectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
+	fmt.Println(Cyan(strings.Repeat("-", 110)))
+	
+	// Table headers with proper spacing
+	fmt.Printf("%s %s %s %s %s %s %s\n",
+		formatTableColumn(Bold("Client IP"), 25),
+		formatTableColumn(Bold("Hostname"), 20),
+		formatTableColumn(Bold("Queries"), 10),
+		formatTableColumn(Bold("Domains"), 12),
+		formatTableColumn(Bold("Avg Reply"), 12),
+		formatTableColumn(Bold("% Total"), 8),
+		formatTableColumn(Bold("Online"), 8))
+	fmt.Println(Cyan(strings.Repeat("-", 110)))
 
 	maxDisplay := 20
 	if len(statsList) < maxDisplay {
@@ -1428,34 +1445,26 @@ func displayResults(clientStats map[string]*ClientStats) {
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
 		clientDisplay := stats.Client
 		if stats.HWAddr != "" {
-			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, stats.HWAddr[:12]+"...") // Show first 12 chars of MAC
+			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, Gray(stats.HWAddr[:12]+"...")) // Show first 12 chars of MAC
 		}
 
-		// Prepare hostname display
+		// Prepare hostname display with colors
 		hostname := stats.Hostname
 		if hostname == "" {
-			hostname = "-"
+			hostname = Gray("-")
 		} else if len(hostname) > 18 {
 			hostname = hostname[:15] + "..."
 		}
 
-		onlineStatus := "Unknown"
-		if stats.ARPStatus != "unknown" {
-			if stats.IsOnline {
-				onlineStatus = "✓ Online"
-			} else {
-				onlineStatus = "✗ Offline"
-			}
-		}
-
-		fmt.Printf("%-25s %-20s %-10d %-12d %-12.6f %-8.2f%% %-8s\n",
-			clientDisplay,
-			hostname,
-			stats.TotalQueries,
-			stats.Uniquedomains,
-			stats.AvgReplyTime,
-			percentage,
-			onlineStatus)
+		// Format each column with proper padding and colors  
+		fmt.Printf("%s %s %s %s %s %s %s\n",
+			formatTableColumn(HighlightIP(clientDisplay), 25),
+			formatTableColumn(Cyan(hostname), 20),
+			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
+			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 12),
+			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
+			formatTableColumn(ColoredPercentage(percentage), 8),
+			formatTableColumn(OnlineStatus(stats.IsOnline, stats.ARPStatus), 8))
 	}
 
 	// Detailed analysis for top 5 clients

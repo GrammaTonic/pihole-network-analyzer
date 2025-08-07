@@ -193,13 +193,20 @@ The application provides:
 The analyzer features **rich terminal output** with colors and emojis for enhanced readability:
 
 ### Color Scheme
-- **🔵 Blue**: Processing indicators and informational messages
-- **🟢 Green**: Success messages, high query counts, online clients
-- **🟡 Yellow**: Section headers, moderate activity levels  
-- **🔴 Red**: Warnings, offline clients, blocked content
-- **🟠 Orange**: IP addresses and important identifiers
-- **🟣 Cyan**: Domain names and hostnames
-- **⚪ Gray**: Hardware addresses and secondary information
+- **🔵 Blue**: Processing indicators, informational messages, and private IP addresses
+- **🟢 Green**: Success messages, high query counts, online clients, and major service domains
+- **🟡 Yellow**: Section headers, moderate activity levels, and public IP addresses  
+- **🔴 Red**: Warnings, offline clients, blocked content, and tracking/ads domains
+- **🟠 Orange**: Public IP addresses and important identifiers
+- **🟣 Cyan**: Hostnames and development-related domains (GitHub, StackOverflow)
+- **⚪ Gray**: Hardware addresses, low activity, and secondary information
+
+### Smart Domain Highlighting
+The analyzer intelligently colorizes domain names based on their purpose:
+- **🟢 Major Services**: `google.com`, `microsoft.com`, `apple.com` (Green)
+- **🔴 Tracking/Ads**: `doubleclick.net`, `telemetry.microsoft.com`, `ads.*` (Red)
+- **🟣 Development**: `github.com`, `stackoverflow.com`, `npm.*` (Cyan)
+- **Default**: Other domains remain uncolored for clarity
 
 ### Visual Elements
 - **✅ Online Status**: Green checkmark for active devices
@@ -233,9 +240,12 @@ go run main.go --no-color --no-emoji test.csv
 192.168.2.6 (E0:69:95:4F:...)  pi.hole              115211   322    ✅ Online
 192.168.2.210                  s21-van-marloes...   114690   1301   ❌ Offline
 
-# Top domains with highlighting  
-     api.spotify.com: 17731 queries
-     mobile.events.data.microsoft.com: 15749 queries
+# Top domains with intelligent highlighting  
+     google.com: 1731 queries           # Green (major service)
+     tracking.doubleclick.net: 1249 queries  # Red (ads/tracking)
+     github.com: 892 queries            # Cyan (development)
+     api.spotify.com: 733 queries       # No color (regular domain)
+     telemetry.microsoft.com: 421 queries    # Red (telemetry)
 ```
 
 The colorized output makes it easier to:

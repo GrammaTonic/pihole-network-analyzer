@@ -48,6 +48,10 @@ func RunTests() {
 		{"ARP Table Functionality", testARPFunctionality},
 		{"Hostname Resolution", testHostnameResolution},
 		{"Exclusion Logic", testExclusionLogic},
+		{"Colorized Output - Colors Enabled", testColorizedOutputEnabled},
+		{"Colorized Output - Colors Disabled", testColorizedOutputDisabled},
+		{"Domain Highlighting", testDomainHighlighting},
+		{"Table Formatting", testTableFormatting},
 	}
 
 	successCount := 0
@@ -331,5 +335,191 @@ func mockCheckARPStatus(clientStats map[string]*ClientStats) error {
 		}
 	}
 
+	fmt.Printf("   Mock ARP status applied to %d clients\n", len(clientStats))
+	return nil
+}
+
+// Test colorized output with colors enabled
+func testColorizedOutputEnabled() error {
+	// Enable colors and emojis
+	EnableColors()
+	EnableEmojis()
+
+	// Test basic color functions
+	redText := Red("test")
+	if !strings.Contains(redText, "\033[31m") || !strings.Contains(redText, "\033[0m") {
+		return fmt.Errorf("Red() function not working properly")
+	}
+
+	greenText := BoldGreen("success")
+	if !strings.Contains(greenText, "\033[1;32m") {
+		return fmt.Errorf("BoldGreen() function not working properly")
+	}
+
+	// Test status functions
+	onlineStatus := OnlineStatus(true, "reachable")
+	if !strings.Contains(onlineStatus, "✅") || !strings.Contains(onlineStatus, "Online") {
+		return fmt.Errorf("OnlineStatus() for online client not working properly")
+	}
+
+	offlineStatus := OnlineStatus(false, "timeout")
+	if !strings.Contains(offlineStatus, "❌") || !strings.Contains(offlineStatus, "Offline") {
+		return fmt.Errorf("OnlineStatus() for offline client not working properly")
+	}
+
+	// Test percentage coloring
+	highPerc := ColoredPercentage(35.5)
+	if !strings.Contains(highPerc, "\033[1;31m") { // Should be BoldRed
+		return fmt.Errorf("ColoredPercentage() high value not colored properly")
+	}
+
+	lowPerc := ColoredPercentage(2.1)
+	if !strings.Contains(lowPerc, "\033[90m") { // Should be Gray
+		return fmt.Errorf("ColoredPercentage() low value not colored properly")
+	}
+
+	fmt.Printf("   Color functions working correctly\n")
+	return nil
+}
+
+// Test colorized output with colors disabled
+func testColorizedOutputDisabled() error {
+	// Disable colors
+	DisableColors()
+
+	// Test that color functions return plain text
+	redText := Red("test")
+	if strings.Contains(redText, "\033[") {
+		return fmt.Errorf("Red() should return plain text when colors disabled, got: %q", redText)
+	}
+	if redText != "test" {
+		return fmt.Errorf("Red() should return original text when colors disabled")
+	}
+
+	// Test status functions without colors
+	onlineStatus := OnlineStatus(true, "reachable")
+	if strings.Contains(onlineStatus, "\033[") {
+		return fmt.Errorf("OnlineStatus() should not contain color codes when disabled")
+	}
+
+	// Test that emojis still work when colors are disabled
+	if !strings.Contains(onlineStatus, "✅") {
+		return fmt.Errorf("OnlineStatus() should still show emojis when colors disabled")
+	}
+
+	// Re-enable colors for other tests
+	EnableColors()
+
+	fmt.Printf("   Color disabling working correctly\n")
+	return nil
+}
+
+// Test domain highlighting functionality
+func testDomainHighlighting() error {
+	EnableColors()
+
+	testCases := []struct {
+		domain    string
+		colorCode string
+		category  string
+	}{
+		{"google.com", "\033[1;32m", "major service"},
+		{"microsoft.com", "\033[1;32m", "major service"},
+		{"github.com", "\033[1;36m", "development"},
+		{"stackoverflow.com", "\033[1;36m", "development"},
+		{"ads.example.com", "\033[1;31m", "ads/tracking"},
+		{"tracking.test.com", "\033[1;31m", "ads/tracking"},
+		{"doubleclick.net", "\033[1;31m", "ads/tracking"},
+		{"telemetry.service.com", "\033[1;31m", "ads/tracking"},
+		{"example.com", "", "no highlighting"},
+		{"netflix.com", "", "no highlighting"},
+	}
+
+	for _, tc := range testCases {
+		result := HighlightDomain(tc.domain)
+		
+		if tc.colorCode == "" {
+			// Should return unchanged domain
+			if result != tc.domain {
+				return fmt.Errorf("HighlightDomain(%q) should return unchanged for %s, got: %q", 
+					tc.domain, tc.category, result)
+			}
+		} else {
+			// Should contain the color code
+			if !strings.Contains(result, tc.colorCode) {
+				return fmt.Errorf("HighlightDomain(%q) should contain %q for %s, got: %q", 
+					tc.domain, tc.colorCode, tc.category, result)
+			}
+			// Should contain the domain name
+			if !strings.Contains(result, tc.domain) {
+				return fmt.Errorf("HighlightDomain(%q) should contain domain name, got: %q", 
+					tc.domain, result)
+			}
+		}
+	}
+
+	fmt.Printf("   Domain highlighting working for %d test cases\n", len(testCases))
+	return nil
+}
+
+// Test table formatting with colors
+func testTableFormatting() error {
+	EnableColors()
+
+	// Test color code stripping
+	coloredText := BoldRed("colored text")
+	stripped := stripColorCodes(coloredText)
+	if stripped != "colored text" {
+		return fmt.Errorf("stripColorCodes() failed: expected 'colored text', got %q", stripped)
+	}
+
+	// Test display length calculation
+	displayLen := getDisplayLength(coloredText)
+	if displayLen != 12 { // "colored text" is 12 characters
+		return fmt.Errorf("getDisplayLength() failed: expected 12, got %d", displayLen)
+	}
+
+	// Test table column formatting
+	formatted := formatTableColumn(coloredText, 20)
+	formattedDisplayLen := getDisplayLength(formatted)
+	if formattedDisplayLen != 20 {
+		return fmt.Errorf("formatTableColumn() failed: expected display length 20, got %d", 
+			formattedDisplayLen)
+	}
+
+	// Test that colored text is preserved in formatting
+	if !strings.Contains(formatted, "\033[1;31m") {
+		return fmt.Errorf("formatTableColumn() should preserve color codes")
+	}
+
+	// Test right-aligned formatting
+	rightFormatted := formatTableColumnRight("test", 10)
+	rightDisplayLen := getDisplayLength(rightFormatted)
+	if rightDisplayLen != 10 {
+		return fmt.Errorf("formatTableColumnRight() failed: expected display length 10, got %d", 
+			rightDisplayLen)
+	}
+
+	// Test with various IP addresses
+	testIPs := []string{"192.168.1.1", "10.0.0.1", "172.16.0.1", "8.8.8.8"}
+	for _, ip := range testIPs {
+		highlighted := HighlightIP(ip)
+		if !strings.Contains(highlighted, ip) {
+			return fmt.Errorf("HighlightIP(%q) should contain the IP address", ip)
+		}
+		
+		// Private IPs should be blue, public should be yellow
+		if strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") || strings.HasPrefix(ip, "172.") {
+			if !strings.Contains(highlighted, "\033[1;34m") { // BoldBlue
+				return fmt.Errorf("HighlightIP(%q) should be blue for private IP", ip)
+			}
+		} else {
+			if !strings.Contains(highlighted, "\033[1;33m") { // BoldYellow
+				return fmt.Errorf("HighlightIP(%q) should be yellow for public IP", ip)
+			}
+		}
+	}
+
+	fmt.Printf("   Table formatting working correctly\n")
 	return nil
 }
