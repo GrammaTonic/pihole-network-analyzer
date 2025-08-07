@@ -72,15 +72,15 @@ test_csv_analysis() {
     
     # Test 1: Basic CSV analysis
     run_test_with_timeout "CSV Analysis - Default" \
-        "./pihole-network-analyzer --csv=test.csv --quiet" 120
+        "./pihole-network-analyzer --quiet test.csv" 120
     
     # Test 2: CSV with no exclusions
     run_test_with_timeout "CSV Analysis - No Exclusions" \
-        "./pihole-network-analyzer --csv=test.csv --no-exclude --quiet" 60
+        "./pihole-network-analyzer --no-exclude --quiet test.csv" 60
     
     # Test 3: CSV online only
     run_test_with_timeout "CSV Analysis - Online Only" \
-        "./pihole-network-analyzer --csv=test.csv --online-only --quiet" 60
+        "./pihole-network-analyzer --online-only --quiet test.csv" 60
     
     print_status $GREEN "✅ CSV Analysis tests completed"
 }
