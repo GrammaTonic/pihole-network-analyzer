@@ -66,21 +66,49 @@ check_binary() {
     fi
 }
 
+# Function to create a small test CSV file for CI compatibility
+create_test_csv_file() {
+    cat > test_small.csv << 'EOF'
+"DateTime","Client_IP","Domain","QueryType","Status","ReplyTime"
+"2024-08-06 10:00:01","192.168.2.110","google.com","1","2","0.002"
+"2024-08-06 10:00:02","192.168.2.210","facebook.com","1","2","0.003"
+"2024-08-06 10:00:03","192.168.2.6","api.spotify.com","1","2","0.001"
+"2024-08-06 10:00:04","172.20.0.8","kpn.com","1","2","0.002"
+"2024-08-06 10:00:05","192.168.2.210","tracking.doubleclick.net","1","9","0.002"
+"2024-08-06 10:00:06","192.168.2.110","github.com","1","2","0.004"
+"2024-08-06 10:00:07","192.168.2.6","pi.hole","1","3","0.001"
+"2024-08-06 10:00:08","172.19.0.2","microsoft.com","1","2","0.012"
+"2024-08-06 10:00:09","127.0.0.1","localhost","1","2","0.001"
+"2024-08-06 10:00:10","192.168.2.210","ads.microsoft.com","1","9","0.002"
+"2024-08-06 10:00:11","192.168.2.110","stackoverflow.com","1","2","0.005"
+"2024-08-06 10:00:12","192.168.2.6","netflix.com","1","2","0.001"
+"2024-08-06 10:00:13","192.168.2.210","malware.badsite.com","1","9","0.002"
+"2024-08-06 10:00:14","192.168.2.110","amazon.com","1","2","0.003"
+"2024-08-06 10:00:15","192.168.2.6","telemetry.microsoft.com","1","9","0.001"
+EOF
+}
+
 # Function to run CSV analysis tests
 test_csv_analysis() {
     print_status $YELLOW "📊 Testing CSV Analysis Functionality"
     
+    # Create a smaller test CSV file for CI compatibility
+    create_test_csv_file
+    
     # Test 1: Basic CSV analysis
     run_test_with_timeout "CSV Analysis - Default" \
-        "./pihole-network-analyzer --quiet test.csv" 120
+        "./pihole-network-analyzer --quiet test_small.csv" 120
     
     # Test 2: CSV with no exclusions
     run_test_with_timeout "CSV Analysis - No Exclusions" \
-        "./pihole-network-analyzer --no-exclude --quiet test.csv" 60
+        "./pihole-network-analyzer --no-exclude --quiet test_small.csv" 60
     
     # Test 3: CSV online only
     run_test_with_timeout "CSV Analysis - Online Only" \
-        "./pihole-network-analyzer --online-only --quiet test.csv" 60
+        "./pihole-network-analyzer --online-only --quiet test_small.csv" 60
+    
+    # Cleanup
+    rm -f test_small.csv
     
     print_status $GREEN "✅ CSV Analysis tests completed"
 }
