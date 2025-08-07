@@ -216,11 +216,11 @@ func SectionHeader(title string) string {
 // Sub-section headers
 func SubSectionHeader(title string) string {
 	if !colorEnabled() {
-		border := strings.Repeat("-", 110)
+		border := strings.Repeat("-", 101)  // Match table width: 25+20+10+12+12+8+8+6=101
 		return fmt.Sprintf("%s\n%s\n%s", title, border, "")
 	}
 	
-	border := Cyan(strings.Repeat("-", 110))
+	border := Cyan(strings.Repeat("-", 101))  // Match table width: 25+20+10+12+12+8+8+6=101
 	titleColored := BoldCyan(title)
 	
 	return fmt.Sprintf("%s\n%s", titleColored, border)
