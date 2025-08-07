@@ -1271,7 +1271,8 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		formatTableColumn(Bold("Avg Reply"), 12),
 		formatTableColumn(Bold("% Total"), 8),
 		formatTableColumn(Bold("Online"), 8))
-	fmt.Println(Cyan(strings.Repeat("-", 110)))
+	// Calculate proper separator line width: 25+20+10+12+12+8+8 + 6 spaces = 101
+	fmt.Println(Cyan(strings.Repeat("-", 101)))
 
 	if len(statsList) < maxDisplay {
 		maxDisplay = len(statsList)
@@ -1422,7 +1423,8 @@ func displayResults(clientStats map[string]*ClientStats) {
 
 	// Top 20 clients by query count
 	fmt.Println(SubSectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
-	fmt.Println(Cyan(strings.Repeat("-", 110)))
+	// Calculate proper separator line width: 25+20+10+12+12+8+8 + 6 spaces = 101
+	fmt.Println(Cyan(strings.Repeat("-", 101)))
 	
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s\n",
@@ -1433,7 +1435,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 		formatTableColumn(Bold("Avg Reply"), 12),
 		formatTableColumn(Bold("% Total"), 8),
 		formatTableColumn(Bold("Online"), 8))
-	fmt.Println(Cyan(strings.Repeat("-", 110)))
+	fmt.Println(Cyan(strings.Repeat("-", 101)))
 
 	maxDisplay := 20
 	if len(statsList) < maxDisplay {
