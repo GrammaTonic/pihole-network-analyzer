@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	_ "modernc.org/sqlite"
 	"pihole-network-analyzer/internal/types"
+
+	_ "modernc.org/sqlite"
 )
 
 // MockData contains all the mock data for testing
@@ -56,28 +57,28 @@ func CreateMockData() *MockData {
 
 	// Mock Pi-hole records (simulating database data)
 	mock.PiholeRecords = []types.PiholeRecord{
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3600, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "google.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3500, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "facebook.com", Status: 9},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "youtube.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "tracking.doubleclick.net", Status: 9},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "api.spotify.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "docker.internal", Status: 3},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3000, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "github.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2900, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "ads.microsoft.com", Status: 9},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2800, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "cdn.jsdelivr.net", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2700, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "malware.badsite.com", Status: 9},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2600, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "netflix.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2500, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "amazon.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "microsoft.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "telemetry.microsoft.com", Status: 9},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "pi.hole", Status: 3},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3600, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "google.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3500, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "facebook.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "youtube.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "tracking.doubleclick.net", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "api.spotify.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "docker.internal", Status: 3},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-3000, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "github.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2900, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "ads.microsoft.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2800, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "cdn.jsdelivr.net", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2700, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "malware.badsite.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2600, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "netflix.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2500, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "amazon.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "microsoft.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "telemetry.microsoft.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "pi.hole", Status: 3},
 		// More Docker container traffic
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "registry-1.docker.io", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2000, 10), Client: "172.19.0.2", HWAddr: "02:42:ac:13:00:02", Domain: "hub.docker.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1900, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "auth.docker.io", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "registry-1.docker.io", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-2000, 10), Client: "172.19.0.2", HWAddr: "02:42:ac:13:00:02", Domain: "hub.docker.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-1900, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "auth.docker.io", Status: 2},
 		// Offline devices
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1800, 10), Client: "192.168.2.123", HWAddr: "fc:41:16:b4:22:33", Domain: "old.device.com", Status: 2},
-		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1700, 10), Client: "192.168.2.156", HWAddr: "f2:6f:b8:f3:44:55", Domain: "another.old.com", Status: 3},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-1800, 10), Client: "192.168.2.123", HWAddr: "fc:41:16:b4:22:33", Domain: "old.device.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix()-1700, 10), Client: "192.168.2.156", HWAddr: "f2:6f:b8:f3:44:55", Domain: "another.old.com", Status: 3},
 	}
 
 	// Mock ARP entries (simulating current online devices)
