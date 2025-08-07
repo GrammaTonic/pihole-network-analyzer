@@ -1,0 +1,30 @@
+{
+  "online_only": false,
+  "no_exclude": false,
+  "test_mode": false,
+  "pihole": {
+    "host": "192.168.2.6",
+    "port": "22",
+    "username": "grammatonic",
+    "password": "",
+    "keyfile": "",
+    "dbpath": "/mnt/store1/Docker-Compose/networking/config/pihole/etc/pihole/pihole-FTL.db"
+  },
+  "exclusions": {
+    "exclude_networks": [
+      "172.16.0.0/12",
+      "127.0.0.0/8"
+    ],
+    "exclude_ips": [],
+    "exclude_hosts": [
+      "pi.hole"
+    ]
+  },
+  "output": {
+    "save_reports": true,
+    "report_dir": ".",
+    "verbose_output": false,
+    "max_clients_display": 20,
+    "max_domains_display": 10
+  }
+}
