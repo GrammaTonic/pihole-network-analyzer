@@ -341,8 +341,8 @@ func mockCheckARPStatus(clientStats map[string]*ClientStats) error {
 
 // Test colorized output with colors enabled
 func testColorizedOutputEnabled() error {
-	// Enable colors and emojis
-	EnableColors()
+	// Enable test mode which forces colors on regardless of terminal
+	EnableTestMode()
 	EnableEmojis()
 
 	// Test basic color functions
@@ -416,7 +416,7 @@ func testColorizedOutputDisabled() error {
 
 // Test domain highlighting functionality
 func testDomainHighlighting() error {
-	EnableColors()
+	EnableTestMode()
 
 	testCases := []struct {
 		domain    string
@@ -464,7 +464,7 @@ func testDomainHighlighting() error {
 
 // Test table formatting with colors
 func testTableFormatting() error {
-	EnableColors()
+	EnableTestMode()
 
 	// Test color code stripping
 	coloredText := BoldRed("colored text")

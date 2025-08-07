@@ -31,9 +31,11 @@ print_warning() {
 cleanup() {
     echo "🧹 Cleaning up..."
     rm -f dns-analyzer-test
+    rm -f pihole-network-analyzer
     rm -rf test_data/
     rm -rf reports/
     rm -f test-config.json
+    rm -f test_output.log
 }
 
 # Set up cleanup trap
@@ -54,16 +56,51 @@ else
     exit 1
 fi
 
+# Also build with the same name as CI uses
+if go build -o pihole-network-analyzer . >/dev/null 2>&1; then
+    print_status "CI-compatible build successful"
+else
+    print_error "CI-compatible build failed"
+    exit 1
+fi
+
 echo ""
 echo "🧪 Step 3: Running test suite"
 if ./dns-analyzer-test --test > test_output.log 2>&1; then
-    print_status "Test suite completed successfully"
-    # Show test results summary
-    tail -5 test_output.log
+    # Check if all tests passed by looking for the success message
+    if grep -q "All tests passed!" test_output.log; then
+        print_status "Test suite completed successfully"
+        # Show test results summary
+        grep "Test Results:" test_output.log || echo "Test completed"
+    else
+        print_error "Test suite did not complete successfully"
+        echo "Test output:"
+        cat test_output.log
+        exit 1
+    fi
 else
     print_error "Test suite failed"
     echo "Last few lines of test output:"
     tail -10 test_output.log
+    exit 1
+fi
+
+echo ""
+echo "🚀 Step 3.5: Testing CI-exact commands"
+echo "Testing the exact same commands that GitHub Actions runs..."
+if ./pihole-network-analyzer --test > ci_test_output.log 2>&1; then
+    if grep -q "All tests passed!" ci_test_output.log; then
+        print_status "CI-exact test suite passed"
+    else
+        print_error "CI-exact test suite failed"
+        echo "CI test output:"
+        cat ci_test_output.log
+        exit 1
+    fi
+else
+    print_error "CI-exact test command failed"
+    echo "CI test output:"
+    cat ci_test_output.log
     exit 1
 fi
 
@@ -134,3 +171,4 @@ echo "Your code is ready for GitHub Actions!"
 
 # Cleanup is handled by trap
 rm -f test_output.log
+rm -f ci_test_output.log
