@@ -200,13 +200,13 @@ validate_environment() {
     print_status $GREEN "✅ Go found: $go_version"
     
     # Check if we're in the right directory
-    if [ ! -f "go.mod" ] || [ ! -f "main.go" ]; then
+    if [ ! -f "go.mod" ] || [ ! -f "src/main.go" ]; then
         print_status $RED "❌ Not in the correct project directory"
         exit 1
     fi
     
     # Check for test files
-    if [ ! -f "test.csv" ]; then
+    if [ ! -f "tests/data/test.csv" ]; then
         print_status $YELLOW "⚠️ test.csv not found, some tests may be skipped"
     fi
     

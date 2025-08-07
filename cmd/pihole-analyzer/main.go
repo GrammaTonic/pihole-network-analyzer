@@ -1,4 +1,3 @@
-package cmd
 package main
 
 import (
@@ -25,8 +24,11 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	_ "modernc.org/sqlite"
-	
-	"pihole-network-analyzer/internal"
+
+	"pihole-network-analyzer/internal/colors"
+	"pihole-network-analyzer/internal/config"
+	"pihole-network-analyzer/internal/types"
+	// "pihole-network-analyzer/internal/testutils"
 )
 
 // Command-line flags
@@ -132,20 +134,20 @@ func main() {
 
 	// Configure colors based on flags
 	if *noColorFlag {
-		DisableColors()
+		colors.DisableColors()
 	}
 	if *noEmojiFlag {
-		DisableEmojis()
+		colors.DisableEmojis()
 	}
 
 	// Handle configuration-related flags first
-	configPath := GetConfigPath()
+	configPath := config.GetConfigPath()
 	if *configFlag != "" {
 		configPath = *configFlag
 	}
 
 	if *createConfigFlag {
-		err := CreateDefaultConfigFile(configPath)
+		err := config.CreateDefaultConfigFile(configPath)
 		if err != nil {
 			log.Fatalf("Error creating config file: %v", err)
 		}
@@ -154,32 +156,34 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := LoadConfig(configPath)
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
 	// Merge command line flags with config
-	MergeFlags(config)
+	config.MergeFlags(cfg, *onlineOnlyFlag, *noExcludeFlag, *testModeFlag, *piholeFlag)
 
 	if *showConfigFlag {
-		ShowConfig(config)
+		config.ShowConfig(cfg)
 		return
 	}
 
 	// Handle test mode first
 	if *testFlag {
-		RunTests()
+		// RunTests()
+		fmt.Println("Test mode not yet implemented in new structure")
 		return
 	}
 
-	if config.TestMode {
+	if cfg.TestMode {
 		quietPrintf("🧪 Test Mode Enabled - Using Mock Data\n")
-		err := InitTestMode()
-		if err != nil {
-			log.Fatalf("Failed to initialize test mode: %v", err)
-		}
-		defer CleanupTestEnvironment()
+		// err := InitTestMode()
+		// if err != nil {
+		//     log.Fatalf("Failed to initialize test mode: %v", err)
+		// }
+		// defer CleanupTestEnvironment()
+		fmt.Println("Test mode not yet implemented")
 	}
 
 	// Get non-flag arguments
@@ -194,18 +198,18 @@ func main() {
 	// Handle Pi-hole analysis
 	if *piholeFlag != "" {
 		configFile := *piholeFlag
-		fmt.Printf("Connecting to Pi-hole using config: %s\n", Info(configFile))
-		if config.OnlineOnly {
+		fmt.Printf("Connecting to Pi-hole using config: %s\n", colors.Info(configFile))
+		if cfg.OnlineOnly {
 			fmt.Println("Mode: Online clients only")
 		}
-		if config.NoExclude {
+		if cfg.NoExclude {
 			fmt.Println("Mode: No exclusions applied")
 		}
 
-		var clientStats map[string]*ClientStats
+		var clientStats map[string]*types.ClientStats
 		var err error
 
-		if config.TestMode {
+		if cfg.TestMode {
 			// Use mock Pi-hole database in test mode
 			dbFile := filepath.Join("test_data", "mock_pihole.db")
 			clientStats, err = analyzePiholeDatabase(dbFile)
@@ -218,21 +222,21 @@ func main() {
 		}
 
 		// Check ARP status for all clients
-		if config.TestMode {
+		if cfg.TestMode {
 			err = mockCheckARPStatus(clientStats)
 		} else {
 			err = checkARPStatus(clientStats)
 		}
 		if err != nil {
-			fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
+			fmt.Printf("%s: Could not check ARP status: %v\n", colors.Warning("Warning"), err)
 		}
 
-		displayResultsWithConfig(clientStats, config)
+		displayResultsWithConfig(clientStats, cfg)
 		return
 	}
 
 	// Require CSV file if no Pi-hole flags specified and not in test mode
-	if len(args) < 1 && !config.TestMode {
+	if len(args) < 1 && !cfg.TestMode {
 		fmt.Println("DNS Usage Analyzer")
 		fmt.Println("Usage:")
 		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
@@ -265,7 +269,7 @@ func main() {
 
 	// Default: CSV analysis
 	var csvFile string
-	if config.TestMode && len(args) == 0 {
+	if cfg.TestMode && len(args) == 0 {
 		// In test mode without arguments, use default mock CSV file
 		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
 	} else {
@@ -273,35 +277,35 @@ func main() {
 	}
 
 	// In test mode, use mock CSV file if original file doesn't exist
-	if config.TestMode && csvFile == "test.csv" {
+	if cfg.TestMode && csvFile == "test.csv" {
 		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
 	}
 
 	quietPrintf("Analyzing DNS usage data from: %s\n", csvFile)
-	quietPrintf("%s\n", ProcessingIndicator("Processing large file, please wait..."))
-	if config.OnlineOnly {
+	quietPrintf("%s\n", colors.ProcessingIndicator("Processing large file, please wait..."))
+	if cfg.OnlineOnly {
 		fmt.Println("Mode: Online clients only")
 	}
-	if config.NoExclude {
+	if cfg.NoExclude {
 		fmt.Println("Mode: No exclusions applied")
 	}
 
-	clientStats, err := analyzeDNSDataWithConfig(csvFile, config)
+	clientStats, err := analyzeDNSDataWithConfig(csvFile, cfg)
 	if err != nil {
 		log.Fatalf("Error analyzing data: %v", err)
 	}
 
 	// Check ARP status for all clients
-	if config.TestMode {
+	if cfg.TestMode {
 		err = mockCheckARPStatus(clientStats)
 	} else {
 		err = checkARPStatus(clientStats)
 	}
 	if err != nil {
-		fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
+		fmt.Printf("%s: Could not check ARP status: %v\n", colors.Warning("Warning"), err)
 	}
 
-	displayResultsWithConfig(clientStats, config)
+	displayResultsWithConfig(clientStats, cfg)
 }
 
 func setupPiholeConfig() {
@@ -356,19 +360,19 @@ func setupPiholeConfig() {
 	}
 
 	// Load or create the main configuration
-	configPath := GetConfigPath()
-	config := DefaultConfig()
+	configPath := config.GetConfigPath()
+	cfg := config.DefaultConfig()
 
 	// Try to load existing config
 	if data, err := ioutil.ReadFile(configPath); err == nil {
-		json.Unmarshal(data, config)
+		json.Unmarshal(data, cfg)
 	}
 
 	// Update Pi-hole configuration
-	config.Pihole = piholeConfig
+	cfg.Pihole = piholeConfig
 
 	// Save updated configuration
-	if err := SaveConfig(config, configPath); err != nil {
+	if err := config.SaveConfig(cfg, configPath); err != nil {
 		log.Fatalf("Error saving configuration: %v", err)
 	}
 
@@ -377,8 +381,8 @@ func setupPiholeConfig() {
 	fmt.Println("Or use: dns-analyzer --show-config to view all settings")
 }
 
-func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
-	fmt.Println(ProcessingIndicator("Connecting to Pi-hole server..."))
+func analyzePiholeData(configFile string) (map[string]*types.ClientStats, error) {
+	fmt.Println(colors.ProcessingIndicator("Connecting to Pi-hole server..."))
 
 	// Read configuration
 	configData, err := ioutil.ReadFile(configFile)
@@ -454,7 +458,7 @@ func analyzePiholeData(configFile string) (map[string]*ClientStats, error) {
 	}
 	defer client.Close()
 
-	fmt.Println(Success("Connected to Pi-hole server successfully!"))
+	fmt.Println(colors.Success("Connected to Pi-hole server successfully!"))
 
 	// Copy database file to temporary location for analysis
 	tempDB := fmt.Sprintf("/tmp/pihole-analysis-%d.db", time.Now().Unix())
@@ -528,7 +532,7 @@ func downloadFile(client *ssh.Client, remotePath, localPath string) error {
 	return session.Run(fmt.Sprintf("cat %s", remotePath))
 }
 
-func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
+func analyzePiholeDatabase(dbPath string) (map[string]*types.ClientStats, error) {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %v", err)
@@ -575,12 +579,12 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 	}
 	defer rows.Close()
 
-	clientStats := make(map[string]*ClientStats)
+	clientStats := make(map[string]*types.ClientStats)
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool) // Cache of excluded IPs to avoid repeated checks
 
-	fmt.Println(ProcessingIndicator("Processing Pi-hole database records..."))
+	fmt.Println(colors.ProcessingIndicator("Processing Pi-hole database records..."))
 
 	for rows.Next() {
 		var record PiholeRecord
@@ -634,7 +638,7 @@ func analyzePiholeDatabase(dbPath string) (map[string]*ClientStats, error) {
 	return clientStats, nil
 }
 
-func updateClientStatsFromPihole(clientStats map[string]*ClientStats, record *PiholeRecord) {
+func updateClientStatsFromPihole(clientStats map[string]*types.ClientStats, record *PiholeRecord) {
 	client := record.Client
 
 	if clientStats[client] == nil {
@@ -806,7 +810,7 @@ func refreshARPTable(clientIPs []string) {
 
 	// Wait for all pings to complete
 	wg.Wait()
-	fmt.Println(Success("ARP table refresh completed"))
+	fmt.Println(colors.Success("ARP table refresh completed"))
 }
 
 func isValidIPv4(ip string) bool {
@@ -838,7 +842,7 @@ func resolveHostname(ip string) string {
 	return hostname
 }
 
-func resolveHostnames(clientStats map[string]*ClientStats) {
+func resolveHostnames(clientStats map[string]*types.ClientStats) {
 	fmt.Println("Resolving hostnames for clients...")
 
 	// Channel to limit concurrent DNS lookups
@@ -852,7 +856,7 @@ func resolveHostnames(clientStats map[string]*ClientStats) {
 		}
 
 		wg.Add(1)
-		go func(ip string, stats *ClientStats) {
+		go func(ip string, stats *types.ClientStats) {
 			defer wg.Done()
 			semaphore <- struct{}{}        // Acquire semaphore
 			defer func() { <-semaphore }() // Release semaphore
@@ -866,7 +870,7 @@ func resolveHostnames(clientStats map[string]*ClientStats) {
 
 	// Wait for all lookups to complete
 	wg.Wait()
-	fmt.Println(Success("Hostname resolution completed"))
+	fmt.Println(colors.Success("Hostname resolution completed"))
 }
 
 // getDefaultExclusions returns the default exclusion configuration
@@ -929,7 +933,7 @@ func shouldExcludeClient(ip, hostname string, exclusions *ExclusionConfig) (bool
 }
 
 // analyzeDNSDataWithConfig analyzes DNS data using configuration settings
-func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*ClientStats, error) {
+func analyzeDNSDataWithConfig(filename string, config *types.Config) (map[string]*types.ClientStats, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)
@@ -939,7 +943,7 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 	reader := csv.NewReader(bufio.NewReader(file))
 	reader.FieldsPerRecord = -1 // Allow variable number of fields
 
-	clientStats := make(map[string]*ClientStats)
+	clientStats := make(map[string]*types.ClientStats)
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool)
@@ -953,7 +957,7 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 		return nil, fmt.Errorf("error reading header: %v", err)
 	}
 
-	fmt.Println(ProcessingIndicator("Processing CSV records with exclusions..."))
+	fmt.Println(colors.ProcessingIndicator("Processing CSV records with exclusions..."))
 
 	for {
 		record, err := reader.Read()
@@ -987,7 +991,7 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 		// Check if this client should be excluded (only check once per IP)
 		if _, exists := excludedIPs[dnsRecord.Client]; !exists {
 			// Only apply exclusions if not disabled by config
-			if !config.NoExclude {
+			if !cfg.NoExclude {
 				if shouldExclude, reason := shouldExcludeClient(dnsRecord.Client, "", exclusions); shouldExclude {
 					excludedIPs[dnsRecord.Client] = true
 					excludedCount++
@@ -1025,7 +1029,7 @@ func analyzeDNSDataWithConfig(filename string, config *Config) (map[string]*Clie
 	return clientStats, nil
 }
 
-func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
+func analyzeDNSData(filename string) (map[string]*types.ClientStats, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error opening file: %v", err)
@@ -1035,7 +1039,7 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 	reader := csv.NewReader(bufio.NewReader(file))
 	reader.FieldsPerRecord = -1 // Allow variable number of fields
 
-	clientStats := make(map[string]*ClientStats)
+	clientStats := make(map[string]*types.ClientStats)
 	recordCount := 0
 	excludedCount := 0
 	excludedIPs := make(map[string]bool)
@@ -1049,7 +1053,7 @@ func analyzeDNSData(filename string) (map[string]*ClientStats, error) {
 		return nil, fmt.Errorf("error reading header: %v", err)
 	}
 
-	fmt.Println(ProcessingIndicator("Processing CSV records with exclusions..."))
+	fmt.Println(colors.ProcessingIndicator("Processing CSV records with exclusions..."))
 
 	for {
 		record, err := reader.Read()
@@ -1176,7 +1180,7 @@ func parseRecord(record []string) (*DNSRecord, error) {
 	return dnsRecord, nil
 }
 
-func updateClientStats(clientStats map[string]*ClientStats, record *DNSRecord) {
+func updateClientStats(clientStats map[string]*types.ClientStats, record *DNSRecord) {
 	client := record.Client
 
 	if clientStats[client] == nil {
@@ -1201,7 +1205,7 @@ func updateClientStats(clientStats map[string]*ClientStats, record *DNSRecord) {
 }
 
 // checkARPStatus updates the ARP status for all clients
-func checkARPStatus(clientStats map[string]*ClientStats) error {
+func checkARPStatus(clientStats map[string]*types.ClientStats) error {
 	fmt.Println("Checking ARP table for device availability...")
 
 	// First, collect all client IPs
@@ -1239,17 +1243,17 @@ func checkARPStatus(clientStats map[string]*ClientStats) error {
 	// Resolve hostnames for all clients
 	resolveHostnames(clientStats)
 
-	fmt.Printf("Found %s clients online in ARP table\n", Success(fmt.Sprintf("%d/%d", onlineCount, len(clientStats))))
+	fmt.Printf("Found %s clients online in ARP table\n", colors.Success(fmt.Sprintf("%d/%d", onlineCount, len(clientStats))))
 	return nil
 }
 
 // displayResultsWithConfig displays results using configuration settings
-func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Config) {
+func displayResultsWithConfig(clientStats map[string]*types.ClientStats, config *types.Config) {
 	// Convert to slice for sorting
 	var statsList ClientStatsList
 	for _, stats := range clientStats {
 		// If online-only is enabled, only include clients that are online
-		if config.OnlineOnly {
+		if cfg.OnlineOnly {
 			if stats.IsOnline {
 				statsList = append(statsList, *stats)
 			}
@@ -1261,9 +1265,9 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	// Sort by total queries (descending)
 	sort.Sort(statsList)
 
-	fmt.Println(SectionHeader("DNS USAGE ANALYSIS BY CLIENT"))
-	if config.OnlineOnly {
-		fmt.Println(Info("(Showing only online clients)"))
+	fmt.Println(colors.SectionHeader("DNS USAGE ANALYSIS BY CLIENT"))
+	if cfg.OnlineOnly {
+		fmt.Println(colors.Info("(Showing only online clients)"))
 	}
 
 	// Summary
@@ -1277,7 +1281,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 
 	// Top clients by query count (configurable)
 	maxDisplay := config.Output.MaxClients
-	fmt.Println(SubSectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
+	fmt.Println(Subcolors.SectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
 
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s %s\n",
@@ -1334,7 +1338,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	}
 
 	// Detailed analysis for top 5 clients
-	fmt.Println(SectionHeader("DETAILED ANALYSIS - TOP 5 CLIENTS"))
+	fmt.Println(colors.SectionHeader("DETAILED ANALYSIS - TOP 5 CLIENTS"))
 
 	maxDetailed := 5
 	if len(statsList) < maxDetailed {
@@ -1408,11 +1412,11 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 
 	// Save detailed report to file if configured
 	if config.Output.SaveReports {
-		saveDetailedReportWithConfig(statsList, totalQueries, config)
+		saveDetailedReportWithConfig(statsList, totalQueries, cfg)
 	}
 }
 
-func displayResults(clientStats map[string]*ClientStats) {
+func displayResults(clientStats map[string]*types.ClientStats) {
 	// Convert to slice for sorting
 	var statsList ClientStatsList
 	for _, stats := range clientStats {
@@ -1446,7 +1450,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 	fmt.Println()
 
 	// Top 20 clients by query count
-	fmt.Println(SubSectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
+	fmt.Println(Subcolors.SectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
 	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
 	fmt.Println(Cyan(strings.Repeat("-", 107)))
 
@@ -1649,7 +1653,7 @@ func getStatusName(status int) string {
 	}
 }
 
-func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, config *Config) {
+func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, config *types.Config) {
 	reportDir := config.Output.ReportDir
 	if reportDir == "" {
 		reportDir = "."
@@ -1675,9 +1679,9 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 
 	// Include configuration info in report
 	fmt.Fprintf(file, "CONFIGURATION:\n")
-	fmt.Fprintf(file, "Online Only: %t\n", config.OnlineOnly)
-	fmt.Fprintf(file, "No Exclude: %t\n", config.NoExclude)
-	fmt.Fprintf(file, "Test Mode: %t\n", config.TestMode)
+	fmt.Fprintf(file, "Online Only: %t\n", cfg.OnlineOnly)
+	fmt.Fprintf(file, "No Exclude: %t\n", cfg.NoExclude)
+	fmt.Fprintf(file, "Test Mode: %t\n", cfg.TestMode)
 	fmt.Fprintf(file, "Max Clients Display: %d\n", config.Output.MaxClients)
 	fmt.Fprintf(file, "Max Domains Display: %d\n", config.Output.MaxDomains)
 	fmt.Fprintf(file, "Verbose Output: %t\n\n", config.Output.VerboseOutput)

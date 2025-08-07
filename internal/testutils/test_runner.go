@@ -1,10 +1,12 @@
-package main
+package testutils
 
 import (
 	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
+
+	"pihole-network-analyzer/internal/types"
 )
 
 // TestMode enables mock data and offline testing
@@ -313,7 +315,7 @@ func testExclusionLogic() error {
 }
 
 // mockCheckARPStatus simulates ARP status checking for tests
-func mockCheckARPStatus(clientStats map[string]*ClientStats) error {
+func mockCheckARPStatus(clientStats map[string]*types.ClientStats) error {
 	arpEntries := MockDataInstance.ARPEntries
 	hostnames := MockDataInstance.Hostnames
 

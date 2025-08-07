@@ -1,5 +1,4 @@
-package internal
-package internal
+package colors
 
 import (
 	"fmt"

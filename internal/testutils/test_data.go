@@ -1,4 +1,4 @@
-package main
+package testutils
 
 import (
 	"database/sql"
@@ -8,25 +8,26 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+	"pihole-network-analyzer/internal/types"
 )
 
 // MockData contains all the mock data for testing
 type MockData struct {
-	DNSRecords    []DNSRecord
-	PiholeRecords []PiholeRecord
-	ARPEntries    map[string]*ARPEntry
+	types.DNSRecords    []types.types.DNSRecord
+	types.PiholeRecords []types.PiholeRecord
+	ARPEntries    map[string]*types.ARPEntry
 	Hostnames     map[string]string
 }
 
 // CreateMockData generates realistic test data
 func CreateMockData() *MockData {
 	mock := &MockData{
-		ARPEntries: make(map[string]*ARPEntry),
+		ARPEntries: make(map[string]*types.ARPEntry),
 		Hostnames:  make(map[string]string),
 	}
 
 	// Mock DNS records (simulating CSV data)
-	mock.DNSRecords = []DNSRecord{
+	mock.types.DNSRecords = []types.DNSRecord{
 		{ID: 1, DateTime: "2024-08-06 10:00:01", Domain: "google.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.003245},
 		{ID: 2, DateTime: "2024-08-06 10:00:02", Domain: "facebook.com", Type: 1, Status: 1, Client: "192.168.2.210", ReplyTime: 0.002134},
 		{ID: 3, DateTime: "2024-08-06 10:00:03", Domain: "youtube.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.004567},
@@ -53,7 +54,7 @@ func CreateMockData() *MockData {
 	}
 
 	// Mock Pi-hole records (simulating database data)
-	mock.PiholeRecords = []PiholeRecord{
+	mock.types.PiholeRecords = []types.PiholeRecord{
 		{Timestamp: float64(time.Now().Unix() - 3600), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "google.com", Status: "Forwarded"},
 		{Timestamp: float64(time.Now().Unix() - 3500), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "facebook.com", Status: "Blocked (gravity)"},
 		{Timestamp: float64(time.Now().Unix() - 3400), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "youtube.com", Status: "Forwarded"},
@@ -79,7 +80,7 @@ func CreateMockData() *MockData {
 	}
 
 	// Mock ARP entries (simulating current online devices)
-	mock.ARPEntries = map[string]*ARPEntry{
+	mock.ARPEntries = map[string]*types.ARPEntry{
 		"192.168.2.110": {IP: "192.168.2.110", HWAddr: "66:78:8B:59:BF:1A", Status: "reachable", IsOnline: true},
 		"192.168.2.210": {IP: "192.168.2.210", HWAddr: "32:79:B9:39:43:7C", Status: "reachable", IsOnline: true},
 		"192.168.2.6":   {IP: "192.168.2.6", HWAddr: "E0:69:95:4F:19:6D", Status: "reachable", IsOnline: true},
@@ -117,7 +118,7 @@ func CreateMockCSVFile(filename string, mockData *MockData) error {
 	}
 
 	// Write mock data records
-	for _, record := range mockData.DNSRecords {
+	for _, record := range mockData.types.DNSRecords {
 		line := fmt.Sprintf("%d,%s,%s,%d,%d,%s,,%s,%d,%.6f,0,0,0\n",
 			record.ID,
 			record.DateTime,
@@ -224,7 +225,7 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	// Insert query records
 	queryInsert := `INSERT INTO queries (timestamp, type, status, domain, client, forward) VALUES (?, ?, ?, ?, ?, ?)`
 
-	for _, record := range mockData.PiholeRecords {
+	for _, record := range mockData.types.PiholeRecords {
 		statusCode := getStatusCodeFromString(record.Status)
 		_, err = db.Exec(queryInsert, int64(record.Timestamp), 1, statusCode, record.Domain, record.Client, "")
 		if err != nil {
@@ -250,7 +251,7 @@ func CreateMockConfig(filename string) error {
 }
 
 // MockARPTable simulates the ARP table for testing
-func MockARPTable(mockData *MockData) (map[string]*ARPEntry, error) {
+func MockARPTable(mockData *MockData) (map[string]*types.ARPEntry, error) {
 	return mockData.ARPEntries, nil
 }
 

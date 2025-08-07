@@ -1,57 +1,33 @@
-package main
+package config
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"pihole-network-analyzer/internal/types"
 )
 
-// Config represents the application configuration
-type Config struct {
-	// Analysis options
-	OnlineOnly bool `json:"online_only"`
-	NoExclude  bool `json:"no_exclude"`
-	TestMode   bool `json:"test_mode"`
-
-	// Pi-hole configuration
-	Pihole PiholeConfig `json:"pihole"`
-
-	// Exclusion configuration
-	Exclusions ExclusionConfig `json:"exclusions"`
-
-	// Output configuration
-	Output OutputConfig `json:"output"`
-}
-
-// OutputConfig holds output-related settings
-type OutputConfig struct {
-	SaveReports   bool   `json:"save_reports"`
-	ReportDir     string `json:"report_dir"`
-	VerboseOutput bool   `json:"verbose_output"`
-	MaxClients    int    `json:"max_clients_display"`
-	MaxDomains    int    `json:"max_domains_display"`
-}
-
 // DefaultConfig returns the default configuration
-func DefaultConfig() *Config {
+func DefaultConfig() *types.Config {
 	homeDir, _ := os.UserHomeDir()
 
-	return &Config{
+	return &types.Config{
 		OnlineOnly: false,
 		NoExclude:  false,
 		TestMode:   false,
 
-		Pihole: PiholeConfig{
+		Pihole: types.PiholeConfig{
 			Host:     "",
-			Port:     "22",
+			Port:     22,
 			Username: "pi",
 			Password: "",
 			KeyFile:  filepath.Join(homeDir, ".ssh", "id_rsa"),
 			DBPath:   "/etc/pihole/pihole-FTL.db",
 		},
 
-		Exclusions: ExclusionConfig{
+		Exclusions: types.ExclusionConfig{
 			ExcludeNetworks: []string{
 				"172.16.0.0/12", // Docker default networks
 				"127.0.0.0/8",   // Loopback
@@ -60,7 +36,7 @@ func DefaultConfig() *Config {
 			ExcludeHosts: []string{"pi.hole"},
 		},
 
-		Output: OutputConfig{
+		Output: types.OutputConfig{
 			SaveReports:   true,
 			ReportDir:     ".",
 			VerboseOutput: false,
@@ -71,7 +47,7 @@ func DefaultConfig() *Config {
 }
 
 // LoadConfig loads configuration from file, falling back to defaults
-func LoadConfig(configPath string) (*Config, error) {
+func LoadConfig(configPath string) (*types.Config, error) {
 	config := DefaultConfig()
 
 	// Check if config file exists
@@ -96,7 +72,7 @@ func LoadConfig(configPath string) (*Config, error) {
 }
 
 // SaveConfig saves the current configuration to file
-func SaveConfig(config *Config, configPath string) error {
+func SaveConfig(config *types.Config, configPath string) error {
 	// Ensure directory exists
 	dir := filepath.Dir(configPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -118,22 +94,20 @@ func SaveConfig(config *Config, configPath string) error {
 	return nil
 }
 
-// MergeFlags merges command line flags with config file settings
-// Command line flags take precedence over config file
-func MergeFlags(config *Config) {
-	// Only override config if flag was explicitly set
-	if *onlineOnlyFlag {
+// MergeFlags merges command-line flag values into configuration
+func MergeFlags(config *types.Config, onlineOnly, noExclude, testMode bool, piholeConfig string) {
+	if onlineOnly {
 		config.OnlineOnly = true
 	}
-	if *noExcludeFlag {
+	if noExclude {
 		config.NoExclude = true
 	}
-	if *testModeFlag {
+	if testMode {
 		config.TestMode = true
 	}
-	if *piholeFlag != "" {
-		// Pi-hole flag specified, load that specific config
-		// This will be handled in main()
+	if piholeConfig != "" {
+		// Parse pihole config if provided
+		// This would load pihole-specific settings
 	}
 }
 
@@ -144,7 +118,7 @@ func CreateDefaultConfigFile(configPath string) error {
 }
 
 // ShowConfig displays the current configuration
-func ShowConfig(config *Config) {
+func ShowConfig(config *types.Config) {
 	fmt.Println("\nCurrent Configuration:")
 	fmt.Println("======================")
 	fmt.Printf("Online Only:       %t\n", config.OnlineOnly)
@@ -158,7 +132,7 @@ func ShowConfig(config *Config) {
 
 	fmt.Println("\nPi-hole Configuration:")
 	fmt.Printf("  Host:            %s\n", config.Pihole.Host)
-	fmt.Printf("  Port:            %s\n", config.Pihole.Port)
+	fmt.Printf("  Port:            %d\n", config.Pihole.Port)
 	fmt.Printf("  Username:        %s\n", config.Pihole.Username)
 	if config.Pihole.Password != "" {
 		fmt.Printf("  Password:        %s\n", "***configured***")

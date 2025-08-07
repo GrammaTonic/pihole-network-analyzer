@@ -20,27 +20,32 @@ print_status $BLUE "🔄 Running Enhanced CI Simulation Test..."
 
 # Test 1: Basic build with race detection
 print_status $YELLOW "Test 1: Building application with race detection..."
-go build -race -o test-binary . >/dev/null 2>&1
+cd src && go build -race -o test-binary . >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     print_status $GREEN "✅ Build successful"
+    cd ..
 else
     print_status $RED "❌ Build failed"
+    cd ..
     exit 1
 fi
 
 # Test 2: Unit tests (allow colorized integration test failures in CI)
 print_status $YELLOW "Test 2: Running unit tests..."
-go test -v -timeout=5m -run='^Test[^C]' ./... >/dev/null 2>&1
+cd src && go test -v -timeout=5m -run='^Test[^C]' ./... >/dev/null 2>&1
 unit_test_result=$?
 if [ $unit_test_result -eq 0 ]; then
     print_status $GREEN "✅ Unit tests passed"
+    cd ..
 else
     # Try excluding problematic colorized integration tests
     go test -v -timeout=5m -run='^Test(?!Colorized).*' ./... >/dev/null 2>&1
     if [ $? -eq 0 ]; then
         print_status $GREEN "✅ Core unit tests passed (colorized integration tests excluded)"
+        cd ..
     else
         print_status $YELLOW "⚠️ Some unit tests failed (may be expected in CI environment)"
+        cd ..
     fi
 fi
 
@@ -73,11 +78,13 @@ fi
 
 # Test 4: Performance benchmarks
 print_status $YELLOW "Test 4: Running performance benchmarks..."
-go test -bench=. -run=Benchmark -timeout=2m >/dev/null 2>&1
+cd src && go test -bench=. -run=Benchmark -timeout=2m >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     print_status $GREEN "✅ Performance benchmarks completed"
+    cd ..
 else
     print_status $YELLOW "⚠️ Performance benchmarks failed (may be expected)"
+    cd ..
 fi
 
 # Test 5: Configuration system
@@ -92,6 +99,7 @@ fi
 
 # Test 6: Cross-platform build validation
 print_status $YELLOW "Test 6: Testing cross-platform builds..."
+cd src
 GOOS=windows GOARCH=amd64 go build -o test-windows.exe . >/dev/null 2>&1
 GOOS=darwin GOARCH=amd64 go build -o test-darwin . >/dev/null 2>&1
 GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 . >/dev/null 2>&1
@@ -99,8 +107,10 @@ GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 . >/dev/null 2>&1
 if [ $? -eq 0 ]; then
     print_status $GREEN "✅ Cross-platform builds successful"
     rm -f test-windows.exe test-darwin test-linux-arm64
+    cd ..
 else
     print_status $RED "❌ Cross-platform builds failed"
+    cd ..
     exit 1
 fi
 
