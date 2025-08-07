@@ -14,7 +14,7 @@ install-deps: ## Install Go dependencies
 	go mod download
 
 build: ## Build the application
-	go build -o $(BINARY_NAME) $(SOURCE_FILE)
+	go build -o $(BINARY_NAME) .
 
 run: build ## Build and run the application with test.csv
 	./$(BINARY_NAME) $(CSV_FILE)
