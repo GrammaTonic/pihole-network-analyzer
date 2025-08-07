@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -13,8 +14,8 @@ import (
 
 // MockData contains all the mock data for testing
 type MockData struct {
-	types.DNSRecords    []types.types.DNSRecord
-	types.PiholeRecords []types.PiholeRecord
+	DNSRecords    []types.DNSRecord
+	PiholeRecords []types.PiholeRecord
 	ARPEntries    map[string]*types.ARPEntry
 	Hostnames     map[string]string
 }
@@ -27,65 +28,65 @@ func CreateMockData() *MockData {
 	}
 
 	// Mock DNS records (simulating CSV data)
-	mock.types.DNSRecords = []types.DNSRecord{
-		{ID: 1, DateTime: "2024-08-06 10:00:01", Domain: "google.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.003245},
-		{ID: 2, DateTime: "2024-08-06 10:00:02", Domain: "facebook.com", Type: 1, Status: 1, Client: "192.168.2.210", ReplyTime: 0.002134},
-		{ID: 3, DateTime: "2024-08-06 10:00:03", Domain: "youtube.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.004567},
-		{ID: 4, DateTime: "2024-08-06 10:00:04", Domain: "tracking.doubleclick.net", Type: 1, Status: 9, Client: "192.168.2.210", ReplyTime: 0.001234},
-		{ID: 5, DateTime: "2024-08-06 10:00:05", Domain: "api.spotify.com", Type: 1, Status: 2, Client: "192.168.2.6", ReplyTime: 0.002876},
-		{ID: 6, DateTime: "2024-08-06 10:00:06", Domain: "docker.internal", Type: 1, Status: 3, Client: "172.20.0.8", ReplyTime: 0.000234},
-		{ID: 7, DateTime: "2024-08-06 10:00:07", Domain: "github.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.003456},
-		{ID: 8, DateTime: "2024-08-06 10:00:08", Domain: "ads.microsoft.com", Type: 1, Status: 1, Client: "192.168.2.210", ReplyTime: 0.001567},
-		{ID: 9, DateTime: "2024-08-06 10:00:09", Domain: "cdn.jsdelivr.net", Type: 1, Status: 2, Client: "192.168.2.202", ReplyTime: 0.004123},
-		{ID: 10, DateTime: "2024-08-06 10:00:10", Domain: "malware.badsite.com", Type: 1, Status: 9, Client: "192.168.2.119", ReplyTime: 0.000456},
+	mock.DNSRecords = []types.DNSRecord{
+		{ID: 1, DateTime: "2024-08-06 10:00:01", Domain: "google.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.003245},
+		{ID: 2, DateTime: "2024-08-06 10:00:02", Domain: "facebook.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.002134},
+		{ID: 3, DateTime: "2024-08-06 10:00:03", Domain: "youtube.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.004567},
+		{ID: 4, DateTime: "2024-08-06 10:00:04", Domain: "tracking.doubleclick.net", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001234},
+		{ID: 5, DateTime: "2024-08-06 10:00:05", Domain: "api.spotify.com", Type: 1, Client: "192.168.2.6", ResponseTime: 0.002876},
+		{ID: 6, DateTime: "2024-08-06 10:00:06", Domain: "docker.internal", Type: 1, Client: "172.20.0.8", ResponseTime: 0.000234},
+		{ID: 7, DateTime: "2024-08-06 10:00:07", Domain: "github.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.003456},
+		{ID: 8, DateTime: "2024-08-06 10:00:08", Domain: "ads.microsoft.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001567},
+		{ID: 9, DateTime: "2024-08-06 10:00:09", Domain: "cdn.jsdelivr.net", Type: 1, Client: "192.168.2.202", ResponseTime: 0.004123},
+		{ID: 10, DateTime: "2024-08-06 10:00:10", Domain: "malware.badsite.com", Type: 1, Client: "192.168.2.119", ResponseTime: 0.000456},
 		// Add more records for variety
-		{ID: 11, DateTime: "2024-08-06 10:00:11", Domain: "netflix.com", Type: 1, Status: 2, Client: "192.168.2.202", ReplyTime: 0.005234},
-		{ID: 12, DateTime: "2024-08-06 10:00:12", Domain: "amazon.com", Type: 1, Status: 2, Client: "192.168.2.119", ReplyTime: 0.003789},
-		{ID: 13, DateTime: "2024-08-06 10:00:13", Domain: "microsoft.com", Type: 1, Status: 2, Client: "192.168.2.110", ReplyTime: 0.002345},
-		{ID: 14, DateTime: "2024-08-06 10:00:14", Domain: "telemetry.microsoft.com", Type: 1, Status: 9, Client: "192.168.2.210", ReplyTime: 0.001234},
-		{ID: 15, DateTime: "2024-08-06 10:00:15", Domain: "pi.hole", Type: 1, Status: 3, Client: "192.168.2.6", ReplyTime: 0.000123},
+		{ID: 11, DateTime: "2024-08-06 10:00:11", Domain: "netflix.com", Type: 1, Client: "192.168.2.202", ResponseTime: 0.005234},
+		{ID: 12, DateTime: "2024-08-06 10:00:12", Domain: "amazon.com", Type: 1, Client: "192.168.2.119", ResponseTime: 0.003789},
+		{ID: 13, DateTime: "2024-08-06 10:00:13", Domain: "microsoft.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.002345},
+		{ID: 14, DateTime: "2024-08-06 10:00:14", Domain: "telemetry.microsoft.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001234},
+		{ID: 15, DateTime: "2024-08-06 10:00:15", Domain: "pi.hole", Type: 1, Client: "192.168.2.6", ResponseTime: 0.000123},
 		// Docker container traffic
-		{ID: 16, DateTime: "2024-08-06 10:00:16", Domain: "registry-1.docker.io", Type: 1, Status: 2, Client: "172.20.0.8", ReplyTime: 0.002456},
-		{ID: 17, DateTime: "2024-08-06 10:00:17", Domain: "hub.docker.com", Type: 1, Status: 2, Client: "172.19.0.2", ReplyTime: 0.003123},
-		{ID: 18, DateTime: "2024-08-06 10:00:18", Domain: "auth.docker.io", Type: 1, Status: 2, Client: "172.20.0.8", ReplyTime: 0.001789},
+		{ID: 16, DateTime: "2024-08-06 10:00:16", Domain: "registry-1.docker.io", Type: 1, Client: "172.20.0.8", ResponseTime: 0.002456},
+		{ID: 17, DateTime: "2024-08-06 10:00:17", Domain: "hub.docker.com", Type: 1, Client: "172.19.0.2", ResponseTime: 0.003123},
+		{ID: 18, DateTime: "2024-08-06 10:00:18", Domain: "auth.docker.io", Type: 1, Client: "172.20.0.8", ResponseTime: 0.001789},
 		// IPv6 and other addresses
-		{ID: 19, DateTime: "2024-08-06 10:00:19", Domain: "ipv6.google.com", Type: 28, Status: 2, Client: "2001:db8::1", ReplyTime: 0.004567},
-		{ID: 20, DateTime: "2024-08-06 10:00:20", Domain: "localhost", Type: 1, Status: 3, Client: "127.0.0.1", ReplyTime: 0.000045},
+		{ID: 19, DateTime: "2024-08-06 10:00:19", Domain: "ipv6.google.com", Type: 28, Client: "2001:db8::1", ResponseTime: 0.004567},
+		{ID: 20, DateTime: "2024-08-06 10:00:20", Domain: "localhost", Type: 1, Client: "127.0.0.1", ResponseTime: 0.000045},
 	}
 
 	// Mock Pi-hole records (simulating database data)
-	mock.types.PiholeRecords = []types.PiholeRecord{
-		{Timestamp: float64(time.Now().Unix() - 3600), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "google.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 3500), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "facebook.com", Status: "Blocked (gravity)"},
-		{Timestamp: float64(time.Now().Unix() - 3400), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "youtube.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 3300), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "tracking.doubleclick.net", Status: "Blocked (gravity, CNAME)"},
-		{Timestamp: float64(time.Now().Unix() - 3200), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "api.spotify.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 3100), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "docker.internal", Status: "Cached"},
-		{Timestamp: float64(time.Now().Unix() - 3000), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "github.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2900), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "ads.microsoft.com", Status: "Blocked (gravity)"},
-		{Timestamp: float64(time.Now().Unix() - 2800), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "cdn.jsdelivr.net", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2700), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "malware.badsite.com", Status: "Blocked (gravity, CNAME)"},
-		{Timestamp: float64(time.Now().Unix() - 2600), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "netflix.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2500), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "amazon.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2400), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "microsoft.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2300), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "telemetry.microsoft.com", Status: "Blocked (gravity, CNAME)"},
-		{Timestamp: float64(time.Now().Unix() - 2200), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "pi.hole", Status: "Cached"},
+	mock.PiholeRecords = []types.PiholeRecord{
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3600, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "google.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3500, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "facebook.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "youtube.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "tracking.doubleclick.net", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "api.spotify.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "docker.internal", Status: 3},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 3000, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "github.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2900, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "ads.microsoft.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2800, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "cdn.jsdelivr.net", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2700, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "malware.badsite.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2600, 10), Client: "192.168.2.202", HWAddr: "14:da:e9:48:53:a4", Domain: "netflix.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2500, 10), Client: "192.168.2.119", HWAddr: "fc:49:2d:1a:41:16", Domain: "amazon.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2400, 10), Client: "192.168.2.110", HWAddr: "66:78:8b:59:bf:1a", Domain: "microsoft.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2300, 10), Client: "192.168.2.210", HWAddr: "32:79:b9:39:43:7c", Domain: "telemetry.microsoft.com", Status: 9},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2200, 10), Client: "192.168.2.6", HWAddr: "e0:69:95:4f:19:6d", Domain: "pi.hole", Status: 3},
 		// More Docker container traffic
-		{Timestamp: float64(time.Now().Unix() - 2100), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "registry-1.docker.io", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 2000), Client: "172.19.0.2", HWAddr: "02:42:ac:13:00:02", Domain: "hub.docker.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 1900), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "auth.docker.io", Status: "Forwarded"},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2100, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "registry-1.docker.io", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 2000, 10), Client: "172.19.0.2", HWAddr: "02:42:ac:13:00:02", Domain: "hub.docker.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1900, 10), Client: "172.20.0.8", HWAddr: "02:42:ac:14:00:08", Domain: "auth.docker.io", Status: 2},
 		// Offline devices
-		{Timestamp: float64(time.Now().Unix() - 1800), Client: "192.168.2.123", HWAddr: "fc:41:16:b4:22:33", Domain: "old.device.com", Status: "Forwarded"},
-		{Timestamp: float64(time.Now().Unix() - 1700), Client: "192.168.2.156", HWAddr: "f2:6f:b8:f3:44:55", Domain: "another.old.com", Status: "Cached"},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1800, 10), Client: "192.168.2.123", HWAddr: "fc:41:16:b4:22:33", Domain: "old.device.com", Status: 2},
+		{Timestamp: strconv.FormatInt(time.Now().Unix() - 1700, 10), Client: "192.168.2.156", HWAddr: "f2:6f:b8:f3:44:55", Domain: "another.old.com", Status: 3},
 	}
 
 	// Mock ARP entries (simulating current online devices)
 	mock.ARPEntries = map[string]*types.ARPEntry{
-		"192.168.2.110": {IP: "192.168.2.110", HWAddr: "66:78:8B:59:BF:1A", Status: "reachable", IsOnline: true},
-		"192.168.2.210": {IP: "192.168.2.210", HWAddr: "32:79:B9:39:43:7C", Status: "reachable", IsOnline: true},
-		"192.168.2.6":   {IP: "192.168.2.6", HWAddr: "E0:69:95:4F:19:6D", Status: "reachable", IsOnline: true},
-		"192.168.2.202": {IP: "192.168.2.202", HWAddr: "14:DA:E9:48:53:A4", Status: "reachable", IsOnline: true},
-		"192.168.2.119": {IP: "192.168.2.119", HWAddr: "FC:49:2D:1A:41:16", Status: "reachable", IsOnline: true},
+		"192.168.2.110": {IP: "192.168.2.110", MAC: "66:78:8B:59:BF:1A", IsOnline: true},
+		"192.168.2.210": {IP: "192.168.2.210", MAC: "32:79:B9:39:43:7C", IsOnline: true},
+		"192.168.2.6":   {IP: "192.168.2.6", MAC: "E0:69:95:4F:19:6D", IsOnline: true},
+		"192.168.2.202": {IP: "192.168.2.202", MAC: "14:DA:E9:48:53:A4", IsOnline: true},
+		"192.168.2.119": {IP: "192.168.2.119", MAC: "FC:49:2D:1A:41:16", IsOnline: true},
 		// Note: 192.168.2.123 and 192.168.2.156 are NOT in ARP table (offline)
 	}
 

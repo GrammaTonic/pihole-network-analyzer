@@ -338,12 +338,12 @@ func padColoredText(text string, width int, leftAlign bool) string {
 	}
 }
 
-// formatTableColumn formats a colored text for table display with proper padding
-func formatTableColumn(text string, width int) string {
+// FormatTableColumn formats a colored text for table display with proper padding
+func FormatTableColumn(text string, width int) string {
 	return padColoredText(text, width, true) // left-align by default
 }
 
-// formatTableColumnRight formats a colored text for table display with right alignment
-func formatTableColumnRight(text string, width int) string {
+// FormatTableColumnRight formats a colored text for table display with right alignment
+func FormatTableColumnRight(text string, width int) string {
 	return padColoredText(text, width, false)
 }

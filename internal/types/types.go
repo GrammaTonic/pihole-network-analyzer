@@ -10,6 +10,11 @@ type DNSRecord struct {
 	QueryType      string
 	ResponseStatus string
 	ResponseTime   float64
+	// Additional fields used in main code
+	Client    string
+	Status    string
+	ReplyTime float64
+	Timestamp string
 }
 
 // PiholeRecord represents a record from Pi-hole database
@@ -20,6 +25,9 @@ type PiholeRecord struct {
 	Client    string
 	QueryType string
 	Status    int
+	// Additional fields used in main code
+	Timestamp string
+	HWAddr    string
 }
 
 // ClientStats stores statistics for each client
@@ -38,6 +46,15 @@ type ClientStats struct {
 	TotalQueries  int
 	FirstSeen     string
 	DeviceType    string
+	// Additional fields used in main code
+	Client         string
+	QueryTypes     map[int]int
+	StatusCodes    map[int]int
+	HWAddr         string
+	ARPStatus      string
+	TotalReplyTime float64
+	AvgReplyTime   float64
+	Uniquedomains  int
 }
 
 // DomainStat represents domain statistics

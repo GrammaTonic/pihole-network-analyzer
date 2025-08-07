@@ -5,13 +5,15 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	
+	"pihole-network-analyzer/internal/colors"
 )
 
 // Test basic color functions
 func TestColorFunctions(t *testing.T) {
 	// Enable test mode to bypass terminal detection
-	EnableTestMode()
-	defer DisableColors()
+	colors.EnableTestMode()
+	defer colors.DisableColors()
 
 	tests := []struct {
 		name     string
@@ -19,22 +21,22 @@ func TestColorFunctions(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"Red", Red, "test", "\033[31mtest\033[0m"},
-		{"Green", Green, "test", "\033[32mtest\033[0m"},
-		{"Yellow", Yellow, "test", "\033[33mtest\033[0m"},
-		{"Blue", Blue, "test", "\033[34mtest\033[0m"},
-		{"Purple", Purple, "test", "\033[35mtest\033[0m"},
-		{"Cyan", Cyan, "test", "\033[36mtest\033[0m"},
-		{"Gray", Gray, "test", "\033[90mtest\033[0m"},
-		{"BoldRed", BoldRed, "test", "\033[1;31mtest\033[0m"},
-		{"BoldGreen", BoldGreen, "test", "\033[1;32mtest\033[0m"},
-		{"BoldYellow", BoldYellow, "test", "\033[1;33mtest\033[0m"},
-		{"BoldBlue", BoldBlue, "test", "\033[1;34mtest\033[0m"},
-		{"BoldPurple", BoldPurple, "test", "\033[1;35mtest\033[0m"},
-		{"BoldCyan", BoldCyan, "test", "\033[1;36mtest\033[0m"},
-		{"BoldWhite", BoldWhite, "test", "\033[1;37mtest\033[0m"},
-		{"Bold", Bold, "test", "\033[1mtest\033[0m"},
-		{"Underline", Underline, "test", "\033[4mtest\033[0m"},
+		{"colors.Red", colors.Red, "test", "\033[31mtest\033[0m"},
+		{"colors.Green", colors.Green, "test", "\033[32mtest\033[0m"},
+		{"colors.Yellow", colors.Yellow, "test", "\033[33mtest\033[0m"},
+		{"colors.Blue", colors.Blue, "test", "\033[34mtest\033[0m"},
+		{"colors.Purple", colors.Purple, "test", "\033[35mtest\033[0m"},
+		{"colors.Cyan", colors.Cyan, "test", "\033[36mtest\033[0m"},
+		{"colors.Gray", colors.Gray, "test", "\033[90mtest\033[0m"},
+		{"colors.BoldRed", colors.BoldRed, "test", "\033[1;31mtest\033[0m"},
+		{"colors.BoldGreen", colors.BoldGreen, "test", "\033[1;32mtest\033[0m"},
+		{"colors.BoldYellow", colors.BoldYellow, "test", "\033[1;33mtest\033[0m"},
+		{"colors.BoldBlue", colors.BoldBlue, "test", "\033[1;34mtest\033[0m"},
+		{"colors.BoldPurple", colors.BoldPurple, "test", "\033[1;35mtest\033[0m"},
+		{"colors.BoldCyan", colors.BoldCyan, "test", "\033[1;36mtest\033[0m"},
+		{"colors.BoldWhite", colors.BoldWhite, "test", "\033[1;37mtest\033[0m"},
+		{"colors.Bold", colors.Bold, "test", "\033[1mtest\033[0m"},
+		{"colors.Underline", colors.Underline, "test", "\033[4mtest\033[0m"},
 	}
 
 	for _, tt := range tests {
@@ -258,11 +260,11 @@ func TestHighlightIP(t *testing.T) {
 		color string
 		desc  string
 	}{
-		{"Private 192.168", "192.168.1.100", "\033[1;34m", "BoldBlue"},
-		{"Private 10.x", "10.0.0.5", "\033[1;34m", "BoldBlue"},
-		{"Private 172.x", "172.16.0.10", "\033[1;34m", "BoldBlue"},
-		{"Public IP", "8.8.8.8", "\033[1;33m", "BoldYellow"},
-		{"Public IP 2", "1.1.1.1", "\033[1;33m", "BoldYellow"},
+		{"Private 192.168", "192.168.1.100", "\033[1;34m", "colors.BoldBlue"},
+		{"Private 10.x", "10.0.0.5", "\033[1;34m", "colors.BoldBlue"},
+		{"Private 172.x", "172.16.0.10", "\033[1;34m", "colors.BoldBlue"},
+		{"Public IP", "8.8.8.8", "\033[1;33m", "colors.BoldYellow"},
+		{"Public IP 2", "1.1.1.1", "\033[1;33m", "colors.BoldYellow"},
 	}
 
 	for _, tt := range tests {
@@ -289,14 +291,14 @@ func TestHighlightDomain(t *testing.T) {
 		color  string
 		desc   string
 	}{
-		{"Google service", "google.com", "\033[1;32m", "BoldGreen"},
-		{"Microsoft service", "api.microsoft.com", "\033[1;32m", "BoldGreen"},
-		{"GitHub development", "github.com", "\033[1;36m", "BoldCyan"},
-		{"StackOverflow development", "stackoverflow.com", "\033[1;36m", "BoldCyan"},
-		{"Ads domain", "ads.example.com", "\033[1;31m", "BoldRed"},
-		{"Tracking domain", "tracking.analytics.com", "\033[1;31m", "BoldRed"},
-		{"Doubleclick ads", "doubleclick.net", "\033[1;31m", "BoldRed"},
-		{"Telemetry domain", "telemetry.service.com", "\033[1;31m", "BoldRed"},
+		{"Google service", "google.com", "\033[1;32m", "colors.BoldGreen"},
+		{"Microsoft service", "api.microsoft.com", "\033[1;32m", "colors.BoldGreen"},
+		{"GitHub development", "github.com", "\033[1;36m", "colors.BoldCyan"},
+		{"StackOverflow development", "stackoverflow.com", "\033[1;36m", "colors.BoldCyan"},
+		{"Ads domain", "ads.example.com", "\033[1;31m", "colors.BoldRed"},
+		{"Tracking domain", "tracking.analytics.com", "\033[1;31m", "colors.BoldRed"},
+		{"Doubleclick ads", "doubleclick.net", "\033[1;31m", "colors.BoldRed"},
+		{"Telemetry domain", "telemetry.service.com", "\033[1;31m", "colors.BoldRed"},
 	}
 
 	for _, tt := range tests {
@@ -351,7 +353,7 @@ func TestSectionHeader(t *testing.T) {
 
 	// Should contain color codes when colors are enabled
 	if !strings.Contains(result, "\033[1;36m") { // BoldCyan
-		t.Errorf("SectionHeader(%q) should contain BoldCyan color code", title)
+		t.Errorf("SectionHeader(%q) should contain colors.BoldCyan color code", title)
 	}
 
 	// Should contain border characters
@@ -374,7 +376,7 @@ func TestSubSectionHeader(t *testing.T) {
 
 	// Should contain color codes when colors are enabled
 	if !strings.Contains(result, "\033[1;36m") { // BoldCyan
-		t.Errorf("SubSectionHeader(%q) should contain BoldCyan color code", title)
+		t.Errorf("SubSectionHeader(%q) should contain colors.BoldCyan color code", title)
 	}
 
 	// Should contain border characters
@@ -403,7 +405,7 @@ func TestProcessingIndicator(t *testing.T) {
 
 	// Should contain color code
 	if !strings.Contains(result, "\033[1;36m") { // BoldCyan (Info)
-		t.Errorf("ProcessingIndicator(%q) should contain BoldCyan color code", message)
+		t.Errorf("ProcessingIndicator(%q) should contain colors.BoldCyan color code", message)
 	}
 }
 
@@ -415,10 +417,10 @@ func TestStripColorCodes(t *testing.T) {
 		expected string
 	}{
 		{"No colors", "plain text", "plain text"},
-		{"Red text", "\033[31mred text\033[0m", "red text"},
-		{"Bold green", "\033[1;32mbold green\033[0m", "bold green"},
+		{"colors.Red text", "\033[31mred text\033[0m", "red text"},
+		{"colors.Bold green", "\033[1;32mbold green\033[0m", "bold green"},
 		{"Multiple colors", "\033[31mred\033[0m and \033[32mgreen\033[0m", "red and green"},
-		{"Complex formatting", "\033[1;36mBold Cyan\033[0m with \033[90mgray\033[0m", "Bold Cyan with gray"},
+		{"Complex formatting", "\033[1;36mBold colors.Cyan\033[0m with \033[90mgray\033[0m", "colors.Bold colors.Cyan with gray"},
 	}
 
 	for _, tt := range tests {
@@ -439,8 +441,8 @@ func TestGetDisplayLength(t *testing.T) {
 		expected int
 	}{
 		{"Plain text", "hello world", 11},
-		{"Red text", "\033[31mhello\033[0m", 5},
-		{"Bold text", "\033[1mworld\033[0m", 5},
+		{"colors.Red text", "\033[31mhello\033[0m", 5},
+		{"colors.Bold text", "\033[1mworld\033[0m", 5},
 		{"Complex colors", "\033[1;32mGreen\033[0m \033[31mRed\033[0m", 9}, // "Green Red"
 	}
 
@@ -522,14 +524,14 @@ func TestColorDetectionDisabled(t *testing.T) {
 	DisableColors()
 
 	// All color functions should return plain text
-	result := Red("test")
+	result := colors.Red("test")
 	if result != "test" {
-		t.Errorf("Red() with disabled colors should return %q, got %q", "test", result)
+		t.Errorf("colors.Red() with disabled colors should return %q, got %q", "test", result)
 	}
 
-	result = BoldGreen("test")
+	result = colors.BoldGreen("test")
 	if result != "test" {
-		t.Errorf("BoldGreen() with disabled colors should return %q, got %q", "test", result)
+		t.Errorf("colors.BoldGreen() with disabled colors should return %q, got %q", "test", result)
 	}
 
 	// Re-enable for other tests
@@ -574,15 +576,15 @@ func BenchmarkColorFunctions(b *testing.B) {
 	EnableTestMode()
 	text := "benchmark test text"
 
-	b.Run("Red", func(b *testing.B) {
+	b.Run("colors.Red", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			Red(text)
+			colors.Red(text)
 		}
 	})
 
-	b.Run("BoldGreen", func(b *testing.B) {
+	b.Run("colors.BoldGreen", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			BoldGreen(text)
+			colors.BoldGreen(text)
 		}
 	})
 
