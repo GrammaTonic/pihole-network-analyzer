@@ -48,6 +48,7 @@ type ColorConfig struct {
 	Enabled       bool
 	ForceDisabled bool
 	UseEmoji      bool
+	TestMode      bool // For unit testing - bypasses terminal detection
 }
 
 // Global color configuration
@@ -64,6 +65,11 @@ func colorEnabled() bool {
 	
 	if !colorConfig.Enabled {
 		return false
+	}
+
+	// In test mode, bypass terminal and OS checks
+	if colorConfig.TestMode {
+		return true
 	}
 
 	// Disable colors on Windows unless explicitly enabled
@@ -279,4 +285,65 @@ func DisableEmojis() {
 
 func IsColorEnabled() bool {
 	return colorEnabled()
+}
+
+// EnableTestMode enables colors for unit testing (bypasses terminal detection)
+func EnableTestMode() {
+	colorConfig.TestMode = true
+	colorConfig.Enabled = true
+	colorConfig.ForceDisabled = false
+}
+
+// DisableTestMode disables test mode
+func DisableTestMode() {
+	colorConfig.TestMode = false
+}
+
+// stripColorCodes removes ANSI color codes from a string to calculate its actual display length
+func stripColorCodes(text string) string {
+	// Simple regex would be better, but this avoids additional dependencies
+	result := text
+	colorCodes := []string{
+		ColorReset, ColorRed, ColorGreen, ColorYellow, ColorBlue, ColorPurple, ColorCyan, ColorWhite, ColorGray,
+		ColorBoldRed, ColorBoldGreen, ColorBoldYellow, ColorBoldBlue, ColorBoldPurple, ColorBoldCyan, ColorBoldWhite,
+		ColorBgRed, ColorBgGreen, ColorBgYellow, ColorBgBlue, ColorBold, ColorUnderline, ColorReverse,
+	}
+	
+	for _, code := range colorCodes {
+		result = strings.ReplaceAll(result, code, "")
+	}
+	
+	return result
+}
+
+// getDisplayLength calculates the actual display length of a string (excluding color codes)
+func getDisplayLength(text string) int {
+	return len(stripColorCodes(text))
+}
+
+// padColoredText pads a colored string to a specific width, accounting for color codes
+func padColoredText(text string, width int, leftAlign bool) string {
+	displayLen := getDisplayLength(text)
+	
+	if displayLen >= width {
+		return text
+	}
+	
+	padding := strings.Repeat(" ", width-displayLen)
+	
+	if leftAlign {
+		return text + padding
+	} else {
+		return padding + text
+	}
+}
+
+// formatTableColumn formats a colored text for table display with proper padding
+func formatTableColumn(text string, width int) string {
+	return padColoredText(text, width, true) // left-align by default
+}
+
+// formatTableColumnRight formats a colored text for table display with right alignment
+func formatTableColumnRight(text string, width int) string {
+	return padColoredText(text, width, false)
 }
