@@ -39,6 +39,7 @@ var (
 	createConfigFlag = flag.Bool("create-config", false, "Create default configuration file and exit")
 	noColorFlag      = flag.Bool("no-color", false, "Disable colored output")
 	noEmojiFlag      = flag.Bool("no-emoji", false, "Disable emoji in output")
+	quietFlag        = flag.Bool("quiet", false, "Suppress non-essential output (useful for CI/testing)")
 )
 
 // DNSRecord represents a single DNS query record
@@ -115,6 +116,13 @@ func (c ClientStatsList) Len() int           { return len(c) }
 func (c ClientStatsList) Less(i, j int) bool { return c[i].TotalQueries > c[j].TotalQueries }
 func (c ClientStatsList) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
 
+// quietPrintf prints only if quiet mode is not enabled
+func quietPrintf(format string, args ...interface{}) {
+	if !*quietFlag {
+		fmt.Printf(format, args...)
+	}
+}
+
 func main() {
 	// Parse command-line flags
 	flag.Parse()
@@ -163,7 +171,7 @@ func main() {
 	}
 
 	if config.TestMode {
-		fmt.Println("🧪 Test Mode Enabled - Using Mock Data")
+		quietPrintf("🧪 Test Mode Enabled - Using Mock Data\n")
 		err := InitTestMode()
 		if err != nil {
 			log.Fatalf("Failed to initialize test mode: %v", err)
@@ -220,8 +228,8 @@ func main() {
 		return
 	}
 
-	// Require CSV file if no Pi-hole flags specified
-	if len(args) < 1 {
+	// Require CSV file if no Pi-hole flags specified and not in test mode
+	if len(args) < 1 && !config.TestMode {
 		fmt.Println("DNS Usage Analyzer")
 		fmt.Println("Usage:")
 		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
@@ -253,15 +261,21 @@ func main() {
 	}
 
 	// Default: CSV analysis
-	csvFile := args[0]
+	var csvFile string
+	if config.TestMode && len(args) == 0 {
+		// In test mode without arguments, use default mock CSV file
+		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
+	} else {
+		csvFile = args[0]
+	}
 
 	// In test mode, use mock CSV file if original file doesn't exist
 	if config.TestMode && csvFile == "test.csv" {
 		csvFile = filepath.Join("test_data", "mock_dns_data.csv")
 	}
 
-	fmt.Printf("Analyzing DNS usage data from: %s\n", csvFile)
-	fmt.Println(ProcessingIndicator("Processing large file, please wait..."))
+	quietPrintf("Analyzing DNS usage data from: %s\n", csvFile)
+	quietPrintf("%s\n", ProcessingIndicator("Processing large file, please wait..."))
 	if config.OnlineOnly {
 		fmt.Println("Mode: Online clients only")
 	}
