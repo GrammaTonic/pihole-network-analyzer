@@ -25,7 +25,7 @@ Successfully enhanced the CI/CD pipeline with comprehensive integration testing 
 - Build checks now depend on integration tests
 - Final builds now require all tests to pass
 
-### 2. Integration Test Framework (`integration-test.sh`)
+### 2. Integration Test Framework (`scripts/integration-test.sh`)
 
 **Key Features:**
 - ✅ **Cross-platform timeout support** (GNU timeout, gtimeout, or graceful fallback)
@@ -57,7 +57,7 @@ Successfully enhanced the CI/CD pipeline with comprehensive integration testing 
 - Go unit tests (excluding problematic integration tests)
 - Performance benchmarks
 
-### 3. Enhanced CI Test Script (`ci-test.sh`)
+### 3. Enhanced CI Test Script (`scripts/ci-test.sh`)
 
 **New Features:**
 - ✅ **Race condition detection** during builds

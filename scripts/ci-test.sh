@@ -46,15 +46,15 @@ fi
 
 # Test 3: Integration tests using our framework
 print_status $YELLOW "Test 3: Running integration tests..."
-if [ -f "./integration-test.sh" ]; then
-    chmod +x ./integration-test.sh
+if [ -f "./scripts/integration-test.sh" ]; then
+    chmod +x ./scripts/integration-test.sh
     
     # Test all scenarios
     scenarios=("csv-analysis" "pihole-db" "colorized-output" "all-features")
     
     for scenario in "${scenarios[@]}"; do
         print_status $BLUE "Testing scenario: $scenario"
-        timeout 120 ./integration-test.sh "$scenario" >/dev/null 2>&1 || {
+        timeout 120 ./scripts/integration-test.sh "$scenario" >/dev/null 2>&1 || {
             print_status $YELLOW "⚠️ Scenario $scenario timed out or failed (expected in CI)"
         }
     done

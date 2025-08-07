@@ -54,8 +54,8 @@ vet: ## Run go vet
 
 all: install-deps fmt vet build ## Install deps, format, vet, and build
 
-pre-push: ## Run pre-push validation tests (same as CI)
-	./pre-push-test.sh
+pre-push: ## Run comprehensive pre-push tests
+	./scripts/pre-push-test.sh
 
 ci-test: ## Run the same tests as CI locally
 	@echo "🧪 Running CI tests locally..."
