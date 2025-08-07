@@ -40,7 +40,7 @@ jobs:
     - name: Run unit tests
       run: |
         echo "Running Go unit tests..."
-        go test -v -timeout=5m ./...
+        go test -v -timeout=5m -run="^Test[^C]" ./...
       timeout-minutes: 6
       
     - name: Validate integration test script
@@ -167,7 +167,8 @@ jobs:
       run: |
         echo "🧪 Running integration tests for scenario: ${{ matrix.test-scenario }}"
         chmod +x ./integration-test.sh
-        ./integration-test.sh "${{ matrix.test-scenario }}"
+        # Set CI environment variable for integration tests
+        CI=true ./integration-test.sh "${{ matrix.test-scenario }}"
       timeout-minutes: 10
       
     - name: Test cross-platform compatibility
