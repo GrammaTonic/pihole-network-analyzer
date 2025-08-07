@@ -1263,16 +1263,17 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	fmt.Println(SubSectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
 	
 	// Table headers with proper spacing
-	fmt.Printf("%s %s %s %s %s %s %s\n",
-		formatTableColumn(Bold("Client IP"), 25),
-		formatTableColumn(Bold("Hostname"), 20),
+	fmt.Printf("%s %s %s %s %s %s %s %s\n",
+		formatTableColumn(Bold("Client IP"), 16),
+		formatTableColumn(Bold("MAC Address"), 18),
+		formatTableColumn(Bold("Hostname"), 18),
 		formatTableColumn(Bold("Queries"), 10),
-		formatTableColumn(Bold("Domains"), 12),
+		formatTableColumn(Bold("Domains"), 10),
 		formatTableColumn(Bold("Avg Reply"), 12),
 		formatTableColumn(Bold("% Total"), 8),
 		formatTableColumn(Bold("Online"), 8))
-	// Calculate proper separator line width: 25+20+10+12+12+8+8 + 6 spaces = 101
-	fmt.Println(Cyan(strings.Repeat("-", 101)))
+	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
+	fmt.Println(Cyan(strings.Repeat("-", 107)))
 
 	if len(statsList) < maxDisplay {
 		maxDisplay = len(statsList)
@@ -1281,17 +1282,22 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	for i := 0; i < maxDisplay; i++ {
 		stats := statsList[i]
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		clientDisplay := HighlightIP(stats.Client)
+		
+		// Separate IP and MAC address
+		clientIP := HighlightIP(stats.Client)
+		macAddress := ""
 		if stats.HWAddr != "" {
-			clientDisplay = fmt.Sprintf("%s (%s)", HighlightIP(stats.Client), Gray(stats.HWAddr[:12]+"...")) // Show first 12 chars of MAC
+			macAddress = Gray(stats.HWAddr[:12] + "...")  // Show first 12 chars of MAC
+		} else {
+			macAddress = Gray("-")
 		}
 
 		// Prepare hostname display
 		hostname := stats.Hostname
 		if hostname == "" {
 			hostname = Gray("-")
-		} else if len(hostname) > 18 {
-			hostname = Cyan(hostname[:15] + "...")
+		} else if len(hostname) > 16 {
+			hostname = Cyan(hostname[:13] + "...")
 		} else {
 			hostname = Cyan(hostname)
 		}
@@ -1299,11 +1305,12 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		onlineStatus := OnlineStatus(stats.IsOnline, stats.ARPStatus)
 
 		// Format each column with proper padding
-		fmt.Printf("%s %s %s %s %s %s %s\n",
-			formatTableColumn(clientDisplay, 25),
-			formatTableColumn(hostname, 20),
+		fmt.Printf("%s %s %s %s %s %s %s %s\n",
+			formatTableColumn(clientIP, 16),
+			formatTableColumn(macAddress, 18),
+			formatTableColumn(hostname, 18),
 			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
-			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 12),
+			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 10),
 			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
 			formatTableColumn(ColoredPercentage(percentage), 8),
 			formatTableColumn(onlineStatus, 8))
@@ -1423,19 +1430,20 @@ func displayResults(clientStats map[string]*ClientStats) {
 
 	// Top 20 clients by query count
 	fmt.Println(SubSectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
-	// Calculate proper separator line width: 25+20+10+12+12+8+8 + 6 spaces = 101
-	fmt.Println(Cyan(strings.Repeat("-", 101)))
+	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
+	fmt.Println(Cyan(strings.Repeat("-", 107)))
 	
 	// Table headers with proper spacing
-	fmt.Printf("%s %s %s %s %s %s %s\n",
-		formatTableColumn(Bold("Client IP"), 25),
-		formatTableColumn(Bold("Hostname"), 20),
+	fmt.Printf("%s %s %s %s %s %s %s %s\n",
+		formatTableColumn(Bold("Client IP"), 16),
+		formatTableColumn(Bold("MAC Address"), 18),
+		formatTableColumn(Bold("Hostname"), 18),
 		formatTableColumn(Bold("Queries"), 10),
-		formatTableColumn(Bold("Domains"), 12),
+		formatTableColumn(Bold("Domains"), 10),
 		formatTableColumn(Bold("Avg Reply"), 12),
 		formatTableColumn(Bold("% Total"), 8),
 		formatTableColumn(Bold("Online"), 8))
-	fmt.Println(Cyan(strings.Repeat("-", 101)))
+	fmt.Println(Cyan(strings.Repeat("-", 107)))
 
 	maxDisplay := 20
 	if len(statsList) < maxDisplay {
@@ -1445,25 +1453,33 @@ func displayResults(clientStats map[string]*ClientStats) {
 	for i := 0; i < maxDisplay; i++ {
 		stats := statsList[i]
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		clientDisplay := stats.Client
+		
+		// Separate IP and MAC address
+		clientIP := HighlightIP(stats.Client)
+		macAddress := ""
 		if stats.HWAddr != "" {
-			clientDisplay = fmt.Sprintf("%s (%s)", stats.Client, Gray(stats.HWAddr[:12]+"...")) // Show first 12 chars of MAC
+			macAddress = Gray(stats.HWAddr[:12] + "...")  // Show first 12 chars of MAC
+		} else {
+			macAddress = Gray("-")
 		}
 
 		// Prepare hostname display with colors
 		hostname := stats.Hostname
 		if hostname == "" {
 			hostname = Gray("-")
-		} else if len(hostname) > 18 {
-			hostname = hostname[:15] + "..."
+		} else if len(hostname) > 16 {
+			hostname = Cyan(hostname[:13] + "...")
+		} else {
+			hostname = Cyan(hostname)
 		}
 
 		// Format each column with proper padding and colors  
-		fmt.Printf("%s %s %s %s %s %s %s\n",
-			formatTableColumn(HighlightIP(clientDisplay), 25),
-			formatTableColumn(Cyan(hostname), 20),
+		fmt.Printf("%s %s %s %s %s %s %s %s\n",
+			formatTableColumn(clientIP, 16),
+			formatTableColumn(macAddress, 18),
+			formatTableColumn(hostname, 18),
 			formatTableColumn(ColoredQueryCount(stats.TotalQueries), 10),
-			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 12),
+			formatTableColumn(ColoredDomainCount(stats.Uniquedomains), 10),
 			formatTableColumn(fmt.Sprintf("%.6f", stats.AvgReplyTime), 12),
 			formatTableColumn(ColoredPercentage(percentage), 8),
 			formatTableColumn(OnlineStatus(stats.IsOnline, stats.ARPStatus), 8))
