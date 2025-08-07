@@ -131,7 +131,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: ['1.23.x', '1.24.x']
+        go-version: ['1.24.x']
         test-scenario: ['csv-analysis', 'pihole-db', 'colorized-output', 'all-features']
     
     steps:
