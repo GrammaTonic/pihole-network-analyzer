@@ -280,11 +280,11 @@ func main() {
 	} else {
 		err = checkARPStatus(clientStats)
 	}
-		if err != nil {
-			fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
-		}
+	if err != nil {
+		fmt.Printf("%s: Could not check ARP status: %v\n", Warning("Warning"), err)
+	}
 
-		displayResultsWithConfig(clientStats, config)
+	displayResultsWithConfig(clientStats, config)
 }
 
 func setupPiholeConfig() {
@@ -1261,7 +1261,7 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	// Top clients by query count (configurable)
 	maxDisplay := config.Output.MaxClients
 	fmt.Println(SubSectionHeader(fmt.Sprintf("TOP %d CLIENTS BY QUERY COUNT:", maxDisplay)))
-	
+
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s %s\n",
 		formatTableColumn(Bold("Client IP"), 16),
@@ -1282,12 +1282,12 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 	for i := 0; i < maxDisplay; i++ {
 		stats := statsList[i]
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		
+
 		// Separate IP and MAC address
 		clientIP := HighlightIP(stats.Client)
 		macAddress := ""
 		if stats.HWAddr != "" {
-			macAddress = Gray(stats.HWAddr[:12] + "...")  // Show first 12 chars of MAC
+			macAddress = Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
 		} else {
 			macAddress = Gray("-")
 		}
@@ -1367,8 +1367,8 @@ func displayResultsWithConfig(clientStats map[string]*ClientStats, config *Confi
 		}
 
 		for j := 0; j < maxDomains; j++ {
-			fmt.Printf("     %s: %s queries\n", 
-				HighlightDomain(domainList[j].domain), 
+			fmt.Printf("     %s: %s queries\n",
+				HighlightDomain(domainList[j].domain),
 				ColoredQueryCount(domainList[j].count))
 		}
 
@@ -1432,7 +1432,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 	fmt.Println(SubSectionHeader("TOP 20 CLIENTS BY QUERY COUNT:"))
 	// Calculate proper separator line width: 16+18+18+10+10+12+8+8 + 7 spaces = 107
 	fmt.Println(Cyan(strings.Repeat("-", 107)))
-	
+
 	// Table headers with proper spacing
 	fmt.Printf("%s %s %s %s %s %s %s %s\n",
 		formatTableColumn(Bold("Client IP"), 16),
@@ -1453,12 +1453,12 @@ func displayResults(clientStats map[string]*ClientStats) {
 	for i := 0; i < maxDisplay; i++ {
 		stats := statsList[i]
 		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		
+
 		// Separate IP and MAC address
 		clientIP := HighlightIP(stats.Client)
 		macAddress := ""
 		if stats.HWAddr != "" {
-			macAddress = Gray(stats.HWAddr[:12] + "...")  // Show first 12 chars of MAC
+			macAddress = Gray(stats.HWAddr[:12] + "...") // Show first 12 chars of MAC
 		} else {
 			macAddress = Gray("-")
 		}
@@ -1473,7 +1473,7 @@ func displayResults(clientStats map[string]*ClientStats) {
 			hostname = Cyan(hostname)
 		}
 
-		// Format each column with proper padding and colors  
+		// Format each column with proper padding and colors
 		fmt.Printf("%s %s %s %s %s %s %s %s\n",
 			formatTableColumn(clientIP, 16),
 			formatTableColumn(macAddress, 18),
@@ -1542,8 +1542,8 @@ func displayResults(clientStats map[string]*ClientStats) {
 		}
 
 		for j := 0; j < maxDomains; j++ {
-			fmt.Printf("     %s: %s queries\n", 
-				HighlightDomain(domainList[j].domain), 
+			fmt.Printf("     %s: %s queries\n",
+				HighlightDomain(domainList[j].domain),
 				ColoredQueryCount(domainList[j].count))
 		}
 

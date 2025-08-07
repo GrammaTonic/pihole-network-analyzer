@@ -11,9 +11,9 @@ import (
 // Test colorized output integration
 func TestColorizedOutputIntegration(t *testing.T) {
 	// Setup test environment
-	EnableTestMode()  // This enables colors for testing and bypasses terminal detection
+	EnableTestMode() // This enables colors for testing and bypasses terminal detection
 	EnableEmojis()
-	
+
 	// Create mock client stats
 	mockStats := map[string]*ClientStats{
 		"192.168.1.100": {
@@ -26,11 +26,11 @@ func TestColorizedOutputIntegration(t *testing.T) {
 			ARPStatus:     "reachable",
 			Hostname:      "test-device",
 			Domains: map[string]int{
-				"google.com":                 1500,
-				"tracking.doubleclick.net":   800,
-				"github.com":                 600,
-				"ads.microsoft.com":          400,
-				"example.com":                200,
+				"google.com":               1500,
+				"tracking.doubleclick.net": 800,
+				"github.com":               600,
+				"ads.microsoft.com":        400,
+				"example.com":              200,
 			},
 			QueryTypes:  map[int]int{1: 4000, 28: 1000},
 			StatusCodes: map[int]int{2: 3000, 3: 1500, 9: 500},
@@ -45,9 +45,9 @@ func TestColorizedOutputIntegration(t *testing.T) {
 			ARPStatus:     "timeout",
 			Hostname:      "",
 			Domains: map[string]int{
-				"microsoft.com":          500,
-				"telemetry.windows.com":  400,
-				"api.spotify.com":        300,
+				"microsoft.com":         500,
+				"telemetry.windows.com": 400,
+				"api.spotify.com":       300,
 			},
 			QueryTypes:  map[int]int{1: 1000, 28: 200},
 			StatusCodes: map[int]int{2: 800, 3: 400},
@@ -60,8 +60,8 @@ func TestColorizedOutputIntegration(t *testing.T) {
 		NoExclude:  false,
 		TestMode:   true,
 		Output: OutputConfig{
-			MaxClients: 20,
-			MaxDomains: 10,
+			MaxClients:    20,
+			MaxDomains:    10,
 			VerboseOutput: false,
 		},
 	}
@@ -77,7 +77,7 @@ func TestColorizedOutputIntegration(t *testing.T) {
 	// Restore stdout and get output
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	output := buf.String()
@@ -106,7 +106,7 @@ func TestColorizedOutputIntegration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if !strings.Contains(output, tt.contains) {
-				t.Errorf("Output should contain %s: %q\nActual output: %s", 
+				t.Errorf("Output should contain %s: %q\nActual output: %s",
 					tt.desc, tt.contains, output)
 			}
 		})
@@ -114,9 +114,9 @@ func TestColorizedOutputIntegration(t *testing.T) {
 
 	// Test that domains are properly highlighted
 	domainTests := []struct {
-		domain   string
+		domain    string
 		colorCode string
-		desc     string
+		desc      string
 	}{
 		{"google.com", "\033[1;32m", "Google should be BoldGreen"},
 		{"microsoft.com", "\033[1;32m", "Microsoft should be BoldGreen"},
@@ -133,7 +133,7 @@ func TestColorizedOutputIntegration(t *testing.T) {
 				t.Errorf("Domain %s should appear in output", tt.domain)
 				return
 			}
-			
+
 			// If domain is present, check for any color code near it
 			// This is more flexible than exact color matching
 			lines := strings.Split(output, "\n")
@@ -148,7 +148,7 @@ func TestColorizedOutputIntegration(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("Domain %s should be colored (expected %s - %s)", 
+				t.Errorf("Domain %s should be colored (expected %s - %s)",
 					tt.domain, tt.colorCode, tt.desc)
 			}
 		})
@@ -159,7 +159,7 @@ func TestColorizedOutputIntegration(t *testing.T) {
 func TestColorizedOutputDisabled(t *testing.T) {
 	// Disable colors for this test
 	DisableColors()
-	
+
 	// Create minimal mock stats
 	mockStats := map[string]*ClientStats{
 		"192.168.1.100": {
@@ -191,7 +191,7 @@ func TestColorizedOutputDisabled(t *testing.T) {
 
 	w.Close()
 	os.Stdout = oldStdout
-	
+
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	output := buf.String()
@@ -223,11 +223,11 @@ func TestColorizedOutputDisabled(t *testing.T) {
 
 // Test emoji functionality
 func TestEmojiOutput(t *testing.T) {
-	EnableTestMode()  // Enable test mode to force colors in testing environment
-	
+	EnableTestMode() // Enable test mode to force colors in testing environment
+
 	// Test with emojis enabled
 	EnableEmojis()
-	
+
 	result := OnlineStatus(true, "reachable")
 	if !strings.Contains(result, "✅") {
 		t.Error("OnlineStatus should contain checkmark emoji when emojis are enabled")
@@ -245,7 +245,7 @@ func TestEmojiOutput(t *testing.T) {
 
 	// Test with emojis disabled
 	DisableEmojis()
-	
+
 	result = OnlineStatus(true, "reachable")
 	if strings.Contains(result, "✅") {
 		t.Error("OnlineStatus should not contain checkmark emoji when emojis are disabled")
@@ -268,8 +268,8 @@ func TestEmojiOutput(t *testing.T) {
 
 // Test table formatting with colors
 func TestTableFormattingWithColors(t *testing.T) {
-	EnableTestMode()  // Enable test mode to force colors in testing environment
-	
+	EnableTestMode() // Enable test mode to force colors in testing environment
+
 	// Test various colored texts with different widths
 	tests := []struct {
 		name     string
@@ -286,14 +286,14 @@ func TestTableFormattingWithColors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := formatTableColumn(tt.text, tt.width)
-			
+
 			// Calculate display length (without color codes)
 			displayLen := getDisplayLength(result)
-			
+
 			if displayLen < tt.width && getDisplayLength(tt.text) <= tt.width {
 				// If original text fits in width, result should be padded to width
 				if displayLen != tt.width {
-					t.Errorf("formatTableColumn(%s, %d) display length = %d, want %d", 
+					t.Errorf("formatTableColumn(%s, %d) display length = %d, want %d",
 						stripColorCodes(tt.text), tt.width, displayLen, tt.width)
 				}
 			}
@@ -303,12 +303,12 @@ func TestTableFormattingWithColors(t *testing.T) {
 
 // Test color consistency across functions
 func TestColorConsistency(t *testing.T) {
-	EnableTestMode()  // Enable test mode to force colors in testing environment
-	
+	EnableTestMode() // Enable test mode to force colors in testing environment
+
 	// Test that related functions use consistent colors
 	successText := Success("test")
 	onlineStatus := OnlineStatus(true, "reachable")
-	
+
 	// Both should use green color codes
 	if !strings.Contains(successText, "\033[1;32m") {
 		t.Error("Success() should use BoldGreen color")
@@ -320,7 +320,7 @@ func TestColorConsistency(t *testing.T) {
 	// Test error/warning consistency
 	errorText := Error("test")
 	offlineStatus := OnlineStatus(false, "timeout")
-	
+
 	// Both should use red color codes
 	if !strings.Contains(errorText, "\033[1;31m") {
 		t.Error("Error() should use BoldRed color")
@@ -332,26 +332,26 @@ func TestColorConsistency(t *testing.T) {
 
 // Test performance of color functions
 func TestColorPerformance(t *testing.T) {
-	EnableTestMode()  // Enable test mode to force colors in testing environment
-	
+	EnableTestMode() // Enable test mode to force colors in testing environment
+
 	// Test that color functions don't significantly impact performance
 	// This is more of a smoke test than a strict performance test
-	
+
 	largeText := strings.Repeat("test text ", 1000)
-	
+
 	// These should complete quickly
 	_ = Red(largeText)
 	_ = BoldGreen(largeText)
 	_ = formatTableColumn(Red(largeText), 50)
 	_ = stripColorCodes(BoldGreen(largeText))
-	
+
 	// Test with many domain highlights
 	domains := []string{
 		"google.com", "microsoft.com", "github.com", "stackoverflow.com",
 		"ads.example.com", "tracking.test.com", "doubleclick.net",
 		"telemetry.service.com", "example.com", "test.org",
 	}
-	
+
 	for i := 0; i < 100; i++ {
 		for _, domain := range domains {
 			_ = HighlightDomain(domain)
@@ -361,13 +361,13 @@ func TestColorPerformance(t *testing.T) {
 
 // Test edge cases
 func TestColorEdgeCases(t *testing.T) {
-	EnableTestMode()  // Enable test mode to force colors in testing environment
-	
+	EnableTestMode() // Enable test mode to force colors in testing environment
+
 	// Test empty strings
 	if Red("") != "\033[31m\033[0m" {
 		t.Error("Red(\"\") should return color codes even for empty string")
 	}
-	
+
 	// Test very long strings
 	longString := strings.Repeat("a", 10000)
 	result := Green(longString)
@@ -377,7 +377,7 @@ func TestColorEdgeCases(t *testing.T) {
 	if !strings.HasSuffix(result, "\033[0m") {
 		t.Error("Green() should end with reset code for very long strings")
 	}
-	
+
 	// Test strings with existing color codes
 	alreadyColored := "\033[31mred\033[0m"
 	result = Blue(alreadyColored)
@@ -385,7 +385,7 @@ func TestColorEdgeCases(t *testing.T) {
 	if !strings.HasPrefix(result, "\033[34m") {
 		t.Error("Blue() should work with already colored text")
 	}
-	
+
 	// Test strip color codes with nested/malformed codes
 	malformed := "\033[31mtest\033[32mnested\033[0m\033[invalid"
 	stripped := stripColorCodes(malformed)
@@ -399,40 +399,40 @@ func TestColorEdgeCases(t *testing.T) {
 func TestColorDetectionLogic(t *testing.T) {
 	// Save original config
 	originalConfig := colorConfig
-	
+
 	// Test force disabled
 	colorConfig = ColorConfig{
 		Enabled:       true,
 		ForceDisabled: true,
 		UseEmoji:      true,
 	}
-	
+
 	if colorEnabled() {
 		t.Error("colorEnabled() should return false when ForceDisabled is true")
 	}
-	
+
 	// Test enabled false
 	colorConfig = ColorConfig{
 		Enabled:       false,
 		ForceDisabled: false,
 		UseEmoji:      true,
 	}
-	
+
 	if colorEnabled() {
 		t.Error("colorEnabled() should return false when Enabled is false")
 	}
-	
+
 	// Test normal enabled state (will depend on terminal detection)
 	colorConfig = ColorConfig{
 		Enabled:       true,
 		ForceDisabled: false,
 		UseEmoji:      true,
 	}
-	
+
 	// Result will depend on isTerminal() which depends on the test environment
 	// We just test that it doesn't panic
 	_ = colorEnabled()
-	
+
 	// Restore original config
 	colorConfig = originalConfig
 }

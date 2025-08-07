@@ -53,8 +53,8 @@ type ColorConfig struct {
 
 // Global color configuration
 var colorConfig = ColorConfig{
-	Enabled:   true,
-	UseEmoji:  true,
+	Enabled:  true,
+	UseEmoji: true,
 }
 
 // colorEnabled checks if colors should be used
@@ -62,7 +62,7 @@ func colorEnabled() bool {
 	if colorConfig.ForceDisabled {
 		return false
 	}
-	
+
 	if !colorConfig.Enabled {
 		return false
 	}
@@ -103,13 +103,13 @@ func Colorize(color, text string) string {
 }
 
 // Color helper functions
-func Red(text string) string      { return Colorize(ColorRed, text) }
-func Green(text string) string    { return Colorize(ColorGreen, text) }
-func Yellow(text string) string   { return Colorize(ColorYellow, text) }
-func Blue(text string) string     { return Colorize(ColorBlue, text) }
-func Purple(text string) string   { return Colorize(ColorPurple, text) }
-func Cyan(text string) string     { return Colorize(ColorCyan, text) }
-func Gray(text string) string     { return Colorize(ColorGray, text) }
+func Red(text string) string    { return Colorize(ColorRed, text) }
+func Green(text string) string  { return Colorize(ColorGreen, text) }
+func Yellow(text string) string { return Colorize(ColorYellow, text) }
+func Blue(text string) string   { return Colorize(ColorBlue, text) }
+func Purple(text string) string { return Colorize(ColorPurple, text) }
+func Cyan(text string) string   { return Colorize(ColorCyan, text) }
+func Gray(text string) string   { return Colorize(ColorGray, text) }
 
 // Bold color helper functions
 func BoldRed(text string) string    { return Colorize(ColorBoldRed, text) }
@@ -136,7 +136,7 @@ func OnlineStatus(isOnline bool, arpStatus string) string {
 	if arpStatus == "unknown" {
 		return Gray("❓ Unknown")
 	}
-	
+
 	if isOnline {
 		if colorConfig.UseEmoji {
 			return Success("✅ Online")
@@ -153,7 +153,7 @@ func OnlineStatus(isOnline bool, arpStatus string) string {
 // Percentage coloring based on value
 func ColoredPercentage(value float64) string {
 	text := fmt.Sprintf("%.2f%%", value)
-	
+
 	switch {
 	case value >= 30.0:
 		return BoldRed(text) // High usage
@@ -169,7 +169,7 @@ func ColoredPercentage(value float64) string {
 // Query count coloring
 func ColoredQueryCount(count int) string {
 	text := fmt.Sprintf("%d", count)
-	
+
 	switch {
 	case count >= 10000:
 		return BoldRed(text) // Very high
@@ -187,7 +187,7 @@ func ColoredQueryCount(count int) string {
 // Domain count coloring
 func ColoredDomainCount(count int) string {
 	text := fmt.Sprintf("%d", count)
-	
+
 	switch {
 	case count >= 500:
 		return BoldPurple(text) // Very diverse
@@ -206,23 +206,23 @@ func SectionHeader(title string) string {
 		border := strings.Repeat("=", 80)
 		return fmt.Sprintf("\n%s\n%s\n%s", border, title, border)
 	}
-	
+
 	border := BoldCyan(strings.Repeat("=", 80))
 	titleColored := BoldWhite(title)
-	
+
 	return fmt.Sprintf("\n%s\n%s\n%s", border, titleColored, border)
 }
 
 // Sub-section headers
 func SubSectionHeader(title string) string {
 	if !colorEnabled() {
-		border := strings.Repeat("-", 107)  // Match table width: 16+18+18+10+10+12+8+8+7=107
+		border := strings.Repeat("-", 107) // Match table width: 16+18+18+10+10+12+8+8+7=107
 		return fmt.Sprintf("%s\n%s\n%s", title, border, "")
 	}
-	
-	border := Cyan(strings.Repeat("-", 107))  // Match table width: 16+18+18+10+10+12+8+8+7=107
+
+	border := Cyan(strings.Repeat("-", 107)) // Match table width: 16+18+18+10+10+12+8+8+7=107
 	titleColored := BoldCyan(title)
-	
+
 	return fmt.Sprintf("%s\n%s", titleColored, border)
 }
 
@@ -244,8 +244,8 @@ func ProcessingIndicator(message string) string {
 // IP address highlighting
 func HighlightIP(ip string) string {
 	// Highlight private network IPs differently
-	if strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") || 
-	   strings.HasPrefix(ip, "172.") {
+	if strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") ||
+		strings.HasPrefix(ip, "172.") {
 		return BoldBlue(ip)
 	}
 	return BoldYellow(ip) // Public IPs
@@ -308,11 +308,11 @@ func stripColorCodes(text string) string {
 		ColorBoldRed, ColorBoldGreen, ColorBoldYellow, ColorBoldBlue, ColorBoldPurple, ColorBoldCyan, ColorBoldWhite,
 		ColorBgRed, ColorBgGreen, ColorBgYellow, ColorBgBlue, ColorBold, ColorUnderline, ColorReverse,
 	}
-	
+
 	for _, code := range colorCodes {
 		result = strings.ReplaceAll(result, code, "")
 	}
-	
+
 	return result
 }
 
@@ -324,13 +324,13 @@ func getDisplayLength(text string) int {
 // padColoredText pads a colored string to a specific width, accounting for color codes
 func padColoredText(text string, width int, leftAlign bool) string {
 	displayLen := getDisplayLength(text)
-	
+
 	if displayLen >= width {
 		return text
 	}
-	
+
 	padding := strings.Repeat(" ", width-displayLen)
-	
+
 	if leftAlign {
 		return text + padding
 	} else {

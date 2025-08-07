@@ -437,22 +437,22 @@ func testDomainHighlighting() error {
 
 	for _, tc := range testCases {
 		result := HighlightDomain(tc.domain)
-		
+
 		if tc.colorCode == "" {
 			// Should return unchanged domain
 			if result != tc.domain {
-				return fmt.Errorf("HighlightDomain(%q) should return unchanged for %s, got: %q", 
+				return fmt.Errorf("HighlightDomain(%q) should return unchanged for %s, got: %q",
 					tc.domain, tc.category, result)
 			}
 		} else {
 			// Should contain the color code
 			if !strings.Contains(result, tc.colorCode) {
-				return fmt.Errorf("HighlightDomain(%q) should contain %q for %s, got: %q", 
+				return fmt.Errorf("HighlightDomain(%q) should contain %q for %s, got: %q",
 					tc.domain, tc.colorCode, tc.category, result)
 			}
 			// Should contain the domain name
 			if !strings.Contains(result, tc.domain) {
-				return fmt.Errorf("HighlightDomain(%q) should contain domain name, got: %q", 
+				return fmt.Errorf("HighlightDomain(%q) should contain domain name, got: %q",
 					tc.domain, result)
 			}
 		}
@@ -483,7 +483,7 @@ func testTableFormatting() error {
 	formatted := formatTableColumn(coloredText, 20)
 	formattedDisplayLen := getDisplayLength(formatted)
 	if formattedDisplayLen != 20 {
-		return fmt.Errorf("formatTableColumn() failed: expected display length 20, got %d", 
+		return fmt.Errorf("formatTableColumn() failed: expected display length 20, got %d",
 			formattedDisplayLen)
 	}
 
@@ -496,7 +496,7 @@ func testTableFormatting() error {
 	rightFormatted := formatTableColumnRight("test", 10)
 	rightDisplayLen := getDisplayLength(rightFormatted)
 	if rightDisplayLen != 10 {
-		return fmt.Errorf("formatTableColumnRight() failed: expected display length 10, got %d", 
+		return fmt.Errorf("formatTableColumnRight() failed: expected display length 10, got %d",
 			rightDisplayLen)
 	}
 
@@ -507,7 +507,7 @@ func testTableFormatting() error {
 		if !strings.Contains(highlighted, ip) {
 			return fmt.Errorf("HighlightIP(%q) should contain the IP address", ip)
 		}
-		
+
 		// Private IPs should be blue, public should be yellow
 		if strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") || strings.HasPrefix(ip, "172.") {
 			if !strings.Contains(highlighted, "\033[1;34m") { // BoldBlue
