@@ -222,15 +222,15 @@ func main() {
 
 	// Require CSV file if no Pi-hole flags specified and not in test mode
 	if len(args) < 1 && !cfg.TestMode {
-		fmt.Println("DNS Usage Analyzer")
+		fmt.Println("Pi-hole Network Analyzer")
 		fmt.Println("Usage:")
-		fmt.Println("  dns-analyzer [flags] <csv_file>                    # Analyze CSV file")
-		fmt.Println("  dns-analyzer --pihole <config_file> [flags]        # Analyze Pi-hole live data")
-		fmt.Println("  dns-analyzer --pihole-setup                       # Setup Pi-hole configuration")
-		fmt.Println("  dns-analyzer --test                               # Run test suite")
-		fmt.Println("  dns-analyzer --test-mode [other flags]           # Use mock data for testing")
-		fmt.Println("  dns-analyzer --create-config                     # Create default config file")
-		fmt.Println("  dns-analyzer --show-config                       # Show current configuration")
+		fmt.Println("  pihole-analyzer [flags] <csv_file>                    # Analyze CSV file")
+		fmt.Println("  pihole-analyzer --pihole <config_file> [flags]        # Analyze Pi-hole live data")
+		fmt.Println("  pihole-analyzer --pihole-setup                       # Setup Pi-hole configuration")
+		fmt.Println("  pihole-analyzer --test                               # Run test suite")
+		fmt.Println("  pihole-analyzer --test-mode [other flags]           # Use mock data for testing")
+		fmt.Println("  pihole-analyzer --create-config                     # Create default config file")
+		fmt.Println("  pihole-analyzer --show-config                       # Show current configuration")
 		fmt.Println()
 		fmt.Println("Flags:")
 		fmt.Println("  --online-only    Show only clients currently online (with MAC addresses in ARP)")
@@ -689,10 +689,8 @@ func getStatusCodeFromString(status string) int {
 
 func getLocalARPTable() (map[string]*ARPEntry, error) {
 	// Try different ARP commands based on OS
-	var cmd *exec.Cmd
-
 	// For macOS and Linux
-	cmd = exec.Command("arp", "-a")
+	cmd := exec.Command("arp", "-a")
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -750,10 +748,8 @@ func parseARPOutput(output string) (map[string]*ARPEntry, error) {
 
 func pingHost(ip string) bool {
 	// Try to ping the host to refresh ARP table
-	var cmd *exec.Cmd
-
 	// Use ping with 1 packet and 1 second timeout
-	cmd = exec.Command("ping", "-c", "1", "-W", "1000", ip)
+	cmd := exec.Command("ping", "-c", "1", "-W", "1000", ip)
 
 	err := cmd.Run()
 	return err == nil
@@ -762,10 +758,8 @@ func pingHost(ip string) bool {
 func arpPing(ip string) bool {
 	// Use arping to send ARP requests directly (more reliable for ARP table population)
 	// First try arping if available, fallback to regular ping
-	var cmd *exec.Cmd
-
 	// Try arping first (if installed via brew install arping)
-	cmd = exec.Command("arping", "-c", "1", "-W", "1000", ip)
+	cmd := exec.Command("arping", "-c", "1", "-W", "1000", ip)
 	err := cmd.Run()
 	if err == nil {
 		return true
@@ -826,9 +820,7 @@ func resolveHostname(ip string) string {
 
 	// Return the first hostname, removing trailing dot if present
 	hostname := names[0]
-	if strings.HasSuffix(hostname, ".") {
-		hostname = hostname[:len(hostname)-1]
-	}
+	hostname = strings.TrimSuffix(hostname, ".")
 	return hostname
 }
 
@@ -1572,9 +1564,6 @@ func displayResults(clientStats map[string]*types.ClientStats) {
 			fmt.Printf("     %s (%d): %d queries\n", statusName, status, count)
 		}
 	}
-
-	// Save detailed report to file
-	saveDetailedReport(statsList, totalQueries)
 }
 
 func getQueryTypeName(queryType int) string {
@@ -1697,40 +1686,6 @@ func saveDetailedReportWithConfig(statsList ClientStatsList, totalQueries int, c
 			stats.AvgReplyTime,
 			percentage,
 			status)
-	}
-
-	fmt.Printf("\nDetailed report saved to: %s\n", filename)
-}
-
-func saveDetailedReport(statsList ClientStatsList, totalQueries int) {
-	filename := fmt.Sprintf("dns_usage_report_%s.txt", time.Now().Format("20060102_150405"))
-	file, err := os.Create(filename)
-	if err != nil {
-		log.Printf("Error creating report file: %v", err)
-		return
-	}
-	defer file.Close()
-
-	fmt.Fprintf(file, "DNS USAGE ANALYSIS REPORT\n")
-	fmt.Fprintf(file, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(file, "%s\n\n", strings.Repeat("=", 80))
-
-	fmt.Fprintf(file, "SUMMARY:\n")
-	fmt.Fprintf(file, "Total unique clients: %d\n", len(statsList))
-	fmt.Fprintf(file, "Total DNS queries: %d\n\n", totalQueries)
-
-	fmt.Fprintf(file, "ALL CLIENTS (sorted by query count):\n")
-	fmt.Fprintf(file, "%-20s %-10s %-15s %-15s %-10s\n", "Client IP", "Queries", "Unique Domains", "Avg Reply Time", "% of Total")
-	fmt.Fprintf(file, "%s\n", strings.Repeat("-", 80))
-
-	for _, stats := range statsList {
-		percentage := float64(stats.TotalQueries) / float64(totalQueries) * 100
-		fmt.Fprintf(file, "%-20s %-10d %-15d %-15.6f %-10.2f%%\n",
-			stats.Client,
-			stats.TotalQueries,
-			stats.Uniquedomains,
-			stats.AvgReplyTime,
-			percentage)
 	}
 
 	fmt.Printf("\nDetailed report saved to: %s\n", filename)
