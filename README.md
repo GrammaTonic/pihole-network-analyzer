@@ -22,8 +22,8 @@ Get started with beautiful DNS analysis in seconds:
 
 ```bash
 # 1. Clone and build
-git clone https://github.com/GrammaTonic/OMG.git
-cd OMG
+git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
+cd pihole-network-analyzer
 make build
 
 # 2. Run with sample data (experience the colorized output!)
@@ -144,12 +144,12 @@ LEFT JOIN
 
 ```bash
 # Method 1: Direct build (recommended)
-git clone https://github.com/GrammaTonic/OMG.git
-cd OMG
+git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
+cd pihole-network-analyzer
 make build
 
 # Method 2: Using Go
-go install github.com/GrammaTonic/OMG@latest
+go install github.com/GrammaTonic/pihole-network-analyzer@latest
 ```
 
 ### 🎨 CSV Analysis (with colorized output)
