@@ -2,7 +2,6 @@
 pihole-network-analyzer
 pihole-network-analyzer-*
 dns-analyzer
-omg-usage-analyzer
 *.exe
 *.exe~
 *.dll
