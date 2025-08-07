@@ -5,13 +5,13 @@
 ### Run Integration Tests Locally
 ```bash
 # Test specific functionality
-./integration-test.sh csv-analysis      # CSV processing tests
-./integration-test.sh pihole-db        # Pi-hole database tests  
-./integration-test.sh colorized-output # Color output tests
-./integration-test.sh all-features     # Comprehensive test suite
+./scripts/integration-test.sh csv-analysis      # CSV processing tests
+./scripts/integration-test.sh pihole-db        # Pi-hole database tests  
+./scripts/integration-test.sh colorized-output # Color output tests
+./scripts/integration-test.sh all-features     # Comprehensive test suite
 
-# Run enhanced CI simulation
-./ci-test.sh
+# Run CI validation tests
+./scripts/ci-test.sh
 ```
 
 ### Check Test Status

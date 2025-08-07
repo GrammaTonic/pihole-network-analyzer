@@ -147,7 +147,7 @@ The analyzer includes a comprehensive test suite for offline development:
 - Performance benchmarking capabilities
 - No network dependencies required for testing
 
-For detailed test documentation, see TEST_README.md
+For detailed test documentation, see docs/TEST_README.md
 
 =============================================================================
 EOF

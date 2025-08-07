@@ -46,8 +46,8 @@ jobs:
     - name: Validate integration test script
       run: |
         echo "Validating integration test script..."
-        chmod +x ./integration-test.sh
-        ./integration-test.sh --help || echo "Integration test script ready"
+        chmod +x ./scripts/integration-test.sh
+        ./scripts/integration-test.sh --help || echo "Integration test script ready"
       timeout-minutes: 1
       
     - name: Run integration tests
@@ -94,11 +94,11 @@ jobs:
     - name: Test integration script functionality
       run: |
         echo "🧪 Testing integration test script framework..."
-        chmod +x ./integration-test.sh
+        chmod +x ./scripts/integration-test.sh
         
         # Test script help and validation
         echo "Testing script validation..."
-        if ./integration-test.sh 2>&1 | grep -q "Validating test environment"; then
+        if ./scripts/integration-test.sh 2>&1 | grep -q "Validating test environment"; then
           echo "✅ Script validation working"
         else
           echo "❌ Script validation failed"
@@ -114,7 +114,7 @@ jobs:
         for scenario in "${scenarios[@]}"; do
           echo "Checking scenario: $scenario"
           # Test that scenario is recognized (will fail gracefully without binary)
-          if ./integration-test.sh "$scenario" 2>&1 | grep -q "Binary.*not found\|Validating test environment"; then
+          if ./scripts/integration-test.sh "$scenario" 2>&1 | grep -q "Binary.*not found\|Validating test environment"; then
             echo "✅ Scenario '$scenario' is supported"
           else
             echo "❌ Scenario '$scenario' is not supported"
@@ -166,9 +166,9 @@ jobs:
     - name: Run scenario-specific integration tests
       run: |
         echo "🧪 Running integration tests for scenario: ${{ matrix.test-scenario }}"
-        chmod +x ./integration-test.sh
+        chmod +x ./scripts/integration-test.sh
         # Set CI environment variable for integration tests
-        CI=true ./integration-test.sh "${{ matrix.test-scenario }}"
+        CI=true ./scripts/integration-test.sh "${{ matrix.test-scenario }}"
       timeout-minutes: 10
       
     - name: Test cross-platform compatibility

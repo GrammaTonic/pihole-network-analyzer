@@ -18,6 +18,7 @@ dns-analyzer
 go.work
 
 # Generated reports
+reports/
 dns_usage_report_*.txt
 
 # Pi-hole related files
