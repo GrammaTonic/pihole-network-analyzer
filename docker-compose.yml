@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Production service using published container
+  pihole-analyzer:
+    image: ghcr.io/grammatonic/pihole-analyzer:latest
+    container_name: pihole-analyzer
+    volumes:
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
+      - ./reports:/app/reports
+    environment:
+      - PIHOLE_CONFIG=/home/appuser/.pihole-analyzer/config.json
+    networks:
+      - pihole-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "./pihole-analyzer", "--help"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Development service with live development environment
+  pihole-analyzer-dev:
+    build:
+      context: .
+      target: development
+      cache_from:
+        - golang:1.23-alpine
+        - alpine:latest
+    container_name: pihole-analyzer-dev
+    volumes:
+      - .:/app/source:ro
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer
+      - ./reports:/app/reports
+      - go-cache:/go/pkg/mod
+      - build-cache:/home/appuser/.cache/go-build
+    environment:
+      - DEVELOPMENT=true
+      - GOCACHE=/home/appuser/.cache/go-build
+      - GOMODCACHE=/go/pkg/mod
+    working_dir: /app
+    command: ["./pihole-analyzer-test", "--test"]
+    networks:
+      - pihole-net
+
+  # Test service for CI/CD validation
+  pihole-analyzer-test:
+    build:
+      context: .
+      target: development
+      cache_from:
+        - golang:1.23-alpine
+        - alpine:latest
+    container_name: pihole-analyzer-test
+    volumes:
+      - ./testing/fixtures:/app/testing/fixtures:ro
+      - ./test-results:/app/test-results
+    environment:
+      - TEST_MODE=true
+    command: ["./pihole-analyzer-test", "--test"]
+    networks:
+      - pihole-net
+
+networks:
+  pihole-net:
+    driver: bridge
+
+volumes:
+  go-cache:
+    driver: local
+  build-cache:
+    driver: local

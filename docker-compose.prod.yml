@@ -1,0 +1,64 @@
+version: '3.8'
+
+# Production-focused Docker Compose configuration
+# Uses published containers from GitHub Container Registry
+
+services:
+  pihole-analyzer:
+    image: ghcr.io/grammatonic/pihole-analyzer:latest
+    container_name: pihole-analyzer-prod
+    volumes:
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    environment:
+      - PIHOLE_CONFIG=/home/appuser/.pihole-analyzer/config.json
+      - LOG_LEVEL=info
+      - OUTPUT_FORMAT=json
+    networks:
+      - pihole-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "./pihole-analyzer", "--help"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Optional: Scheduled analysis service
+  pihole-analyzer-scheduler:
+    image: ghcr.io/grammatonic/pihole-analyzer:latest
+    container_name: pihole-analyzer-scheduler
+    volumes:
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    environment:
+      - PIHOLE_CONFIG=/home/appuser/.pihole-analyzer/config.json
+      - SCHEDULE_ENABLED=true
+      - SCHEDULE_INTERVAL=3600  # Run every hour
+    networks:
+      - pihole-network
+    restart: unless-stopped
+    command: ["./pihole-analyzer", "--schedule"]
+    depends_on:
+      - pihole-analyzer
+
+networks:
+  pihole-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  analyzer-data:
+    driver: local
