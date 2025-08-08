@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
-	"pihole-analyzer/internal/colors"
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 )
 
@@ -32,15 +32,15 @@ type Logger interface {
 type DefaultLogger struct{}
 
 func (l *DefaultLogger) Info(msg string, args ...interface{}) {
-	fmt.Printf(colors.Info("ℹ️  "+msg+"\n"), args...)
+	logger.Info(msg, args...)
 }
 
 func (l *DefaultLogger) Warn(msg string, args ...interface{}) {
-	fmt.Printf(colors.Warning("⚠️  "+msg+"\n"), args...)
+	logger.Warn(msg, args...)
 }
 
 func (l *DefaultLogger) Error(msg string, args ...interface{}) {
-	fmt.Printf(colors.Error("❌ "+msg+"\n"), args...)
+	logger.Error(msg, args...)
 }
 
 // NewConnectionManager creates a new SSH connection manager

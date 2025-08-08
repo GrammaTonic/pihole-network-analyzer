@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	_ "modernc.org/sqlite"
 
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 )
 
@@ -43,7 +44,7 @@ func AnalyzePiholeData(configFile string) (map[string]*types.ClientStats, error)
 	}
 	defer func() {
 		if closeErr := client.Close(); closeErr != nil {
-			fmt.Printf("Warning: failed to close SSH connection: %v\n", closeErr)
+			logger.Warn("Failed to close SSH connection: %v", closeErr)
 		}
 	}()
 
@@ -62,7 +63,7 @@ func AnalyzePiholeData(configFile string) (map[string]*types.ClientStats, error)
 	}
 	defer func() {
 		if removeErr := os.Remove(localDBPath); removeErr != nil {
-			fmt.Printf("Warning: failed to cleanup database file %s: %v\n", localDBPath, removeErr)
+			logger.Warn("Failed to cleanup database file %s: %v", localDBPath, removeErr)
 		}
 	}()
 
