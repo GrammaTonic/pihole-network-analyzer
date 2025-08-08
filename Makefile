@@ -1,4 +1,4 @@
-BINARY_NAME=dns-analyzer
+BINARY_NAME=pihole-analyzer
 SOURCE_FILE=main.go
 CSV_FILE=test.csv
 PIHOLE_CONFIG=pihole-config.json
@@ -14,7 +14,7 @@ install-deps: ## Install Go dependencies
 	go mod download
 
 build: ## Build the application
-	go build -o $(BINARY_NAME) .
+	go build -o $(BINARY_NAME) ./cmd/pihole-analyzer
 
 run: build ## Build and run the application with test.csv
 	./$(BINARY_NAME) $(CSV_FILE)
@@ -62,7 +62,7 @@ ci-test: ## Run the same tests as CI locally
 	go mod tidy
 	go mod verify
 	go mod download
-	go build -o pihole-network-analyzer .
+	go build -o pihole-network-analyzer ./cmd/pihole-analyzer
 	./pihole-network-analyzer --test
 	@if [ "$$(gofmt -s -l . | wc -l)" -gt 0 ]; then \
 		echo "❌ Code formatting issues found:"; \
@@ -75,9 +75,9 @@ ci-test: ## Run the same tests as CI locally
 
 multi-build: build ## Test multi-platform builds (like CI)
 	@echo "🏗️ Testing multi-platform builds..."
-	GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 .
-	GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe .
-	GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 .
+	GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 ./cmd/pihole-analyzer
+	GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe ./cmd/pihole-analyzer
+	GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 ./cmd/pihole-analyzer
 	@echo "✅ All platform builds successful!"
 	rm -f /tmp/test-*
 

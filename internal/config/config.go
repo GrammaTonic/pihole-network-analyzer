@@ -164,5 +164,5 @@ func ShowConfig(config *types.Config) {
 // GetConfigPath returns the default configuration file path
 func GetConfigPath() string {
 	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, ".dns-analyzer", "config.json")
+	return filepath.Join(homeDir, ".pihole-analyzer", "config.json")
 }

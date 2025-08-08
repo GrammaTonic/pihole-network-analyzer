@@ -120,6 +120,9 @@ func BoldPurple(text string) string { return Colorize(ColorBoldPurple, text) }
 func BoldCyan(text string) string   { return Colorize(ColorBoldCyan, text) }
 func BoldWhite(text string) string  { return Colorize(ColorBoldWhite, text) }
 
+// White function for compatibility
+func White(text string) string { return Colorize(ColorWhite, text) }
+
 // Formatting helper functions
 func Bold(text string) string      { return Colorize(ColorBold, text) }
 func Underline(text string) string { return Colorize(ColorUnderline, text) }
@@ -297,6 +300,26 @@ func EnableTestMode() {
 // DisableTestMode disables test mode
 func DisableTestMode() {
 	colorConfig.TestMode = false
+}
+
+// GetDisplayLength returns the display length of text (exported version)
+func GetDisplayLength(text string) int {
+	return getDisplayLength(text)
+}
+
+// IsTestMode returns whether test mode is enabled
+func IsTestMode() bool {
+	return colorConfig.TestMode
+}
+
+// IsForceDisabled returns whether colors are force disabled
+func IsForceDisabled() bool {
+	return colorConfig.ForceDisabled
+}
+
+// IsEmojiEnabled returns whether emojis are enabled
+func IsEmojiEnabled() bool {
+	return colorConfig.UseEmoji
 }
 
 // stripColorCodes removes ANSI color codes from a string to calculate its actual display length

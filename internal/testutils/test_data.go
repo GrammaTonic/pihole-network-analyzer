@@ -13,6 +13,42 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// getStatusCodeFromString converts status strings to status codes
+func getStatusCodeFromString(status string) int {
+	switch status {
+	case "Blocked (gravity)":
+		return 1
+	case "Forwarded":
+		return 2
+	case "Cached":
+		return 3
+	case "Blocked (regex/wildcard)":
+		return 4
+	case "Blocked (exact)":
+		return 5
+	case "Blocked (external)":
+		return 6
+	case "CNAME":
+		return 7
+	case "Retried":
+		return 8
+	case "Retried but ignored":
+		return 9
+	case "Already forwarded":
+		return 10
+	case "Already cached":
+		return 11
+	case "Config blocked":
+		return 12
+	case "Gravity blocked":
+		return 13
+	case "Regex blocked":
+		return 14
+	default:
+		return 0
+	}
+}
+
 // MockData contains all the mock data for testing
 type MockData struct {
 	DNSRecords    []types.DNSRecord
@@ -120,17 +156,17 @@ func CreateMockCSVFile(filename string, mockData *MockData) error {
 	}
 
 	// Write mock data records
-	for _, record := range mockData.types.DNSRecords {
-		line := fmt.Sprintf("%d,%s,%s,%d,%d,%s,,%s,%d,%.6f,0,0,0\n",
+	for _, record := range mockData.DNSRecords {
+		line := fmt.Sprintf("%d,%s,%s,%d,%s,%s,,%s,%d,%.6f,0,0,0\n",
 			record.ID,
 			record.DateTime,
 			record.Domain,
 			record.Type,
 			record.Status,
 			record.Client,
-			record.AdditionalInfo,
-			record.ReplyType,
-			record.ReplyTime,
+			"", // AdditionalInfo - not in types.DNSRecord
+			0,  // ReplyType - not in types.DNSRecord
+			record.ResponseTime,
 		)
 		_, err = file.WriteString(line)
 		if err != nil {
@@ -227,9 +263,10 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	// Insert query records
 	queryInsert := `INSERT INTO queries (timestamp, type, status, domain, client, forward) VALUES (?, ?, ?, ?, ?, ?)`
 
-	for _, record := range mockData.types.PiholeRecords {
-		statusCode := getStatusCodeFromString(record.Status)
-		_, err = db.Exec(queryInsert, int64(record.Timestamp), 1, statusCode, record.Domain, record.Client, "")
+	for _, record := range mockData.PiholeRecords {
+		// record.Status is already an int in types.PiholeRecord
+		timestamp := time.Now().Unix() // Use current time if record.Timestamp is not available
+		_, err = db.Exec(queryInsert, timestamp, 1, record.Status, record.Domain, record.Client, "")
 		if err != nil {
 			return fmt.Errorf("error inserting query: %v", err)
 		}
