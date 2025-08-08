@@ -86,6 +86,7 @@ jobs:
 
       - name: Upload security scan results
         if: github.event_name != 'pull_request'
+        continue-on-error: true  # Don't fail the workflow if SARIF upload has permission issues
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
