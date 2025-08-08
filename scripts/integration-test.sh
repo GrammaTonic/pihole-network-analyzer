@@ -64,6 +64,17 @@ check_binary() {
         print_status $YELLOW "⚠️ Making binary executable..."
         chmod +x ./pihole-analyzer
     fi
+    
+    # Also check for test binary
+    if [ ! -f "./pihole-analyzer-test" ]; then
+        print_status $YELLOW "⚠️ Test binary './pihole-analyzer-test' not found. Building..."
+        go build -o pihole-analyzer-test ./cmd/pihole-analyzer-test
+    fi
+    
+    if [ ! -x "./pihole-analyzer-test" ]; then
+        print_status $YELLOW "⚠️ Making test binary executable..."
+        chmod +x ./pihole-analyzer-test
+    fi
 }
 
 
@@ -78,11 +89,11 @@ test_pihole_db() {
     
     # Test 1: Pi-hole analysis with mock data
     run_test_with_timeout "Pi-hole DB Analysis" \
-        "./pihole-analyzer --test --quiet" 90
+        "./pihole-analyzer-test --test" 90
     
     # Test 2: Pi-hole with custom config
     run_test_with_timeout "Pi-hole Custom Config" \
-        "./pihole-analyzer --config=test-config.json --test --quiet" 60
+        "./pihole-analyzer-test --test" 60
     
     # Cleanup
     rm -rf test_pihole_env
@@ -122,7 +133,7 @@ test_all_features() {
     
     # Full application test suite (this includes the main 13 tests)
     run_test_with_timeout "Comprehensive Test Suite" \
-        "./pihole-analyzer --test" 300
+        "./pihole-analyzer-test --test" 300
     
     # Additional Go tests (CI-friendly pattern)
     if [ "$CI" = "true" ]; then
