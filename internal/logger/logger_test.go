@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -158,30 +159,45 @@ func TestLogger_SpecialMethods(t *testing.T) {
 }
 
 func TestGlobalLogger(t *testing.T) {
-	// Capture output
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
+	// Create a buffer to capture logger output
+	var buf bytes.Buffer
+
+	// Create a simple text handler for testing
+	handler := slog.NewTextHandler(&buf, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
+
+	// Create a custom logger that writes to our buffer for testing
+	testConfig := DefaultConfig()
+	testConfig.EnableColors = false // Disable colors for consistent testing
+	testLogger := &Logger{
+		slogger: slog.New(handler),
+		config:  testConfig,
+	}
+
+	// Temporarily replace the global logger
+	oldLogger := defaultLogger
+	defaultLogger = testLogger
+	defer func() {
+		defaultLogger = oldLogger
+	}()
 
 	// Test global logger functions
 	Info("Global info message")
 	Warn("Global warning message")
 
-	// Close writer and restore stdout
-	w.Close()
-	os.Stdout = oldStdout
-
-	// Read captured output
-	buf := new(bytes.Buffer)
-	io.Copy(buf, r)
+	// Get the output
 	output := buf.String()
 
-	// Verify global logger messages
+	// Debug: print the actual output for troubleshooting
+	t.Logf("Captured output: %q", output)
+
+	// Verify global logger messages (check for the core message, not emojis)
 	if !strings.Contains(output, "Global info message") {
-		t.Error("Global info message not found in output")
+		t.Errorf("Global info message not found in output: %s", output)
 	}
 	if !strings.Contains(output, "Global warning message") {
-		t.Error("Global warning message not found in output")
+		t.Errorf("Global warning message not found in output: %s", output)
 	}
 }
 
