@@ -27,7 +27,31 @@ This file provides comprehensive guidance for AI coding assistants working on th
 - **Container-First**: Production-ready multi-architecture containerization
 - **Fast Builds**: Advanced caching strategies for 60-80% build speed improvement
 
-## Project Structure & Modern Enhancements
+## Project Structure & Architecture
+
+### Documentation Structure
+The project maintains comprehensive documentation in the `docs/` directory:
+
+**Core Documentation Files**:
+- `docs/api.md` - API reference guide
+- `docs/development.md` - Development setup and guidelines
+- `docs/configuration.md` - Configuration guide  
+- `docs/installation.md` - Installation instructions
+- `docs/usage.md` - Usage examples and CLI reference
+- `docs/troubleshooting.md` - Troubleshooting guide
+- `docs/index.md` - Main documentation index
+- `docs/container-registry.md` - Container deployment guide
+
+**Specialized Documentation**:
+- `docs/fast-builds.md` - Build optimization strategies
+- `docs/container-usage.md` - Docker deployment guide
+- `docs/README.md` - Documentation overview
+
+**Documentation Standards**:
+- Enhanced with structured examples and code snippets
+- Container-first approach with deployment examples
+- API-only architecture focus (no SSH references)
+- Comprehensive error handling and troubleshooting guides
 
 ### Directory Layout
 ```
@@ -48,14 +72,35 @@ This file provides comprehensive guidance for AI coding assistants working on th
 │   └── types/                    # Core data structures
 ├── docs/                         # Comprehensive documentation
 │   ├── api.md                   # Pi-hole API integration guide
-│   ├── fast-builds.md           # Build optimization guide
-│   ├── container-registry.md    # Container deployment strategy
-│   └── container-usage.md       # Docker usage guide
+│   ├── development.md           # Development setup and guidelines
+│   ├── configuration.md         # Configuration documentation
+│   ├── installation.md          # Installation instructions
+│   ├── usage.md                 # Usage examples and CLI reference
+│   ├── troubleshooting.md       # Troubleshooting guide
+│   ├── index.md                 # Main documentation index
+│   ├── container-registry.md    # Container deployment guide
+│   ├── fast-builds.md           # Build optimization strategies
+│   ├── container-usage.md       # Docker deployment guide
+│   └── README.md                # Documentation overview
 ├── scripts/                      # Build automation & cache warming
 ├── testing/                      # Test utilities and fixtures
+│   ├── fixtures/                 # Mock data and test configs
+│   ├── integration/              # Integration test helpers
+│   └── testutils/               # Test utilities and mock data
+├── tests/                        # Test scripts and CI validation
+│   ├── integration/              # Integration test scripts
+│   ├── scripts/                  # CI/CD test automation
+│   └── unit/                     # Unit test files
 ├── .github/workflows/           # CI/CD with advanced caching
+│   ├── ci.yml                   # Main CI/CD pipeline
+│   └── container.yml            # Container build and publish
 ├── Dockerfile                   # Multi-stage, multi-arch container builds
-├── docker-compose*.yml         # Development and production environments
+├── Dockerfile.api-only         # API-only container variant
+├── docker-compose*.yml         # Multiple environment configurations
+│   ├── docker-compose.yml      # Default development
+│   ├── docker-compose.dev.yml  # Development environment
+│   ├── docker-compose.prod.yml # Production environment
+│   └── docker-compose.api-only.yml  # API-only deployment
 └── Makefile                     # Enhanced build system (40+ targets)
 ```
 
@@ -137,39 +182,43 @@ docker-compose -f docker-compose.prod.yml up -d
 #### `types.PiholeRecord`
 ```go
 type PiholeRecord struct {
-    ID        int
-    DateTime  string
-    Domain    string
-    Client    string
-    QueryType string
-    Status    int
-    Timestamp string   // Unix timestamp
-    HWAddr    string   // Hardware/MAC address
+    ID        int    `json:"id"`        // Query ID
+    DateTime  string `json:"datetime"`  // Query timestamp
+    Domain    string `json:"domain"`    // Queried domain name
+    Client    string `json:"client"`    // Client IP address
+    QueryType string `json:"querytype"` // DNS query type (A, AAAA, etc)
+    Status    int    `json:"status"`    // Pi-hole status code
+    Timestamp string `json:"timestamp"` // Unix timestamp
+    HWAddr    string `json:"hwaddr"`    // Hardware/MAC address
 }
 ```
 
 #### `types.ClientStats`
 ```go
 type ClientStats struct {
-    IP            string
-    Hostname      string
-    QueryCount    int
-    Domains       map[string]int
-    DomainCount   int
-    MACAddress    string
-    IsOnline      bool
-    LastSeen      string
-    TopDomains    []DomainStat
-    Status        string
-    UniqueQueries int
-    TotalQueries  int
+    IP            string            // Client IP address
+    Hostname      string            // Client hostname
+    QueryCount    int               // Total number of queries
+    Domains       map[string]int    // Domain query counts
+    DomainCount   int               // Number of unique domains
+    MACAddress    string            // MAC address
+    IsOnline      bool              // Online status from ARP
+    LastSeen      string            // Last seen timestamp
+    TopDomains    []DomainStat      // Top queried domains
+    Status        string            // Connection status
+    UniqueQueries int               // Unique query count
+    TotalQueries  int               // Total query count
+    FirstSeen     string            // First seen timestamp
+    DeviceType    string            // Device type identification
     // Additional analysis fields
-    Client         string
-    QueryTypes     map[int]int
-    StatusCodes    map[int]int
-    HWAddr         string
-    TotalReplyTime float64
-    AvgReplyTime   float64
+    Client         string           // Client identifier
+    QueryTypes     map[int]int      // Query type counts
+    StatusCodes    map[int]int      // Status code counts
+    HWAddr         string           // Hardware address
+    ARPStatus      string           // ARP table status
+    TotalReplyTime float64          // Total reply time
+    AvgReplyTime   float64          // Average reply time
+    Uniquedomains  int              // Unique domain count
 }
 ```
 
@@ -212,6 +261,7 @@ type PiholeConfig struct {
 
 ```go
 type DataSource interface {
+    // Connection management
     Connect(ctx context.Context) error
     Close() error
     IsConnected() bool
@@ -222,6 +272,11 @@ type DataSource interface {
     GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
     GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
     
+    // Performance and metadata
+    GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error)
+    GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error)
+    
+    // Configuration and metadata
     GetDataSourceType() DataSourceType
     GetConnectionInfo() *ConnectionInfo
 }
@@ -290,7 +345,13 @@ make docker-api-only   # Build API-only container variant
 # Testing (enhanced)
 make ci-test          # CI-compatible test suite with caching
 make test-cached      # Cached test execution
-make phase5-test      # API-only test scenarios
+make pre-push         # Comprehensive pre-push tests
+make release-build    # Full release build validation
+
+# Pi-hole specific
+make analyze-pihole   # Analyze Pi-hole live data
+make setup-pihole     # Setup Pi-hole API configuration
+make test-pihole      # Test Pi-hole connection
 ```
 
 ### Testing Strategy (Enhanced)
@@ -546,6 +607,7 @@ type Client struct {
 
 ```go
 type DataSource interface {
+    // Connection management
     Connect(ctx context.Context) error
     Close() error
     IsConnected() bool
@@ -556,6 +618,11 @@ type DataSource interface {
     GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
     GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
     
+    // Performance and metadata
+    GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error)
+    GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error)
+    
+    // Configuration and metadata
     GetDataSourceType() DataSourceType
     GetConnectionInfo() *ConnectionInfo
 }
@@ -697,15 +764,18 @@ When working on this project:
 8. **📜 Maintain structured logging** - Use `slog` with colors and emojis
 9. **🚀 Fast builds** - Use `make fast-build` for quick iterations
 10. **📦 Container first** - All features must work in containerized environments
-11. **Make unit tests comprehensive** - Ensure all new features are covered
-12. **Make intergration tests robust** - Validate Pi-hole connectivity and mock environments
+11. **📋 Comprehensive unit tests** - Ensure all new features are covered
+12. **🔗 Robust integration tests** - Validate Pi-hole connectivity and mock environments
+13. **📚 Documentation updates** - Keep documentation current and comprehensive
+14. **🧪 Test directory structure** - Use both `tests/` and `testing/` directories appropriately
 
 ### Development Workflow
 1. **Start with**: `make dev-setup` for complete environment preparation
 2. **Fast iteration**: `make fast-build` for quick development cycles
 3. **Container testing**: `make docker-dev` for containerized development
-4. **Before committing**: `make ci-test` to validate all tests pass
+4. **Before committing**: `make pre-push` to validate all tests pass
 5. **Performance check**: `make cache-info` to verify cache effectiveness
+6. **Documentation updates**: Keep documentation files current and comprehensive
 
 ### Code Patterns
 - **Logging**: Use structured logging with context (`slog.String()`, `slog.Int()`, etc.)
