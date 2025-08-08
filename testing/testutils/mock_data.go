@@ -246,7 +246,7 @@ func SetupTestEnvironment() (*MockData, error) {
 	mockData := CreateMockData()
 
 	// Create test directory
-	testDir := "test_data"
+	testDir := "testing/fixtures"
 	err := os.MkdirAll(testDir, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("error creating test directory: %v", err)
@@ -275,6 +275,6 @@ func SetupTestEnvironment() (*MockData, error) {
 
 // CleanupTestEnvironment removes all test files
 func CleanupTestEnvironment() {
-	os.RemoveAll("test_data")
+	os.RemoveAll("testing/fixtures")
 	fmt.Println("✓ Test environment cleaned up")
 }

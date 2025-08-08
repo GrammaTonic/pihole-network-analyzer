@@ -10,14 +10,12 @@ import (
 	"pihole-analyzer/internal/types"
 )
 
-// Flags represents command-line flags
+// Flags represents command-line flags (production version - no test flags)
 type Flags struct {
 	OnlineOnly   *bool
 	NoExclude    *bool
 	Pihole       *string
 	PiholeSetup  *bool
-	Test         *bool
-	TestMode     *bool
 	Config       *string
 	ShowConfig   *bool
 	CreateConfig *bool
@@ -33,8 +31,6 @@ func ParseFlags() *Flags {
 		NoExclude:    flag.Bool("no-exclude", false, "Disable default exclusions (Docker networks, Pi-hole host)"),
 		Pihole:       flag.String("pihole", "", "Analyze Pi-hole live data using the specified config file"),
 		PiholeSetup:  flag.Bool("pihole-setup", false, "Setup Pi-hole configuration"),
-		Test:         flag.Bool("test", false, "Run test suite with mock data"),
-		TestMode:     flag.Bool("test-mode", false, "Enable test mode for development (uses mock data)"),
 		Config:       flag.String("config", "", "Configuration file path (default: ~/.pihole-analyzer/config.json)"),
 		ShowConfig:   flag.Bool("show-config", false, "Show current configuration and exit"),
 		CreateConfig: flag.Bool("create-config", false, "Create default configuration file and exit"),
@@ -45,62 +41,6 @@ func ParseFlags() *Flags {
 
 	flag.Parse()
 	return flags
-}
-
-// GetCSVFile returns the CSV file from command-line arguments (DEPRECATED - CSV support removed)
-func GetCSVFile() string {
-	return ""
-}
-
-// ApplyFlags applies command-line flags to configuration
-func ApplyFlags(flags *Flags, cfg *types.Config) {
-	if cfg == nil {
-		return
-	}
-
-	// Apply boolean flags
-	if *flags.OnlineOnly {
-		cfg.OnlineOnly = true
-	}
-	if *flags.NoExclude {
-		cfg.NoExclude = true
-	}
-	if *flags.TestMode {
-		cfg.TestMode = true
-	}
-	if *flags.Quiet {
-		cfg.Quiet = true
-	}
-
-	// Apply color/emoji flags
-	if *flags.NoColor {
-		cfg.Output.Colors = false
-		colors.DisableColors()
-	}
-	if *flags.NoEmoji {
-		cfg.Output.Emojis = false
-		colors.DisableEmojis()
-	}
-}
-
-// ShowUsage displays usage information
-func ShowUsage() {
-	fmt.Printf("%s\n", colors.Header("Pi-hole Network Analyzer"))
-	fmt.Printf("Usage: %s [options]\n\n", os.Args[0])
-
-	fmt.Printf("%s:\n", colors.BoldCyan("Options"))
-	flag.PrintDefaults()
-
-	fmt.Printf("\n%s:\n", colors.BoldCyan("Examples"))
-	fmt.Printf("  %s --pihole config.json     # Analyze Pi-hole live data\n", os.Args[0])
-	fmt.Printf("  %s --pihole-setup           # Setup Pi-hole SSH config\n", os.Args[0])
-	fmt.Printf("  %s --test                   # Run with mock test data\n", os.Args[0])
-	fmt.Printf("  %s --no-color --quiet       # Plain output for scripting\n", os.Args[0])
-
-	fmt.Printf("\n%s:\n", colors.BoldCyan("Configuration"))
-	fmt.Printf("  Default config: ~/.pihole-analyzer/config.json\n")
-	fmt.Printf("  Create config:  %s --create-config\n", os.Args[0])
-	fmt.Printf("  Show config:    %s --show-config\n", os.Args[0])
 }
 
 // HandleSpecialFlags handles flags that should exit immediately
@@ -122,11 +62,16 @@ func HandleSpecialFlags(flags *Flags) bool {
 	}
 
 	if *flags.CreateConfig {
-		err := config.CreateDefaultConfigFile(*flags.Config)
+		configPath := config.GetConfigPath()
+		if *flags.Config != "" {
+			configPath = *flags.Config
+		}
+
+		err := config.CreateDefaultConfigFile(configPath)
 		if err != nil {
 			fmt.Printf("Error creating config: %v\n", err)
 		} else {
-			fmt.Printf("Default configuration created successfully\n")
+			fmt.Printf("Default configuration created at: %s\n", configPath)
 		}
 		return true
 	}
@@ -134,49 +79,50 @@ func HandleSpecialFlags(flags *Flags) bool {
 	return false
 }
 
+// ApplyFlags applies command-line flags to configuration
+func ApplyFlags(flags *Flags, cfg *types.Config) {
+	if *flags.OnlineOnly {
+		cfg.OnlineOnly = true
+	}
+	if *flags.NoExclude {
+		cfg.NoExclude = true
+	}
+	if *flags.NoColor {
+		colors.DisableColors()
+	}
+	if *flags.NoEmoji {
+		colors.DisableEmojis()
+	}
+	if *flags.Quiet {
+		cfg.Quiet = true
+	}
+}
+
+// ShowUsage displays usage information
+func ShowUsage() {
+	fmt.Printf("Usage: %s [options]\n\n", os.Args[0])
+	fmt.Printf("Pi-hole Network Analyzer - Analyze Pi-hole DNS queries and network traffic\n\n")
+	fmt.Printf("Examples:\n")
+	fmt.Printf("  %s --pihole config.json     # Analyze live Pi-hole data\n", os.Args[0])
+	fmt.Printf("  %s --pihole-setup           # Setup Pi-hole SSH configuration\n", os.Args[0])
+	fmt.Printf("  %s --show-config            # Show current configuration\n", os.Args[0])
+	fmt.Printf("  %s --create-config          # Create default config file\n", os.Args[0])
+	fmt.Printf("\nOptions:\n")
+	flag.PrintDefaults()
+}
+
 // ValidateInput validates command-line input
 func ValidateInput(flags *Flags) error {
-	// Pi-hole config file is now required since CSV support is removed
-	if *flags.Pihole == "" && !*flags.Test && !*flags.TestMode && !*flags.PiholeSetup {
-		return fmt.Errorf("pi-hole config file required - use --pihole <config.json> or --pihole-setup")
+	if *flags.Pihole == "" && !*flags.PiholeSetup {
+		return fmt.Errorf("Pi-hole configuration required. Use --pihole <config.json> or --pihole-setup to create one")
 	}
-
-	// If analyzing Pi-hole data, config file is required and must exist
-	if *flags.Pihole != "" {
-		if _, err := os.Stat(*flags.Pihole); os.IsNotExist(err) {
-			return fmt.Errorf("pi-hole config file not found: %s", *flags.Pihole)
-		}
-	}
-
 	return nil
 }
 
 // PrintStartupInfo prints startup information
 func PrintStartupInfo(flags *Flags, cfg *types.Config) {
-	if cfg != nil && cfg.Quiet {
-		return
+	if !cfg.Quiet {
+		fmt.Printf("%s\n", colors.Header("🕳️ Pi-hole Network Analyzer"))
+		fmt.Printf("Analyzing Pi-hole DNS data with network insights\n\n")
 	}
-
-	fmt.Printf("%s\n", colors.Header("Pi-hole Network Analyzer"))
-
-	if *flags.Test || *flags.TestMode {
-		fmt.Printf("%s\n", colors.Info("Running in test mode with mock data"))
-	}
-
-	if *flags.OnlineOnly {
-		fmt.Printf("%s\n", colors.Info("Showing only online clients"))
-	}
-
-	if *flags.NoExclude {
-		fmt.Printf("%s\n", colors.Warning("Default exclusions disabled"))
-	}
-
-	if *flags.Pihole != "" {
-		fmt.Printf("%s %s\n", colors.Info("Analyzing Pi-hole data from:"), *flags.Pihole)
-	}
-}
-
-// GetDefaultCSVFile returns the default CSV file name (DEPRECATED - CSV support removed)
-func GetDefaultCSVFile() string {
-	return ""
 }

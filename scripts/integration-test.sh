@@ -162,7 +162,7 @@ validate_environment() {
     fi
     
     # Check for Pi-hole test data
-    if [ ! -f "test_data/mock_pihole.db" ]; then
+    if [ ! -f "testing/fixtures/mock_pihole.db" ]; then
         print_status $YELLOW "⚠️ Pi-hole test database not found, some tests may be skipped"
     fi
     

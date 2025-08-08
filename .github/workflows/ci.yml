@@ -196,7 +196,7 @@ jobs:
       with:
         name: integration-test-failure-${{ matrix.go-version }}-${{ matrix.test-scenario }}
         path: |
-          test_data/
+          testing/fixtures/
           *.log
           core
         retention-days: 7

@@ -1,7 +1,8 @@
 BINARY_NAME=pihole-analyzer
+TEST_BINARY=pihole-analyzer-test
 PIHOLE_CONFIG=pihole-config.json
 
-.PHONY: build run clean install-deps help setup-pihole analyze-pihole pre-push ci-test
+.PHONY: build build-test run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -11,8 +12,14 @@ install-deps: ## Install Go dependencies
 	go mod tidy
 	go mod download
 
-build: ## Build the application
+build: ## Build the production application
 	go build -o $(BINARY_NAME) ./cmd/pihole-analyzer
+
+build-test: ## Build the test runner binary
+	go build -o $(TEST_BINARY) ./cmd/pihole-analyzer-test
+
+test-mode: build-test ## Run in test mode with mock data
+	./$(TEST_BINARY) --test
 
 analyze-pihole: build ## Analyze Pi-hole live data (requires pihole-config.json)
 	./$(BINARY_NAME) --pihole $(PIHOLE_CONFIG)
@@ -29,6 +36,7 @@ test-pihole: build ## Test Pi-hole connection and analyze data
 
 clean: ## Clean build artifacts
 	rm -f $(BINARY_NAME)
+	rm -f $(TEST_BINARY)
 	rm -f dns_usage_report_*.txt
 	rm -f pihole-data-*.db
 
@@ -52,7 +60,8 @@ ci-test: ## Run the same tests as CI locally
 	go mod verify
 	go mod download
 	go build -o pihole-analyzer ./cmd/pihole-analyzer
-	./pihole-analyzer --test
+	go build -o pihole-analyzer-test ./cmd/pihole-analyzer-test
+	./pihole-analyzer-test --test
 	@if [ "$$(gofmt -s -l . | wc -l)" -gt 0 ]; then \
 		echo "❌ Code formatting issues found:"; \
 		gofmt -s -l .; \
