@@ -1,4 +1,4 @@
-# Dockerfile.api-only - API-only container variant for Phase 5
+# Dockerfile.api-only - API-only container variant
 # API-only container variant focusing on Pi-hole API connectivity
 
 # Build stage - Use exact Go version for consistency
