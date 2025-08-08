@@ -54,13 +54,30 @@ func main() {
 
 	// Handle test mode first
 	if *flags.Test {
-		fmt.Println("Test mode not yet implemented in new structure")
+		fmt.Println(colors.Header("🧪 Running Test Mode"))
+		fmt.Println("Using mock data from testdata/test.csv")
+
+		// Use the existing test CSV file
+		testCSV := "testdata/test.csv"
+		if _, err := os.Stat(testCSV); os.IsNotExist(err) {
+			fmt.Printf("Test file not found: %s\n", testCSV)
+			return
+		}
+
+		// Analyze the test data
+		clientStats, err := analyzer.AnalyzeDNSDataWithConfig(testCSV, cfg)
+		if err != nil {
+			log.Fatalf("Error analyzing test data: %v", err)
+		}
+
+		fmt.Println(colors.Success("✅ Test mode analysis completed"))
+		reporting.DisplayResultsWithConfig(clientStats, cfg)
+		fmt.Println(colors.Info("Test mode completed successfully"))
 		return
 	}
 
 	if cfg.TestMode {
 		quietPrintf(cfg.Quiet, "🧪 Test Mode Enabled - Using Mock Data\n")
-		fmt.Println("Test mode not yet implemented")
 	}
 
 	// Validate input
