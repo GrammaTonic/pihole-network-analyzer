@@ -87,7 +87,7 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 	}
 
 	// Try enhanced analysis first
-	result, err := analyzer.AnalyzePiholeDataWithMigration(ctx, config, appLogger)
+	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger)
 	if err != nil {
 		// Fallback to traditional analysis
 		appLogger.Warn("⚠️  Enhanced analysis failed, using traditional method: %v", err)
@@ -107,8 +107,10 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 }
 
 func runTraditionalAnalysis(configFile string, config *types.Config, appLogger *logger.Logger) error {
+	ctx := context.Background()
+
 	// Use traditional analyzer as fallback
-	clientStats, err := analyzer.AnalyzePiholeData(configFile, config)
+	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger)
 	if err != nil {
 		return fmt.Errorf("traditional analysis failed: %w", err)
 	}
@@ -118,7 +120,7 @@ func runTraditionalAnalysis(configFile string, config *types.Config, appLogger *
 	}
 
 	// Display traditional results
-	reporting.DisplayResultsWithConfig(clientStats, config)
+	reporting.DisplayResultsWithConfig(result.ClientStats, config)
 	return nil
 }
 
@@ -137,11 +139,6 @@ func displayEnhancedResults(result *types.AnalysisResult, cfg *types.Config, app
 
 	// Use traditional reporting for client statistics display
 	reporting.DisplayResultsWithConfig(result.ClientStats, cfg)
-
-	// Display migration status if in transition mode
-	if result.MigrationStatus != "" {
-		appLogger.Info("🔄 Migration Status: %s", result.MigrationStatus)
-	}
 
 	// Show performance metrics
 	if result.Performance != nil {

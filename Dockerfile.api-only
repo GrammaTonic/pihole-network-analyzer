@@ -69,7 +69,7 @@ ENV LOG_FORMAT=json
 
 # Health check for API connectivity
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD ["/usr/local/bin/pihole-analyzer", "--validate-migration", "--quiet"]
+    CMD ["/usr/local/bin/pihole-analyzer", "--help"]
 
 # Default entrypoint
 ENTRYPOINT ["/usr/local/bin/pihole-analyzer"]

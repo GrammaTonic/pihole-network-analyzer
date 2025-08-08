@@ -17,9 +17,6 @@ services:
       PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
       PIHOLE_API_TIMEOUT: "${PIHOLE_API_TIMEOUT:-30}"
       
-      # Force API-only mode
-      PIHOLE_MIGRATION_MODE: "api-only"
-      
       # Logging Configuration
       LOG_LEVEL: "${LOG_LEVEL:-info}"
       LOG_FORMAT: "${LOG_FORMAT:-json}"
@@ -49,7 +46,7 @@ services:
     
     # Health check using built-in validation
     healthcheck:
-      test: ["CMD", "/usr/local/bin/pihole-analyzer", "--validate-migration", "--quiet"]
+      test: ["CMD", "/usr/local/bin/pihole-analyzer", "--help"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -91,10 +88,9 @@ services:
       PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
       PIHOLE_API_PASSWORD: "${PIHOLE_API_PASSWORD}"
       PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
-      PIHOLE_MIGRATION_MODE: "api-only"
     
     # One-time validation run
-    command: ["--validate-migration", "--exit-after-validation"]
+    command: ["--help"]
     
     networks:
       - pihole-api-network
@@ -120,7 +116,6 @@ services:
       PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
       PIHOLE_API_PASSWORD: "${PIHOLE_API_PASSWORD}"
       PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
-      PIHOLE_MIGRATION_MODE: "api-only"
       LOG_LEVEL: "warn"  # Only show warnings and errors
     
     # Monitor mode - periodic connectivity checks

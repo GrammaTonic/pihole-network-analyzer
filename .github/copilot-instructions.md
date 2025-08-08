@@ -579,40 +579,23 @@ type QueryParams struct {
 - Performance metrics (query counts, response times) must be **equivalent**
 - Network analysis (ARP correlation, device detection) must be **preserved**
 
-#### Phase 4: SSH-to-API Migration Strategy
-**Goal**: Complete replacement of SSH functionality with seamless transition
+#### Current Implementation: API-Only Architecture
+**Status**: SSH functionality has been completely removed. The application now uses Pi-hole API exclusively.
 
-**Enhanced Config Structure** (Transition-focused):
+**Simplified Config Structure**:
 ```go
 type PiholeConfig struct {
-    // Existing SSH fields (to be deprecated)
-    Host         string `json:"host"`
-    Port         int    `json:"port"`
-    Username     string `json:"username"`
-    Password     string `json:"password"`
-    
-    // New API fields (primary method)
+    // API fields (primary and only method)
     APIEnabled   bool   `json:"api_enabled"`
     APIPassword  string `json:"api_password"`
     APITOTP      string `json:"api_totp"`
     UseHTTPS     bool   `json:"use_https"`
     APITimeout   int    `json:"api_timeout"`
-    
-    // Migration control
-    UseSSH       bool   `json:"use_ssh"`        // Fallback only
-    DatabasePath string `json:"database_path"`  // Legacy support
-    MigrationMode string `json:"migration_mode"` // "api-first", "ssh-only", "auto"
 }
 ```
 
-**Migration Phases**:
-1. **Phase 4a**: API implementation with SSH fallback
-2. **Phase 4b**: API-first with SSH backup
-3. **Phase 4c**: API-only with SSH deprecation warnings
-4. **Phase 4d**: Complete SSH removal (future release)
-
-#### Phase 5: Complete SSH Replacement & Analyzer Integration
-**Goal**: Finalize API-first architecture with SSH removal path
+#### Current Implementation Status
+**Completed**: SSH functionality completely removed and replaced with API-only architecture
 
 **Enhanced Analyzer** (`internal/analyzer/analyzer.go`):
 ```go
@@ -623,16 +606,10 @@ type Analyzer struct {
 }
 
 func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, error) {
-    // Universal analysis logic - identical results regardless of data source
-    // Must produce identical output whether using API or SSH
+    // API-only data analysis logic
+    // Direct Pi-hole API integration
 }
 ```
-
-**SSH Deprecation Strategy**:
-1. **Warning Messages**: Structured logging warnings about SSH deprecation
-2. **Feature Flags**: Gradual removal of SSH-specific code paths
-3. **Documentation Updates**: Migration guides and API-first examples
-4. **Container Builds**: API-only variants for new deployments
 
 ### Implementation Details
 
@@ -691,32 +668,28 @@ func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, erro
    - Realistic query patterns
    - Error scenario simulation
 
-### Migration Strategy
+### Current Architecture
 
-#### Backward Compatibility
-1. **Configuration Migration**:
-   - Auto-detect SSH vs API configuration
-   - Configuration file migration tool
-   - Validation of mixed configurations
+#### API-Only Implementation
+The application now uses exclusively Pi-hole API with no SSH fallback or migration logic.
 
-2. **CLI Flag Enhancement**:
+#### Configuration Management
+1. **API Configuration**:
+   - Direct Pi-hole API authentication
+   - HTTPS/HTTP support with certificate validation
+   - Session management and token refresh
+
+2. **Simplified CLI**:
    ```bash
-   --api-mode           # Force API mode
-   --ssh-mode           # Force SSH mode (current behavior)
-   --auto-detect        # Auto-detect best method (default)
+   --api-url            # Pi-hole API endpoint
+   --api-password       # Pi-hole API password
+   --use-https          # Force HTTPS (default: auto-detect)
    ```
 
-3. **Feature Parity**:
-   - Ensure API implementation provides same data as SSH
-   - Maintain output format consistency
-   - Preserve existing CLI behavior
-
-#### Rollout Plan
-1. **Phase 1**: API client implementation with tests
-2. **Phase 2**: Data source abstraction and API integration
-3. **Phase 3**: Configuration enhancement and migration tools
-4. **Phase 4**: Integration testing and documentation
-5. **Phase 5**: Default to API with SSH fallback
+3. **Current Implementation**:
+   - API-only data retrieval
+   - Simplified configuration structure
+   - Enhanced security with no SSH dependencies
 
 ### Documentation Requirements
 
@@ -726,13 +699,8 @@ func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, erro
    - Authentication setup
    - 2FA configuration
 
-2. **Migration Guide** (`docs/migration-ssh-to-api.md`):
-   - Configuration file updates
-   - Testing connectivity
-   - Troubleshooting guide
-
-3. **Configuration Reference** (`docs/configuration.md` updates):
-   - New API configuration options
+2. **Configuration Reference** (`docs/configuration.md` updates):
+   - API configuration options
    - Security best practices
    - Performance considerations
 
@@ -776,10 +744,10 @@ func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, erro
 - [ ] Add structured logging throughout
 
 #### Phase 3: Configuration
-- [ ] Extend configuration structures
-- [ ] Add configuration validation
-- [ ] Implement auto-detection logic
-- [ ] Create migration utilities
+- [x] Extend configuration structures
+- [x] Add configuration validation
+- [x] Implement auto-detection logic
+- [x] Simplified API-only configuration
 
 #### Phase 4: Testing
 - [ ] Build mock API server
@@ -794,13 +762,13 @@ func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, erro
 - [ ] Container support validation
 
 ### Success Metrics
-1. **Functionality**: Feature parity with SSH implementation
-2. **Performance**: ≤ 20% performance overhead vs SSH
-3. **Reliability**: 99%+ successful API connections
-4. **Security**: No credential storage in logs/memory
-5. **Usability**: Zero-config migration for existing users
+1. **Functionality**: Complete API-only implementation
+2. **Performance**: Optimized Pi-hole API usage
+3. **Reliability**: 99%+ successful API connections  
+4. **Security**: No SSH dependencies, controlled API permissions
+5. **Usability**: Simplified configuration and deployment
 
-This implementation will modernize the Pi-hole integration while maintaining full backward compatibility and providing a foundation for future enhancements.
+This implementation modernizes the Pi-hole integration with API-only architecture providing enhanced security and reliability.
 
 ### Medium Priority
 1. **Add Prometheus metrics endpoints** for monitoring

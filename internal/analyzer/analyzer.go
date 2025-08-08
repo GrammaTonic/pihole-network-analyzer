@@ -17,7 +17,7 @@ type EnhancedAnalyzer struct {
 	logger     *logger.Logger
 }
 
-// NewEnhancedAnalyzer creates a new analyzer with migration-aware data source
+// NewEnhancedAnalyzer creates a new analyzer with API data source
 func NewEnhancedAnalyzer(config *types.Config, logger *logger.Logger) *EnhancedAnalyzer {
 	return &EnhancedAnalyzer{
 		config: config,
@@ -25,14 +25,14 @@ func NewEnhancedAnalyzer(config *types.Config, logger *logger.Logger) *EnhancedA
 	}
 }
 
-// Initialize creates and connects the appropriate data source based on migration strategy
+// Initialize creates and connects the appropriate data source
 func (a *EnhancedAnalyzer) Initialize(ctx context.Context) error {
-	a.logger.Info("🔄 Initializing enhanced analyzer with migration-aware data source")
+	a.logger.Info("🔄 Initializing enhanced analyzer with API data source")
 
-	// Create migration-aware data source factory
+	// Create API data source factory
 	factory := interfaces.NewDataSourceFactory(a.logger)
 
-	// Create data source with migration strategy applied
+	// Create data source
 	dataSource, err := factory.CreateDataSource(a.config)
 	if err != nil {
 		return fmt.Errorf("failed to create data source: %w", err)
@@ -48,7 +48,7 @@ func (a *EnhancedAnalyzer) Initialize(ctx context.Context) error {
 	return nil
 }
 
-// AnalyzeData performs universal DNS data analysis using migration-aware data source
+// AnalyzeData performs DNS data analysis using API data source
 func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, error) {
 	if a.dataSource == nil {
 		return nil, fmt.Errorf("analyzer not initialized - call Initialize() first")
@@ -56,7 +56,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 
 	a.logger.Info("📊 Starting enhanced data analysis")
 
-	// Get DNS queries from data source (API or SSH based on migration mode)
+	// Get DNS queries from data source
 	queries, err := a.dataSource.GetQueries(ctx, interfaces.QueryParams{
 		Limit: 10000, // Default limit for analysis
 	})
@@ -136,9 +136,8 @@ func (a *EnhancedAnalyzer) getAnalysisMode() string {
 	return "API-Only Analysis"
 }
 
-// AnalyzePiholeDataWithMigration performs modern API-first analysis with migration support
-// This is the recommended method for enhanced implementations
-func AnalyzePiholeDataWithMigration(ctx context.Context, config *types.Config, appLogger *logger.Logger) (*types.AnalysisResult, error) {
+// AnalyzePiholeData performs API-based analysis
+func AnalyzePiholeData(ctx context.Context, config *types.Config, appLogger *logger.Logger) (*types.AnalysisResult, error) {
 	// Create enhanced analyzer
 	enhancedAnalyzer := NewEnhancedAnalyzer(config, appLogger)
 
@@ -151,21 +150,20 @@ func AnalyzePiholeDataWithMigration(ctx context.Context, config *types.Config, a
 	// Perform analysis
 	result, err := enhancedAnalyzer.AnalyzeData(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("enhanced analysis failed: %w", err)
+		return nil, fmt.Errorf("analysis failed: %w", err)
 	}
 
 	return result, nil
 }
 
-// CreateMigrationAwareDataSource creates a data source based on migration configuration
-// This function bridges legacy and modern implementations
-func CreateMigrationAwareDataSource(config *types.Config, appLogger *logger.Logger) (interfaces.DataSource, error) {
+// CreateDataSource creates a data source for Pi-hole analysis
+func CreateDataSource(config *types.Config, appLogger *logger.Logger) (interfaces.DataSource, error) {
 	factory := interfaces.NewDataSourceFactory(appLogger)
 
 	// Create data source based on configuration
 	dataSource, err := factory.CreateDataSource(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create migration-aware data source: %w", err)
+		return nil, fmt.Errorf("failed to create data source: %w", err)
 	}
 
 	return dataSource, nil
