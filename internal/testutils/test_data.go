@@ -263,7 +263,7 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	// Insert query records
 	queryInsert := `INSERT INTO queries (timestamp, type, status, domain, client, forward) VALUES (?, ?, ?, ?, ?, ?)`
 
-	for _, record := range mockData.PiholeRecords {
+	for _, record := range mockData.types.PiholeRecords {
 		// record.Status is already an int in types.PiholeRecord
 		timestamp := time.Now().Unix() // Use current time if record.Timestamp is not available
 		_, err = db.Exec(queryInsert, timestamp, 1, record.Status, record.Domain, record.Client, "")
