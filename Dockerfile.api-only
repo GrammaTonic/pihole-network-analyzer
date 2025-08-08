@@ -1,0 +1,78 @@
+# Dockerfile.api-only - API-only container variant for Phase 5
+# This container variant completely removes SSH dependencies and focuses on API-only deployment
+
+# Build stage - Use exact Go version for consistency
+FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
+
+# Build arguments for cross-compilation
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION=dev
+ARG BUILD_TIME
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files first for better caching
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download && go mod verify
+
+# Copy source code
+COPY . .
+
+# Build API-only binary with optimizations and build info
+RUN CGO_ENABLED=0 \
+    GOOS=$TARGETOS \
+    GOARCH=$TARGETARCH \
+    go build \
+    -ldflags="-s -w -X main.version=${VERSION} -X main.buildTime=${BUILD_TIME}" \
+    -tags="api_only,no_ssh" \
+    -trimpath \
+    -o pihole-analyzer-api \
+    ./cmd/pihole-analyzer
+
+# Runtime stage - Minimal secure container
+FROM scratch
+
+# Copy CA certificates for HTTPS API connections
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy timezone data for proper log timestamps
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+# Copy API-only binary
+COPY --from=builder /app/pihole-analyzer-api /usr/local/bin/pihole-analyzer
+
+# Create non-root user for security
+# Note: In scratch, we can't use adduser, so we rely on the binary to handle permissions
+
+# Container metadata
+LABEL org.opencontainers.image.title="Pi-hole Network Analyzer (API-only)"
+LABEL org.opencontainers.image.description="Pi-hole network analysis tool - API-only variant without SSH dependencies"
+LABEL org.opencontainers.image.vendor="grammatonic"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/grammatonic/pihole-network-analyzer"
+LABEL version="${VERSION}"
+LABEL build_type="api-only"
+
+# Default container configuration
+ENV PIHOLE_API_ENABLED=true
+ENV PIHOLE_USE_HTTPS=false
+ENV PIHOLE_API_TIMEOUT=30
+ENV LOG_LEVEL=info
+ENV LOG_FORMAT=json
+
+# Health check for API connectivity
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD ["/usr/local/bin/pihole-analyzer", "--validate-migration", "--quiet"]
+
+# Default entrypoint
+ENTRYPOINT ["/usr/local/bin/pihole-analyzer"]
+
+# Default command shows help
+CMD ["--help"]

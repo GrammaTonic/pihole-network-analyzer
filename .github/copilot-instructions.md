@@ -401,15 +401,409 @@ make docker-build-multi  # Test AMD64, ARM64, ARMv7
 5. **✅ Enhanced CI/CD**: Advanced caching and parallel builds implemented
 
 ### High Priority (Remaining)
-1. **Configuration validation enhancement** - Add comprehensive config validation
-2. **Performance monitoring integration** - Add metrics collection
-3. **Enhanced error recovery** - Improve SSH connection resilience
+1. **Use PiHole Official API** - Integrate with Pi-hole official API for enhanced data access
+2. **Configuration validation enhancement** - Add comprehensive config validation
+3. **Performance monitoring integration** - Add metrics collection
+
+## Pi-hole API Integration Implementation Plan
+
+### Overview
+**Primary Goal**: Replace SSH-based database access with Pi-hole's official REST API while maintaining 100% feature parity and backward compatibility during transition. This modernization will provide enhanced security, reliability, and performance while eliminating the need for SSH access to Pi-hole systems.
+
+### Current SSH Architecture Analysis
+- **Current Method**: SSH connection → Direct SQLite database queries → Manual data parsing
+- **Data Access**: Raw access to `/etc/pihole/pihole-FTL.db` via SSH tunnel
+- **Authentication**: SSH key-based or password authentication with server access requirements
+- **Data Processing**: Custom SQL queries for DNS records, client statistics, and network analysis
+- **Limitations**: 
+  - Requires SSH server access and credentials
+  - Direct database dependency creates fragility
+  - Manual query optimization and data parsing
+  - Network connectivity issues with SSH tunneling
+  - Security concerns with database-level access
+
+### Pi-hole API Capabilities & Feature Mapping
+Based on official documentation (https://docs.pi-hole.net/api/):
+- **REST API**: Standard HTTP/HTTPS with structured JSON responses
+- **Authentication**: Session-based SID tokens with optional 2FA support
+- **Complete Data Access**: All SSH functionality available through API endpoints
+- **Enhanced Security**: Controlled permissions, no direct database access required
+- **Built-in Features**: Rate limiting, session management, CSRF protection
+- **Self-Documentation**: Complete API docs at `http://pi.hole/api/docs`
+
+**Critical Requirement**: The API implementation must provide 100% of current SSH functionality including:
+- Complete DNS query history access
+- Client statistics and analysis
+- Domain resolution data
+- Network device information
+- Real-time and historical data
+- All current filtering and analysis capabilities
+
+### Implementation Strategy
+
+#### Phase 1: Complete SSH Feature Analysis & API Client Foundation
+**Goal**: Catalog all current SSH functionality and build API client with equivalent capabilities
+
+**SSH Feature Inventory**:
+1. **Database Queries** (`internal/ssh/pihole.go`):
+   - DNS query history retrieval
+   - Client-based query filtering
+   - Domain statistics aggregation
+   - Time-based query filtering
+   - Query type and status analysis
+
+2. **Data Processing** (`internal/analyzer/analyzer.go`):
+   - Client statistics calculation
+   - Network device identification
+   - ARP table correlation
+   - Domain categorization and ranking
+   - Performance metrics (reply times, query counts)
+
+3. **Network Analysis**:
+   - MAC address resolution
+   - Online/offline status determination
+   - Hardware address mapping
+   - Device type identification
+
+**API Client Implementation** (`internal/pihole/client.go`):
+```go
+type Client struct {
+    BaseURL    string
+    HTTPClient *http.Client
+    SID        string
+    CSRFToken  string
+    Logger     *logger.Logger
+    config     *Config
+}
+
+// Must provide 100% SSH functionality equivalents
+func (c *Client) GetDNSQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
+func (c *Client) GetClientStatistics(ctx context.Context) (map[string]*types.ClientStats, error)
+func (c *Client) GetNetworkDevices(ctx context.Context) ([]types.NetworkDevice, error)
+func (c *Client) GetDomainStatistics(ctx context.Context) (*types.DomainStats, error)
+```
+
+#### Phase 2: Data Source Interface & SSH Replacement Strategy
+**Goal**: Create unified interface that abstracts SSH and API, ensuring identical data output
+
+**Data Source Abstraction** (`internal/interfaces/data_source.go`):
+```go
+type DataSource interface {
+    Connect(ctx context.Context) error
+    
+    // Core SSH functionality - must be 100% equivalent
+    GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
+    GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error)
+    GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
+    GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
+    
+    // Performance and metadata - must match SSH implementation
+    GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error)
+    GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error)
+    
+    Close() error
+}
+
+// Data format compatibility - ensure identical output structures
+type QueryParams struct {
+    StartTime    time.Time
+    EndTime      time.Time
+    ClientFilter string
+    DomainFilter string
+    Limit        int
+    StatusFilter []int    // Match SSH status code filtering
+    TypeFilter   []int    // Match SSH query type filtering
+}
+```
+
+**Implementation Requirements**:
+1. **SSH Data Source** (`internal/ssh/datasource.go`) - Wrapper around existing SSH code
+2. **API Data Source** (`internal/pihole/datasource.go`) - New API implementation with identical output
+3. **Data Validation** - Ensure API responses match SSH data structures exactly
+
+#### Phase 3: Complete SSH Feature Replacement
+**Goal**: Implement every SSH database query through Pi-hole API endpoints
+
+**SSH Function Mapping to API Endpoints**:
+
+1. **DNS Query History** (Replace SSH database queries):
+   ```sql
+   -- Current SSH Query (to be replaced)
+   SELECT timestamp, client, domain, status FROM queries 
+   WHERE timestamp BETWEEN ? AND ?
+   ```
+   ```go
+   // API Replacement - must return identical data structure
+   GET /api/queries?from={timestamp}&until={timestamp}
+   ```
+
+2. **Client Statistics** (Replace SSH aggregation):
+   ```sql
+   -- Current SSH Queries (to be replaced)
+   SELECT client, COUNT(*) as total FROM queries GROUP BY client
+   SELECT client, domain, COUNT(*) FROM queries GROUP BY client, domain
+   ```
+   ```go
+   // API Replacement - must provide same statistics
+   GET /api/stats/query_types_over_time
+   GET /api/stats/top_clients
+   ```
+
+3. **Domain Analysis** (Replace SSH domain queries):
+   ```sql
+   -- Current SSH Query (to be replaced)
+   SELECT domain, COUNT(*) FROM queries GROUP BY domain ORDER BY COUNT(*) DESC
+   ```
+   ```go
+   // API Replacement - must match sorting and counting
+   GET /api/stats/top_domains
+   GET /api/stats/query_types
+   ```
+
+4. **Network Device Information** (Replace SSH network queries):
+   ```sql
+   -- Current SSH Query (to be replaced)
+   SELECT DISTINCT client FROM queries
+   ```
+   ```go
+   // API Replacement - must include all client information
+   GET /api/network
+   GET /api/clients
+   ```
+
+**Critical Implementation Requirements**:
+- Each API implementation must return data in **identical format** to SSH version
+- All filtering, sorting, and aggregation logic must produce **same results**
+- Performance metrics (query counts, response times) must be **equivalent**
+- Network analysis (ARP correlation, device detection) must be **preserved**
+
+#### Phase 4: SSH-to-API Migration Strategy
+**Goal**: Complete replacement of SSH functionality with seamless transition
+
+**Enhanced Config Structure** (Transition-focused):
+```go
+type PiholeConfig struct {
+    // Existing SSH fields (to be deprecated)
+    Host         string `json:"host"`
+    Port         int    `json:"port"`
+    Username     string `json:"username"`
+    Password     string `json:"password"`
+    
+    // New API fields (primary method)
+    APIEnabled   bool   `json:"api_enabled"`
+    APIPassword  string `json:"api_password"`
+    APITOTP      string `json:"api_totp"`
+    UseHTTPS     bool   `json:"use_https"`
+    APITimeout   int    `json:"api_timeout"`
+    
+    // Migration control
+    UseSSH       bool   `json:"use_ssh"`        // Fallback only
+    DatabasePath string `json:"database_path"`  // Legacy support
+    MigrationMode string `json:"migration_mode"` // "api-first", "ssh-only", "auto"
+}
+```
+
+**Migration Phases**:
+1. **Phase 4a**: API implementation with SSH fallback
+2. **Phase 4b**: API-first with SSH backup
+3. **Phase 4c**: API-only with SSH deprecation warnings
+4. **Phase 4d**: Complete SSH removal (future release)
+
+#### Phase 5: Complete SSH Replacement & Analyzer Integration
+**Goal**: Finalize API-first architecture with SSH removal path
+
+**Enhanced Analyzer** (`internal/analyzer/analyzer.go`):
+```go
+type Analyzer struct {
+    dataSource interfaces.DataSource
+    config     *types.Config
+    logger     *logger.Logger
+}
+
+func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, error) {
+    // Universal analysis logic - identical results regardless of data source
+    // Must produce identical output whether using API or SSH
+}
+```
+
+**SSH Deprecation Strategy**:
+1. **Warning Messages**: Structured logging warnings about SSH deprecation
+2. **Feature Flags**: Gradual removal of SSH-specific code paths
+3. **Documentation Updates**: Migration guides and API-first examples
+4. **Container Builds**: API-only variants for new deployments
+
+### Implementation Details
+
+#### Error Handling & Resilience
+1. **Connection Retry Logic**:
+   ```go
+   type RetryConfig struct {
+       MaxRetries int
+       Backoff    time.Duration
+       MaxBackoff time.Duration
+   }
+   ```
+
+2. **Fallback Strategy**:
+   - Primary: Pi-hole API
+   - Fallback: SSH database access
+   - Configuration-driven priority
+
+3. **Graceful Degradation**:
+   - Handle API endpoint unavailability
+   - Partial data scenarios
+   - Network connectivity issues
+
+#### Security Implementation
+1. **Session Management**:
+   - Automatic session refresh
+   - Secure token storage
+   - Session cleanup on exit
+
+2. **HTTPS Support**:
+   - TLS certificate validation
+   - Option for self-signed certificates
+   - Secure communication channels
+
+3. **Authentication Flows**:
+   - Standard password authentication
+   - 2FA TOTP integration
+   - Application password support
+
+#### Testing Strategy
+1. **Mock API Server** (`testing/mock_pihole_api.go`):
+   ```go
+   type MockAPIServer struct {
+       responses map[string]interface{}
+       delays    map[string]time.Duration
+   }
+   ```
+
+2. **Integration Tests**:
+   - Real Pi-hole API testing
+   - SSH fallback scenarios
+   - Configuration validation
+
+3. **Test Data**:
+   - Enhanced mock data for API responses
+   - Realistic query patterns
+   - Error scenario simulation
+
+### Migration Strategy
+
+#### Backward Compatibility
+1. **Configuration Migration**:
+   - Auto-detect SSH vs API configuration
+   - Configuration file migration tool
+   - Validation of mixed configurations
+
+2. **CLI Flag Enhancement**:
+   ```bash
+   --api-mode           # Force API mode
+   --ssh-mode           # Force SSH mode (current behavior)
+   --auto-detect        # Auto-detect best method (default)
+   ```
+
+3. **Feature Parity**:
+   - Ensure API implementation provides same data as SSH
+   - Maintain output format consistency
+   - Preserve existing CLI behavior
+
+#### Rollout Plan
+1. **Phase 1**: API client implementation with tests
+2. **Phase 2**: Data source abstraction and API integration
+3. **Phase 3**: Configuration enhancement and migration tools
+4. **Phase 4**: Integration testing and documentation
+5. **Phase 5**: Default to API with SSH fallback
+
+### Documentation Requirements
+
+#### User Documentation
+1. **API Setup Guide** (`docs/api-setup.md`):
+   - Pi-hole API configuration
+   - Authentication setup
+   - 2FA configuration
+
+2. **Migration Guide** (`docs/migration-ssh-to-api.md`):
+   - Configuration file updates
+   - Testing connectivity
+   - Troubleshooting guide
+
+3. **Configuration Reference** (`docs/configuration.md` updates):
+   - New API configuration options
+   - Security best practices
+   - Performance considerations
+
+#### Developer Documentation
+1. **API Client Usage** (`docs/development.md` updates):
+   - Data source interface usage
+   - Adding new endpoints
+   - Testing with mock server
+
+2. **Architecture Documentation**:
+   - Data flow diagrams
+   - Security architecture
+   - Error handling patterns
+
+### Benefits of API Integration
+
+#### Enhanced Capabilities
+1. **Real-time Data**: More up-to-date information than database snapshots
+2. **Better Security**: No SSH access required, controlled API permissions
+3. **Reliability**: Built-in retry logic, session management
+4. **Performance**: Optimized data queries vs direct database access
+
+#### Future Enhancements Enabled
+1. **Live Monitoring**: Real-time query streaming
+2. **Configuration Management**: Modify Pi-hole settings via API
+3. **Multi-Pi-hole Support**: Easier to connect to multiple instances
+4. **Advanced Analytics**: Access to additional Pi-hole metrics
+
+### Implementation Checklist
+
+#### Phase 1: Foundation
+- [ ] Create `internal/pihole` package structure
+- [ ] Implement basic HTTP client with authentication
+- [ ] Add session management with automatic refresh
+- [ ] Create comprehensive error handling
+
+#### Phase 2: Data Integration
+- [ ] Enhance `interfaces.DataSource` interface
+- [ ] Implement API-based data source
+- [ ] Create data transformation utilities
+- [ ] Add structured logging throughout
+
+#### Phase 3: Configuration
+- [ ] Extend configuration structures
+- [ ] Add configuration validation
+- [ ] Implement auto-detection logic
+- [ ] Create migration utilities
+
+#### Phase 4: Testing
+- [ ] Build mock API server
+- [ ] Create comprehensive test suite
+- [ ] Add integration tests
+- [ ] Performance benchmarking
+
+#### Phase 5: Integration
+- [ ] Update analyzer to use data source interface
+- [ ] Enhance CLI with new options
+- [ ] Update documentation
+- [ ] Container support validation
+
+### Success Metrics
+1. **Functionality**: Feature parity with SSH implementation
+2. **Performance**: ≤ 20% performance overhead vs SSH
+3. **Reliability**: 99%+ successful API connections
+4. **Security**: No credential storage in logs/memory
+5. **Usability**: Zero-config migration for existing users
+
+This implementation will modernize the Pi-hole integration while maintaining full backward compatibility and providing a foundation for future enhancements.
 
 ### Medium Priority
 1. **Add Prometheus metrics endpoints** for monitoring
 2. **Support multiple output formats** (JSON, XML) beyond terminal
 3. **Enhanced network analysis** capabilities
-4. **Kubernetes deployment manifests** for container orchestration
 
 ## Integration Points (Enhanced)
 
@@ -433,7 +827,6 @@ make docker-build-multi  # Test AMD64, ARM64, ARMv7
 - **Docker**: Multi-stage builds with BuildKit optimization
 - **Docker Compose**: Separate dev/prod configurations with persistent caches
 - **Registry**: GHCR with automated security scanning and SBOM generation
-- **Kubernetes**: Ready for deployment with provided manifests (future enhancement)
 
 ## Debugging & Troubleshooting (Enhanced)
 
@@ -481,22 +874,18 @@ docker stats pihole-analyzer-prod
 ## Future Roadmap (Updated)
 
 ### Planned Features (Short Term)
-1. **Enhanced Configuration Validation** - Comprehensive config validation with structured logging
-2. **Performance Metrics Collection** - Built-in metrics for monitoring
-3. **Kubernetes Manifests** - Ready-to-deploy K8s configurations
+1. **Pi-hole API Integration** - Replace SSH with official Pi-hole REST API
+2. **Enhanced Configuration Validation** - Comprehensive config validation with structured logging
+3. **Performance Metrics Collection** - Built-in metrics for monitoring
 4. **Multi-Pi-hole Support** - Connect to multiple Pi-hole instances
 
 ### Architecture Evolution (Medium Term)
-1. **Microservices Architecture** - Break into focused services
-2. **REST API Endpoints** - Web API for remote access
-3. **Real-time Monitoring** - Live dashboard capabilities
+1. **Real-time Monitoring** - Live dashboard capabilities
 4. **Plugin System** - Extensible analysis modules
 
 ### Container Ecosystem (Advanced)
-1. **Helm Charts** - Kubernetes package management
-2. **Operator Pattern** - Kubernetes custom resources
-3. **Multi-Registry Support** - Docker Hub, ACR, ECR publishing
-4. **ARM32 Support** - Additional Raspberry Pi architectures
+1. **Multi-Registry Support** - Docker Hub, ACR, ECR publishing
+2. **ARM32 Support** - Additional Raspberry Pi architectures
 
 ---
 
@@ -510,6 +899,13 @@ When working on this project:
 3. **🐳 Validate container builds** - Changes must work in containerized environments
 4. **⚡ Preserve build performance** - Check cache impact with `make cache-info`
 5. **🏗️ Follow dual-binary architecture** - Production/test separation is intentional
+6. **🔒 Security first** - Non-root containers, minimal attack surface
+7. **🌐 Cross-platform support** - AMD64, ARM64, ARMv7 architectures
+8. **📜 Maintain structured logging** - Use `slog` with colors and emojis
+9. **🚀 Fast builds** - Use `make fast-build` for quick iterations
+10. **📦 Container first** - All features must work in containerized environments
+11. **Make unit tests comprehensive** - Ensure all new features are covered
+12. **Make intergration tests robust** - Validate Pi-hole connectivity and mock environments
 
 ### Development Workflow
 1. **Start with**: `make dev-setup` for complete environment preparation

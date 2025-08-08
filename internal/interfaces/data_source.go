@@ -1,10 +1,64 @@
 package interfaces
 
-import "pihole-analyzer/internal/types"
+import (
+	"context"
+	"time"
 
-// DataSource defines the interface for data analysis sources
+	"pihole-analyzer/internal/types"
+)
+
+// DataSource defines the interface for Pi-hole data access
+// This abstraction allows switching between SSH database access and Pi-hole API
 type DataSource interface {
-	AnalyzeData(configFile string, cfg *types.Config) (map[string]*types.ClientStats, error)
+	// Connection management
+	Connect(ctx context.Context) error
+	Close() error
+	IsConnected() bool
+
+	// Core data retrieval - must provide identical output regardless of implementation
+	GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
+	GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error)
+	GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
+	GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
+
+	// Performance and metadata
+	GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error)
+	GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error)
+
+	// Configuration and metadata
+	GetDataSourceType() DataSourceType
+	GetConnectionInfo() *ConnectionInfo
+}
+
+// QueryParams represents parameters for DNS query requests
+// Must be compatible between SSH and API implementations
+type QueryParams struct {
+	StartTime    time.Time
+	EndTime      time.Time
+	ClientFilter string
+	DomainFilter string
+	Limit        int
+	StatusFilter []int // Pi-hole status codes (blocked, allowed, etc.)
+	TypeFilter   []int // DNS query types (A, AAAA, PTR, etc.)
+}
+
+// DataSourceType represents the type of data source implementation
+type DataSourceType string
+
+const (
+	DataSourceTypeSSH DataSourceType = "ssh"
+	DataSourceTypeAPI DataSourceType = "api"
+)
+
+// ConnectionInfo provides metadata about the data source connection
+type ConnectionInfo struct {
+	Type        DataSourceType
+	Host        string
+	Port        int
+	Connected   bool
+	LastError   error
+	ConnectedAt time.Time
+	Metadata    map[string]interface{}
 }
 
 // NetworkChecker defines the interface for network status checking
