@@ -74,7 +74,7 @@ type NetworkResponse struct {
 }
 
 // GetDNSQueries retrieves DNS queries from Pi-hole API
-// This replaces the SSH database query functionality
+// This provides API-based database query functionality
 func (c *Client) GetDNSQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error) {
 	c.Logger.Info("Fetching DNS queries from Pi-hole API: start_time=%s end_time=%s limit=%d",
 		params.StartTime.Format(time.RFC3339), params.EndTime.Format(time.RFC3339), params.Limit)
@@ -166,7 +166,7 @@ func (c *Client) GetStatistics(ctx context.Context) (*StatsResponse, error) {
 }
 
 // GetNetworkInfo retrieves network device information from Pi-hole API
-// This replaces the SSH query for client information
+// This provides API-based client information queries
 func (c *Client) GetNetworkInfo(ctx context.Context) ([]ClientInfo, error) {
 	c.Logger.Info("Fetching network information from Pi-hole API")
 
@@ -215,7 +215,7 @@ func (c *Client) GetTopDomains(ctx context.Context) (map[string]int, error) {
 }
 
 // BuildClientStats builds client statistics from API data
-// This matches the SSH implementation functionality
+// This provides comprehensive API functionality
 func (c *Client) BuildClientStats(ctx context.Context, queries []types.PiholeRecord, networkInfo []ClientInfo) (map[string]*types.ClientStats, error) {
 	c.Logger.Info("Building client statistics from API data: query_count=%d network_count=%d",
 		len(queries), len(networkInfo))

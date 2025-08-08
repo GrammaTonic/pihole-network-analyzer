@@ -65,7 +65,7 @@ func TestLogger_WithComponent(t *testing.T) {
 		EnableEmojis: false,
 	}
 	logger := New(config)
-	componentLogger := logger.Component("SSH")
+	componentLogger := logger.Component("API")
 
 	componentLogger.Info("Connection established")
 
@@ -79,7 +79,7 @@ func TestLogger_WithComponent(t *testing.T) {
 	output := buf.String()
 
 	// Verify component prefix is present
-	if !strings.Contains(output, "[SSH]") {
+	if !strings.Contains(output, "[API]") {
 		t.Error("Component prefix not found in output")
 	}
 	if !strings.Contains(output, "Connection established") {

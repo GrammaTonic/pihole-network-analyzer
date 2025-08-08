@@ -36,7 +36,7 @@ phase5-test: ## Test Phase 5 analyzer
 	@go test -v ./internal/analyzer/phase5_*.go
 	@echo "✅ Phase 5 tests completed"
 
-phase5-integration: ## Run Phase 5 integration tests with API and SSH scenarios
+phase5-integration: ## Run Phase 5 integration tests with API scenarios
 	@echo "🔗 Running Phase 5 integration tests..."
 	@./scripts/integration-test.sh --phase5
 	@echo "✅ Phase 5 integration tests completed"
@@ -143,7 +143,7 @@ test-mode: build-test ## Run in test mode with mock data
 analyze-pihole: build ## Analyze Pi-hole live data (requires pihole-config.json)
 	./$(BINARY_NAME) --pihole $(PIHOLE_CONFIG)
 
-setup-pihole: build ## Setup Pi-hole SSH configuration
+setup-pihole: build ## Setup Pi-hole API configuration
 	./$(BINARY_NAME) --pihole-setup
 
 test-pihole: build ## Test Pi-hole connection and analyze data

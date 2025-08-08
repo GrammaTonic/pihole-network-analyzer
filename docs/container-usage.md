@@ -60,7 +60,7 @@ ENTRYPOINT ["./pihole-analyzer"]
 - Minimal size (~44MB)
 - Non-root user execution
 - Health checks enabled
-- SSH client for Pi-hole connections
+- Pi-hole API client for data access
 - Production-ready logging
 
 **Usage:**
@@ -322,8 +322,8 @@ ls -la ~/.pihole-analyzer
 
 **Network connectivity:**
 ```bash
-# Test SSH connection from container
-docker exec -it pihole-analyzer ssh user@pihole-server
+# Test Pi-hole API connection from container
+docker exec -it pihole-analyzer curl http://192.168.1.100/admin/api.php
 
 # Verify network access
 docker exec -it pihole-analyzer ping pihole-server

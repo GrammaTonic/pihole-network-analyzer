@@ -3,7 +3,7 @@
 [![CI/CD Pipeline](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/GrammaTonic/pihole-network-analyzer)](https://goreportcard.com/report/github.com/GrammaTonic/pihole-network-analyzer)
 
-A professional Go application to analyze DNS usage patterns and network traffic from Pi-hole servers. Features **rich colorized terminal output** with smart domain highlighting, visual progress indicators, and comprehensive analytics. Supports both CSV log file analysis and direct Pi-hole server connections via SSH.
+A professional Go application to analyze DNS usage patterns and network traffic from Pi-hole servers. Features **rich colorized terminal output** with smart domain highlighting, visual progress indicators, and comprehensive analytics. Supports Pi-hole API connectivity for real-time data analysis.
 
 ## ✨ What's New: Colorized Output!
 
@@ -77,7 +77,7 @@ See our comprehensive [TODO list](TODO_DOCKER_PROMETHEUS_GRAFANA.md) and [implem
 
 ### 📊 **Comprehensive Analysis**
 - **CSV Analysis**: Analyzes DNS query logs from CSV files with intelligent parsing
-- **Live Pi-hole Data**: Connects to Pi-hole servers via SSH to analyze real-time data
+- **Live Pi-hole Data**: Connects to Pi-hole servers via API to analyze real-time data
 - **Detailed Statistics**: Provides per-client analytics including:
   - Total number of queries with color-coded volume indicators
   - Unique domains accessed with smart categorization
@@ -105,7 +105,7 @@ The application expects CSV files with the following columns:
 - ID, DateTime, Domain, Query Type, Status, Client IP, Forward, Additional Info, Reply Type, Reply Time, DNSSEC, List ID, EDE
 
 ### Pi-hole Database
-Connects directly to Pi-hole's SQLite database via SSH to execute the query:
+Connects directly to Pi-hole's API to query DNS records:
 ```sql
 SELECT
     q.timestamp,
@@ -138,7 +138,7 @@ LEFT JOIN
 ### Prerequisites
 - **Go 1.21+** - For building and running the application
 - **Terminal with color support** - For the best visual experience (optional)
-- **SSH access** - Only required for Pi-hole live analysis
+- **Pi-hole API access** - Required for Pi-hole live analysis
 
 ### Quick Installation
 
@@ -195,7 +195,7 @@ go run main.go --pihole pihole-config.json
 - Real-time data from your Pi-hole's SQLite database
 - Hardware address mapping and hostname resolution
 - All the colorized output benefits for live data
-- Secure SSH connection with key or password authentication
+- Secure Pi-hole API connection with password authentication
 
 ### 🛠️ Available Make Commands
 
@@ -205,7 +205,7 @@ go run main.go --pihole pihole-config.json
 - `make run` - Build and run with test.csv
 - `make analyze` - Alias for run
 - `make run-with-file CSV_FILE=file.csv` - Run with specific CSV file
-- `make setup-pihole` - Setup Pi-hole SSH configuration
+- `make setup-pihole` - Setup Pi-hole API configuration
 - `make analyze-pihole` - Analyze Pi-hole live data
 - `make test-pihole` - Test Pi-hole connection and analyze
 - `make clean` - Clean build artifacts and reports
@@ -215,8 +215,8 @@ go run main.go --pihole pihole-config.json
 
 ### Pi-hole Requirements
 
-- SSH access to Pi-hole server
-- Either SSH key authentication or password access
+- Pi-hole API access
+- Pi-hole admin password for API authentication
 - Sudo privileges to read Pi-hole database (`/etc/pihole/pihole-FTL.db`)
 - Network connectivity between analyzer and Pi-hole server
 
@@ -427,7 +427,7 @@ Report saved: dns_usage_report_20250807_142856.txt
   "port": "22",
   "username": "pi",
   "password": "",
-  "keyfile": "/home/user/.ssh/id_rsa",
+  "api_password": "your-pihole-admin-password",
   "dbpath": "/etc/pihole/pihole-FTL.db"
 }
 ```
