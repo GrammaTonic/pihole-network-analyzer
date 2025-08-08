@@ -5,24 +5,26 @@ This file provides comprehensive guidance for AI coding assistants working on th
 ## Project Overview
 
 **Repository**: Pi-hole Network Analyzer  
-**Language**: Go 1.23+  
+**Language**: Go 1.23.12+  
 **Module**: `pihole-analyzer`  
 **Binary Names**: `pihole-analyzer` (production), `pihole-analyzer-test` (development)
 **Commands Directory**: `cmd/pihole-analyzer/`, `cmd/pihole-analyzer-test/`  
 **Main Files**: `cmd/pihole-analyzer/main.go`, `cmd/pihole-analyzer-test/main.go`
 **Help Command**: `pihole-analyzer --help`  
-**Architecture**: Standard Go Project Layout with comprehensive containerization
+**Architecture**: Standard Go Project Layout with API-only Pi-hole integration
 
 ### Core Purpose
-**Pi-hole-focused** DNS usage analysis tool with SSH connectivity. Features structured logging, colorized terminal output, network analysis, and comprehensive reporting. Now includes production-ready containerization and optimized build system.
+**Pi-hole-focused** DNS usage analysis tool with **API-only connectivity**. Features structured logging, colorized terminal output, network analysis, and comprehensive reporting. Includes production-ready containerization and optimized build system.
 
-**🚨 IMPORTANT**: 
-- CSV functionality completely removed as of August 2025
-- SSH functionality is completely removed as of August 2025
-- Getting data from Pi-Hole is now done via API calls instead of direct database access
-- Structured logging implemented with Go's `log/slog` package
-- Comprehensive Docker/container support added
-- Fast builds with advanced caching strategies implemented
+**🚨 IMPORTANT ARCHITECTURE CHANGES**: 
+- **API-Only Implementation**: Direct Pi-hole API integration - no SSH dependencies
+- **SSH Functionality Removed**: All SSH connectivity and database access removed
+- **Migration Logic Removed**: No fallback or transition mechanisms needed
+- **Simplified Configuration**: Pure API-based configuration structure
+- **Enhanced Security**: No SSH access required, controlled API permissions only
+- **Structured Logging**: Comprehensive `log/slog` implementation throughout
+- **Container-First**: Production-ready multi-architecture containerization
+- **Fast Builds**: Advanced caching strategies for 60-80% build speed improvement
 
 ## Project Structure & Modern Enhancements
 
@@ -34,15 +36,17 @@ This file provides comprehensive guidance for AI coding assistants working on th
 │   └── pihole-analyzer-test/     # Test/development binary with mock data
 ├── internal/                     # Private application packages
 │   ├── analyzer/                 # Pi-hole data analysis engine
-│   ├── cli/                      # Command-line interface
+│   ├── cli/                      # Command-line interface and flag management
 │   ├── colors/                   # Terminal colorization with cross-platform support
 │   ├── config/                   # Configuration management
+│   ├── interfaces/               # Data source abstraction and factory pattern
 │   ├── logger/                   # Structured logging with slog integration
 │   ├── network/                  # Network analysis & ARP integration
+│   ├── pihole/                   # Pi-hole API client implementation
 │   ├── reporting/                # Output display & formatted reports
-│   ├── ssh/                      # Pi-hole SSH connectivity & database access
 │   └── types/                    # Core data structures
 ├── docs/                         # Comprehensive documentation
+│   ├── api.md                   # Pi-hole API integration guide
 │   ├── fast-builds.md           # Build optimization guide
 │   ├── container-registry.md    # Container deployment strategy
 │   └── container-usage.md       # Docker usage guide
@@ -55,12 +59,14 @@ This file provides comprehensive guidance for AI coding assistants working on th
 ```
 
 ### Key Files & Their Roles
-- **`cmd/pihole-analyzer/main.go`**: Production application entry point
+- **`cmd/pihole-analyzer/main.go`**: Production application entry point with API-only connectivity
 - **`cmd/pihole-analyzer-test/main.go`**: Development/testing entry point with mock data
 - **`internal/logger/logger.go`**: Structured logging with slog, colors, and emojis
+- **`internal/pihole/client.go`**: Pi-hole API client with session management
+- **`internal/interfaces/data_source.go`**: Data source abstraction interface
+- **`internal/cli/flags.go`**: Command-line flag parsing and validation
 - **`internal/analyzer/analyzer.go`**: Pi-hole data analysis engine
-- **`internal/ssh/pihole.go`**: SSH connection and database analysis
-- **`internal/types/types.go`**: Core data structures (ClientStats, PiholeRecord)
+- **`internal/types/types.go`**: Core data structures (ClientStats, PiholeRecord, Config)
 - **`.github/workflows/ci.yml`**: Enhanced CI/CD with multi-layer caching
 - **`Dockerfile`**: Multi-architecture container builds (AMD64, ARM64, ARMv7)
 - **`Makefile`**: 40+ targets including fast builds, caching, and container management
@@ -85,9 +91,9 @@ logger.Info("Analysis complete",
     slog.String("status", "success"))
 ```
 
-### Data Flow (Pi-hole Only)
-1. **Input**: SSH connection to Pi-hole SQLite database
-2. **Processing**: Query Pi-hole database for DNS records with structured logging
+### Data Flow (API-Only)
+1. **Input**: Pi-hole configuration file with API credentials
+2. **Processing**: Use Pi-hole API to query DNS records with structured logging
 3. **Analysis**: Aggregate into `types.ClientStats` with network analysis
 4. **Output**: Colorized terminal display + optional file reports
 5. **Logging**: Structured logs with contextual information throughout
@@ -130,39 +136,132 @@ docker-compose -f docker-compose.prod.yml up -d
 #### `types.PiholeRecord`
 ```go
 type PiholeRecord struct {
+    ID        int
+    DateTime  string
+    Domain    string
+    Client    string
+    QueryType string
+    Status    int
     Timestamp string   // Unix timestamp
-    Client    string   // Client IP address
     HWAddr    string   // Hardware/MAC address
-    Domain    string   // Queried domain
-    Status    int      // Pi-hole status code
 }
 ```
 
 #### `types.ClientStats`
 ```go
 type ClientStats struct {
-    Client       string
-    Hostname     string
-    HardwareAddr string
-    IsOnline     bool
-    TotalQueries int
+    IP            string
+    Hostname      string
+    QueryCount    int
+    Domains       map[string]int
+    DomainCount   int
+    MACAddress    string
+    IsOnline      bool
+    LastSeen      string
+    TopDomains    []DomainStat
+    Status        string
     UniqueQueries int
-    AvgReplyTime float64
-    Domains      map[string]int
-    QueryTypes   map[int]int
-    StatusCodes  map[int]int
-    TopDomains   []DomainCount
+    TotalQueries  int
+    // Additional analysis fields
+    Client         string
+    QueryTypes     map[int]int
+    StatusCodes    map[int]int
+    HWAddr         string
+    TotalReplyTime float64
+    AvgReplyTime   float64
+}
+```
+
+#### `types.Config` (API-Only)
+```go
+type Config struct {
+    OnlineOnly bool            `json:"online_only"`
+    NoExclude  bool            `json:"no_exclude"`
+    TestMode   bool            `json:"test_mode"`
+    Quiet      bool            `json:"quiet"`
+    Pihole     PiholeConfig    `json:"pihole"`
+    Output     OutputConfig    `json:"output"`
+    Exclusions ExclusionConfig `json:"exclusions"`
+    Logging    LoggingConfig   `json:"logging"`
+}
+
+type PiholeConfig struct {
+    Host string `json:"host"`
+    Port int    `json:"port"`
+    
+    // API Configuration (only method)
+    APIEnabled  bool   `json:"api_enabled"`
+    APIPassword string `json:"api_password"`
+    APITOTP     string `json:"api_totp"`
+    UseHTTPS    bool   `json:"use_https"`
+    APITimeout  int    `json:"api_timeout"`
 }
 ```
 
 ### Configuration Management
 - **File**: `~/.pihole-analyzer/config.json` (default)
-- **Structure**: `types.Config` with nested structs for Pi-hole, exclusions, output, logging
+- **Structure**: `types.Config` with nested structs for Pi-hole API, exclusions, output, logging
 - **Defaults**: Comprehensive defaults in `config.DefaultConfig()`
-- **SSH Support**: Key-based and password authentication
 - **Logging Config**: Structured logging levels, colors, emoji, output file support
 
 ## Enhanced Development Workflow
+
+### Data Source Interface (NEW)
+**Package**: `internal/interfaces` - Provides abstraction for Pi-hole data access
+
+```go
+type DataSource interface {
+    Connect(ctx context.Context) error
+    Close() error
+    IsConnected() bool
+    
+    // Core data retrieval (API-only implementation)
+    GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
+    GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error)
+    GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
+    GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
+    
+    GetDataSourceType() DataSourceType
+    GetConnectionInfo() *ConnectionInfo
+}
+```
+
+### Pi-hole API Client (NEW)
+**Package**: `internal/pihole` - Direct Pi-hole API integration
+
+```go
+type Client struct {
+    BaseURL    string
+    HTTPClient *http.Client
+    SID        string
+    CSRFToken  string
+    Logger     *logger.Logger
+    config     *Config
+}
+
+// API client with session management and 2FA support
+func NewClient(config *Config, log *logger.Logger) *Client
+func (c *Client) Connect(ctx context.Context) error
+func (c *Client) GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
+```
+
+### CLI Package (NEW)
+**Package**: `internal/cli` - Centralized command-line flag management
+
+```go
+type Flags struct {
+    OnlineOnly   *bool
+    NoExclude    *bool
+    Pihole       *string
+    Config       *string
+    NoColor      *bool
+    NoEmoji      *bool
+    Quiet        *bool
+    CreateConfig *bool
+    ShowConfig   *bool
+    PiholeSetup  *bool
+}
+```
 
 ### Build System (Advanced Makefile - 40+ Targets)
 ```bash
@@ -185,10 +284,12 @@ make analyze-size      # Binary size analysis
 make docker-build      # Build optimized Docker image
 make docker-dev        # Start development container environment
 make docker-multi      # Multi-architecture builds (AMD64, ARM64, ARMv7)
+make docker-api-only   # Build API-only container variant
 
 # Testing (enhanced)
 make ci-test          # CI-compatible test suite with caching
 make test-cached      # Cached test execution
+make phase5-test      # API-only test scenarios
 ```
 
 ### Testing Strategy (Enhanced)
@@ -270,24 +371,24 @@ make fast-build     # Typical output: "✅ Fast build completed in 3s"
 make docker-build   # Typical output: "✅ Docker build completed in 21s"
 ```
 
-### SSH Pi-hole Connection (Enhanced)
+### Pi-hole API Connection (Enhanced)
 ```go
-// Modern SSH connection pattern with structured logging
-logger := logger.New(&logger.Config{Component: "ssh"})
+// Modern API connection pattern with structured logging
+logger := logger.New(&logger.Config{Component: "pihole-api"})
 
-sshConfig := &ssh.ClientConfig{
-    User: config.Pihole.Username,
-    Auth: []ssh.AuthMethod{
-        ssh.PublicKeys(signer),
-        ssh.Password(config.Pihole.Password),
-    },
-    HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-}
+client := pihole.NewClient(&pihole.Config{
+    Host:        config.Pihole.Host,
+    Port:        config.Pihole.Port,
+    Password:    config.Pihole.APIPassword,
+    UseHTTPS:    config.Pihole.UseHTTPS,
+    Timeout:     time.Duration(config.Pihole.APITimeout) * time.Second,
+}, logger)
 
 // Always log connection attempts
-logger.Info("Establishing SSH connection",
+logger.Info("Establishing Pi-hole API connection",
     slog.String("host", config.Pihole.Host),
-    slog.Int("port", config.Pihole.Port))
+    slog.Int("port", config.Pihole.Port),
+    slog.Bool("https", config.Pihole.UseHTTPS))
 ```
 
 ### Network Analysis (Enhanced)
@@ -305,7 +406,7 @@ logger.Info("Establishing SSH connection",
 4. **Multi-Binary Support**: Consider impact on both `pihole-analyzer` and `pihole-analyzer-test`
 
 ### Adding New CLI Flags
-1. Declare in appropriate main.go (production or test binary)
+1. Declare in `internal/cli/flags.go` for centralized flag management
 2. Add to flag parsing with structured logging for validation
 3. Update help text consistently
 4. Handle in configuration logic with logging
@@ -328,7 +429,7 @@ logger.Info("Establishing SSH connection",
 ### Testing New Features (Comprehensive)
 1. Add unit tests in appropriate package with logging validation
 2. Update integration test scenarios for both binaries
-3. Test Pi-hole connectivity and mock environments
+3. Test Pi-hole API connectivity and mock environments
 4. Verify colorized output and structured logging
 5. Test container builds and multi-architecture support
 6. Validate caching doesn't break with changes
@@ -336,7 +437,6 @@ logger.Info("Establishing SSH connection",
 ## Dependencies & External Libraries (Updated)
 
 ### Core Dependencies
-- **`golang.org/x/crypto/ssh`**: SSH client for Pi-hole connections
 - **`modernc.org/sqlite`**: SQLite database access (pure Go)
 - **`log/slog`**: Structured logging (Go 1.23+ standard library)
 - **Standard Library**: Heavy use of net, io, encoding packages
@@ -403,71 +503,25 @@ make docker-build-multi  # Test AMD64, ARM64, ARMv7
 5. **✅ Enhanced CI/CD**: Advanced caching and parallel builds implemented
 
 ### High Priority (Remaining)
-1. **Use PiHole Official API** - Integrate with Pi-hole official API for enhanced data access
-2. **Configuration validation enhancement** - Add comprehensive config validation
-3. **Performance monitoring integration** - Add metrics collection
+1. **Enhanced Configuration Validation** - Add comprehensive config validation with structured logging
+2. **Performance Metrics Collection** - Built-in metrics for monitoring
+3. **Multi-Pi-hole Support** - Connect to multiple Pi-hole instances
 
-## Pi-hole API Integration Implementation Plan
+## Current API-Only Architecture
 
 ### Overview
-**Primary Goal**: Replace SSH-based database access with Pi-hole's official REST API while maintaining 100% feature parity and backward compatibility during transition. This modernization will provide enhanced security, reliability, and performance while eliminating the need for SSH access to Pi-hole systems.
+**Implementation Status**: Complete transition to Pi-hole API-only architecture. SSH functionality has been completely removed and replaced with direct Pi-hole API integration.
 
-### Current SSH Architecture Analysis
-- **Current Method**: SSH connection → Direct SQLite database queries → Manual data parsing
-- **Data Access**: Raw access to `/etc/pihole/pihole-FTL.db` via SSH tunnel
-- **Authentication**: SSH key-based or password authentication with server access requirements
-- **Data Processing**: Custom SQL queries for DNS records, client statistics, and network analysis
-- **Limitations**: 
-  - Requires SSH server access and credentials
-  - Direct database dependency creates fragility
-  - Manual query optimization and data parsing
-  - Network connectivity issues with SSH tunneling
-  - Security concerns with database-level access
+### Current Architecture Benefits
+- **Enhanced Security**: No SSH access required, controlled API permissions only
+- **Improved Reliability**: Direct API communication with built-in retry logic
+- **Better Performance**: Optimized API queries vs direct database access
+- **Simplified Configuration**: Single API-based configuration structure
+- **Real-time Data**: More up-to-date information than database snapshots
 
-### Pi-hole API Capabilities & Feature Mapping
-Based on official documentation (https://docs.pi-hole.net/api/):
-- **REST API**: Standard HTTP/HTTPS with structured JSON responses
-- **Authentication**: Session-based SID tokens with optional 2FA support
-- **Complete Data Access**: All SSH functionality available through API endpoints
-- **Enhanced Security**: Controlled permissions, no direct database access required
-- **Built-in Features**: Rate limiting, session management, CSRF protection
-- **Self-Documentation**: Complete API docs at `http://pi.hole/api/docs`
+### API Client Implementation
+**Package**: `internal/pihole` - Complete Pi-hole API client with session management
 
-**Critical Requirement**: The API implementation must provide 100% of current SSH functionality including:
-- Complete DNS query history access
-- Client statistics and analysis
-- Domain resolution data
-- Network device information
-- Real-time and historical data
-- All current filtering and analysis capabilities
-
-### Implementation Strategy
-
-#### Phase 1: Complete SSH Feature Analysis & API Client Foundation
-**Goal**: Catalog all current SSH functionality and build API client with equivalent capabilities
-
-**SSH Feature Inventory**:
-1. **Database Queries** (`internal/ssh/pihole.go`):
-   - DNS query history retrieval
-   - Client-based query filtering
-   - Domain statistics aggregation
-   - Time-based query filtering
-   - Query type and status analysis
-
-2. **Data Processing** (`internal/analyzer/analyzer.go`):
-   - Client statistics calculation
-   - Network device identification
-   - ARP table correlation
-   - Domain categorization and ranking
-   - Performance metrics (reply times, query counts)
-
-3. **Network Analysis**:
-   - MAC address resolution
-   - Online/offline status determination
-   - Hardware address mapping
-   - Device type identification
-
-**API Client Implementation** (`internal/pihole/client.go`):
 ```go
 type Client struct {
     BaseURL    string
@@ -478,297 +532,65 @@ type Client struct {
     config     *Config
 }
 
-// Must provide 100% SSH functionality equivalents
-func (c *Client) GetDNSQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
-func (c *Client) GetClientStatistics(ctx context.Context) (map[string]*types.ClientStats, error)
-func (c *Client) GetNetworkDevices(ctx context.Context) ([]types.NetworkDevice, error)
-func (c *Client) GetDomainStatistics(ctx context.Context) (*types.DomainStats, error)
+// API client features:
+// - Session-based authentication with automatic refresh
+// - 2FA TOTP support
+// - HTTPS/HTTP with certificate validation
+// - Comprehensive error handling and retry logic
+// - Structured logging throughout
 ```
 
-#### Phase 2: Data Source Interface & SSH Replacement Strategy
-**Goal**: Create unified interface that abstracts SSH and API, ensuring identical data output
+### Data Source Interface
+**Package**: `internal/interfaces` - Abstraction layer for data access
 
-**Data Source Abstraction** (`internal/interfaces/data_source.go`):
 ```go
 type DataSource interface {
     Connect(ctx context.Context) error
+    Close() error
+    IsConnected() bool
     
-    // Core SSH functionality - must be 100% equivalent
+    // Core data retrieval (API implementation)
     GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
     GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error)
     GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
     GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error)
     
-    // Performance and metadata - must match SSH implementation
-    GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error)
-    GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error)
-    
-    Close() error
-}
-
-// Data format compatibility - ensure identical output structures
-type QueryParams struct {
-    StartTime    time.Time
-    EndTime      time.Time
-    ClientFilter string
-    DomainFilter string
-    Limit        int
-    StatusFilter []int    // Match SSH status code filtering
-    TypeFilter   []int    // Match SSH query type filtering
+    GetDataSourceType() DataSourceType
+    GetConnectionInfo() *ConnectionInfo
 }
 ```
 
-**Implementation Requirements**:
-1. **SSH Data Source** (`internal/ssh/datasource.go`) - Wrapper around existing SSH code
-2. **API Data Source** (`internal/pihole/datasource.go`) - New API implementation with identical output
-3. **Data Validation** - Ensure API responses match SSH data structures exactly
-
-#### Phase 3: Complete SSH Feature Replacement
-**Goal**: Implement every SSH database query through Pi-hole API endpoints
-
-**SSH Function Mapping to API Endpoints**:
-
-1. **DNS Query History** (Replace SSH database queries):
-   ```sql
-   -- Current SSH Query (to be replaced)
-   SELECT timestamp, client, domain, status FROM queries 
-   WHERE timestamp BETWEEN ? AND ?
-   ```
-   ```go
-   // API Replacement - must return identical data structure
-   GET /api/queries?from={timestamp}&until={timestamp}
-   ```
-
-2. **Client Statistics** (Replace SSH aggregation):
-   ```sql
-   -- Current SSH Queries (to be replaced)
-   SELECT client, COUNT(*) as total FROM queries GROUP BY client
-   SELECT client, domain, COUNT(*) FROM queries GROUP BY client, domain
-   ```
-   ```go
-   // API Replacement - must provide same statistics
-   GET /api/stats/query_types_over_time
-   GET /api/stats/top_clients
-   ```
-
-3. **Domain Analysis** (Replace SSH domain queries):
-   ```sql
-   -- Current SSH Query (to be replaced)
-   SELECT domain, COUNT(*) FROM queries GROUP BY domain ORDER BY COUNT(*) DESC
-   ```
-   ```go
-   // API Replacement - must match sorting and counting
-   GET /api/stats/top_domains
-   GET /api/stats/query_types
-   ```
-
-4. **Network Device Information** (Replace SSH network queries):
-   ```sql
-   -- Current SSH Query (to be replaced)
-   SELECT DISTINCT client FROM queries
-   ```
-   ```go
-   // API Replacement - must include all client information
-   GET /api/network
-   GET /api/clients
-   ```
-
-**Critical Implementation Requirements**:
-- Each API implementation must return data in **identical format** to SSH version
-- All filtering, sorting, and aggregation logic must produce **same results**
-- Performance metrics (query counts, response times) must be **equivalent**
-- Network analysis (ARP correlation, device detection) must be **preserved**
-
-#### Current Implementation: API-Only Architecture
-**Status**: SSH functionality has been completely removed. The application now uses Pi-hole API exclusively.
-
-**Simplified Config Structure**:
+### Current Configuration Structure
 ```go
 type PiholeConfig struct {
-    // API fields (primary and only method)
-    APIEnabled   bool   `json:"api_enabled"`
-    APIPassword  string `json:"api_password"`
-    APITOTP      string `json:"api_totp"`
-    UseHTTPS     bool   `json:"use_https"`
-    APITimeout   int    `json:"api_timeout"`
+    Host string `json:"host"`
+    Port int    `json:"port"`
+    
+    // API Configuration (only method)
+    APIEnabled  bool   `json:"api_enabled"`
+    APIPassword string `json:"api_password"`
+    APITOTP     string `json:"api_totp"`
+    UseHTTPS    bool   `json:"use_https"`
+    APITimeout  int    `json:"api_timeout"`
 }
 ```
 
-#### Current Implementation Status
-**Completed**: SSH functionality completely removed and replaced with API-only architecture
+### CLI Integration
+**Package**: `internal/cli` - Centralized flag management for API-only operation
 
-**Enhanced Analyzer** (`internal/analyzer/analyzer.go`):
-```go
-type Analyzer struct {
-    dataSource interfaces.DataSource
-    config     *types.Config
-    logger     *logger.Logger
-}
-
-func (a *Analyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResult, error) {
-    // API-only data analysis logic
-    // Direct Pi-hole API integration
-}
+```bash
+# Current CLI flags (API-only)
+--pihole          # Pi-hole config file path
+--config          # Application config file
+--create-config   # Create default configuration
+--show-config     # Display current configuration
+--pihole-setup    # Pi-hole configuration wizard
+--online-only     # Show only online clients
+--no-exclude      # Disable default exclusions
+--no-color        # Disable colored output
+--no-emoji        # Disable emoji output
+--quiet           # Suppress non-essential output
 ```
-
-### Implementation Details
-
-#### Error Handling & Resilience
-1. **Connection Retry Logic**:
-   ```go
-   type RetryConfig struct {
-       MaxRetries int
-       Backoff    time.Duration
-       MaxBackoff time.Duration
-   }
-   ```
-
-2. **Fallback Strategy**:
-   - Primary: Pi-hole API
-   - Fallback: SSH database access
-   - Configuration-driven priority
-
-3. **Graceful Degradation**:
-   - Handle API endpoint unavailability
-   - Partial data scenarios
-   - Network connectivity issues
-
-#### Security Implementation
-1. **Session Management**:
-   - Automatic session refresh
-   - Secure token storage
-   - Session cleanup on exit
-
-2. **HTTPS Support**:
-   - TLS certificate validation
-   - Option for self-signed certificates
-   - Secure communication channels
-
-3. **Authentication Flows**:
-   - Standard password authentication
-   - 2FA TOTP integration
-   - Application password support
-
-#### Testing Strategy
-1. **Mock API Server** (`testing/mock_pihole_api.go`):
-   ```go
-   type MockAPIServer struct {
-       responses map[string]interface{}
-       delays    map[string]time.Duration
-   }
-   ```
-
-2. **Integration Tests**:
-   - Real Pi-hole API testing
-   - SSH fallback scenarios
-   - Configuration validation
-
-3. **Test Data**:
-   - Enhanced mock data for API responses
-   - Realistic query patterns
-   - Error scenario simulation
-
-### Current Architecture
-
-#### API-Only Implementation
-The application now uses exclusively Pi-hole API with no SSH fallback or migration logic.
-
-#### Configuration Management
-1. **API Configuration**:
-   - Direct Pi-hole API authentication
-   - HTTPS/HTTP support with certificate validation
-   - Session management and token refresh
-
-2. **Simplified CLI**:
-   ```bash
-   --api-url            # Pi-hole API endpoint
-   --api-password       # Pi-hole API password
-   --use-https          # Force HTTPS (default: auto-detect)
-   ```
-
-3. **Current Implementation**:
-   - API-only data retrieval
-   - Simplified configuration structure
-   - Enhanced security with no SSH dependencies
-
-### Documentation Requirements
-
-#### User Documentation
-1. **API Setup Guide** (`docs/api-setup.md`):
-   - Pi-hole API configuration
-   - Authentication setup
-   - 2FA configuration
-
-2. **Configuration Reference** (`docs/configuration.md` updates):
-   - API configuration options
-   - Security best practices
-   - Performance considerations
-
-#### Developer Documentation
-1. **API Client Usage** (`docs/development.md` updates):
-   - Data source interface usage
-   - Adding new endpoints
-   - Testing with mock server
-
-2. **Architecture Documentation**:
-   - Data flow diagrams
-   - Security architecture
-   - Error handling patterns
-
-### Benefits of API Integration
-
-#### Enhanced Capabilities
-1. **Real-time Data**: More up-to-date information than database snapshots
-2. **Better Security**: No SSH access required, controlled API permissions
-3. **Reliability**: Built-in retry logic, session management
-4. **Performance**: Optimized data queries vs direct database access
-
-#### Future Enhancements Enabled
-1. **Live Monitoring**: Real-time query streaming
-2. **Configuration Management**: Modify Pi-hole settings via API
-3. **Multi-Pi-hole Support**: Easier to connect to multiple instances
-4. **Advanced Analytics**: Access to additional Pi-hole metrics
-
-### Implementation Checklist
-
-#### Phase 1: Foundation
-- [ ] Create `internal/pihole` package structure
-- [ ] Implement basic HTTP client with authentication
-- [ ] Add session management with automatic refresh
-- [ ] Create comprehensive error handling
-
-#### Phase 2: Data Integration
-- [ ] Enhance `interfaces.DataSource` interface
-- [ ] Implement API-based data source
-- [ ] Create data transformation utilities
-- [ ] Add structured logging throughout
-
-#### Phase 3: Configuration
-- [x] Extend configuration structures
-- [x] Add configuration validation
-- [x] Implement auto-detection logic
-- [x] Simplified API-only configuration
-
-#### Phase 4: Testing
-- [ ] Build mock API server
-- [ ] Create comprehensive test suite
-- [ ] Add integration tests
-- [ ] Performance benchmarking
-
-#### Phase 5: Integration
-- [ ] Update analyzer to use data source interface
-- [ ] Enhance CLI with new options
-- [ ] Update documentation
-- [ ] Container support validation
-
-### Success Metrics
-1. **Functionality**: Complete API-only implementation
-2. **Performance**: Optimized Pi-hole API usage
-3. **Reliability**: 99%+ successful API connections  
-4. **Security**: No SSH dependencies, controlled API permissions
-5. **Usability**: Simplified configuration and deployment
-
-This implementation modernizes the Pi-hole integration with API-only architecture providing enhanced security and reliability.
 
 ### Medium Priority
 1. **Add Prometheus metrics endpoints** for monitoring
@@ -786,7 +608,7 @@ This implementation modernizes the Pi-hole integration with API-only architectur
 - **Performance Monitoring**: Build timing and cache hit rate reporting
 
 ### External Systems (Enhanced)
-- **Pi-hole**: SQLite database access via SSH with structured logging
+- **Pi-hole**: Direct API access with session management and structured logging
 - **Container Registries**: GitHub Container Registry (GHCR) with automated publishing
 - **Development Environments**: Docker Compose with persistent caches
 - **Build Systems**: Enhanced Makefile with 40+ targets and performance monitoring
@@ -887,7 +709,7 @@ When working on this project:
 ### Code Patterns
 - **Logging**: Use structured logging with context (`slog.String()`, `slog.Int()`, etc.)
 - **Configuration**: Always validate config with appropriate logging
-- **SSH**: Include connection logging with host/port context
+- **API**: Include connection logging with host/port context
 - **Errors**: Structured error logging with full context
 - **Colors**: Respect `--no-color` and `--no-emoji` flags
 

@@ -4,25 +4,25 @@
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A powerful, colorized DNS usage analysis tool that connects to Pi-hole servers via SSH to provide comprehensive network insights and beautiful terminal reports.
+A powerful, colorized DNS usage analysis tool that connects to Pi-hole servers via API to provide comprehensive network insights and beautiful terminal reports.
 
 ## 🚀 Features
 
-- **🔗 SSH Pi-hole Integration**: Direct connection to Pi-hole SQLite databases
+- **🔗 Pi-hole API Integration**: Direct connection to Pi-hole via REST API
 - **🎨 Beautiful Terminal Output**: Colorized reports with emoji support
 - **📊 Comprehensive Analysis**: Client statistics, domain queries, network status
 - **🌐 Network Detection**: ARP table integration for online/offline status
 - **⚙️ Flexible Configuration**: JSON-based configuration with exclusion rules
 - **🧪 Testing Support**: Built-in mock data for development and CI
-- **🔒 Security**: Key-based and password SSH authentication
-- **📈 Performance**: Optimized for large Pi-hole databases
+- **🔒 Security**: Session-based API authentication with 2FA support
+- **📈 Performance**: Optimized for large Pi-hole datasets
 
 ## 📋 Quick Start
 
 ### Prerequisites
 
-- Go 1.23+ 
-- SSH access to Pi-hole server
+- Go 1.23.12+ 
+- Pi-hole with API access enabled
 - Terminal with color support (recommended)
 
 ### Installation
@@ -49,7 +49,7 @@ go build -o pihole-analyzer ./cmd/pihole-analyzer
 ./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
 
 # Run with test data (no Pi-hole required)
-./pihole-analyzer --test
+./pihole-analyzer-test
 
 # Create default configuration file
 ./pihole-analyzer --create-config
@@ -60,9 +60,8 @@ go build -o pihole-analyzer ./cmd/pihole-analyzer
 - **[Installation Guide](docs/installation.md)** - Detailed setup instructions
 - **[Configuration Guide](docs/configuration.md)** - Configuration options and examples  
 - **[Usage Guide](docs/usage.md)** - Command-line options and workflows
-- **[SSH Setup](docs/ssh-setup.md)** - Pi-hole SSH connection configuration
+- **[API Setup](docs/api.md)** - Pi-hole API connection configuration
 - **[Development Guide](docs/development.md)** - Building, testing, and contributing
-- **[API Reference](docs/api.md)** - Internal package documentation
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
 ## 🎯 Example Output
