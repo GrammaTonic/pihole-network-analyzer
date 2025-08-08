@@ -14,32 +14,13 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-api-only
+.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod
 
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-# API-Only Container Commands
-docker-api-only: ## Build API-only container variant
-	@echo "🐳 Building API-only container..."
-	@docker build \
-		--build-arg VERSION=$(VERSION) \
-		--build-arg BUILD_TIME=$(BUILD_TIME) \
-		--platform linux/amd64,linux/arm64,linux/arm/v7 \
-		-t pihole-analyzer:api-only \
-		-f Dockerfile.api-only .
-	@echo "✅ API-only container built"
-
-docker-api-only-test: docker-api-only ## Test API-only container deployment
-	@echo "🧪 Testing API-only container..."
-	@docker run --rm pihole-analyzer:api-only --help
-	@echo "✅ API-only container test completed"
-
-docker-api-only-deploy: docker-api-only ## Deploy API-only container environment
-	@echo "🚀 Deploying API-only container environment..."
-	@docker-compose -f docker-compose.api-only.yml up -d
-	@echo "✅ API-only environment deployed"
+# Container Build Commands
 
 # Enhanced Build Commands
 build-all: build build-test ## Build all binaries
@@ -206,7 +187,12 @@ watch: ## Watch for changes and rebuild automatically (requires entr)
 docker-build: ## Build Docker image with caching
 	@echo "🐳 Building Docker image with caching..."
 	@start_time=$$(date +%s); \
-	docker build --build-arg BUILDKIT_INLINE_CACHE=1 -t pihole-analyzer:latest .; \
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--build-arg BUILDKIT_INLINE_CACHE=1 \
+		-t pihole-analyzer:latest \
+		-t pihole-analyzer:$(VERSION) .; \
 	end_time=$$(date +%s); \
 	duration=$$((end_time - start_time)); \
 	echo "✅ Docker build completed in $${duration}s"
@@ -222,11 +208,20 @@ docker-build-prod: ## Build production Docker image
 docker-build-multi: ## Build multi-architecture images
 	@echo "🐳 Building multi-architecture images..."
 	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
-		--target production -t pihole-analyzer:latest .
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--target production \
+		-t pihole-analyzer:latest \
+		-t pihole-analyzer:$(VERSION) .
 
 docker-test: ## Run tests in Docker container
 	@echo "🧪 Running tests in Docker container..."
 	docker-compose run --rm pihole-analyzer-test
+
+docker-test-quick: docker-build ## Quick test of Docker container
+	@echo "🧪 Quick testing Docker container..."
+	@docker run --rm pihole-analyzer:latest --help
+	@echo "✅ Docker container test completed"
 
 docker-dev: ## Start development environment with Docker
 	@echo "🔧 Starting development environment..."
@@ -278,4 +273,4 @@ analyze-size: build ## Analyze binary size and dependencies
 	@echo "Dependencies:"
 	@go list -m all | head -10
 
-.PHONY: docker-build docker-build-dev docker-build-prod docker-build-multi docker-test docker-dev docker-prod docker-clean docker-logs docker-shell docker-push benchmark analyze-size watch cache-info cache-warm cache-clean fast-build dev-setup
+.PHONY: docker-build docker-build-dev docker-build-prod docker-build-multi docker-test docker-test-quick docker-dev docker-prod docker-clean docker-logs docker-shell docker-push benchmark analyze-size watch cache-info cache-warm cache-clean fast-build dev-setup

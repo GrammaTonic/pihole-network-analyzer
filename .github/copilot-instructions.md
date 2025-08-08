@@ -95,12 +95,10 @@ The project maintains comprehensive documentation in the `docs/` directory:
 │   ├── ci.yml                   # Main CI/CD pipeline
 │   └── container.yml            # Container build and publish
 ├── Dockerfile                   # Multi-stage, multi-arch container builds
-├── Dockerfile.api-only         # API-only container variant
 ├── docker-compose*.yml         # Multiple environment configurations
 │   ├── docker-compose.yml      # Default development
 │   ├── docker-compose.dev.yml  # Development environment
-│   ├── docker-compose.prod.yml # Production environment
-│   └── docker-compose.api-only.yml  # API-only deployment
+│   └── docker-compose.prod.yml # Production environment
 └── Makefile                     # Enhanced build system (40+ targets)
 ```
 
@@ -175,6 +173,9 @@ make docker-dev
 
 # Production deployment
 docker-compose -f docker-compose.prod.yml up -d
+
+# Quick container test
+make docker-test-quick
 ```
 
 ### Core Data Structures
@@ -340,7 +341,7 @@ make analyze-size      # Binary size analysis
 make docker-build      # Build optimized Docker image
 make docker-dev        # Start development container environment
 make docker-multi      # Multi-architecture builds (AMD64, ARM64, ARMv7)
-make docker-api-only   # Build API-only container variant
+make docker-test-quick # Quick test of Docker container
 
 # Testing (enhanced)
 make ci-test          # CI-compatible test suite with caching
@@ -563,6 +564,8 @@ make docker-build-multi  # Test AMD64, ARM64, ARMv7
 3. **✅ Fast Builds Implementation**: 60-80% build speed improvement achieved
 4. **✅ Container Infrastructure**: Production-ready multi-architecture containers
 5. **✅ Enhanced CI/CD**: Advanced caching and parallel builds implemented
+6. **✅ Legacy Code Cleanup**: Removed obsolete phase references and unused build targets
+7. **✅ Documentation Consolidation**: Unified documentation structure
 
 ### High Priority (Remaining)
 1. **Enhanced Configuration Validation** - Add comprehensive config validation with structured logging
