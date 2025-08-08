@@ -142,20 +142,20 @@ test_colorized_output() {
     if [ "$CI" = "true" ]; then
         # In CI, exclude integration tests that expect terminal colors
         run_test_with_timeout "Color Unit Tests (CI-friendly)" \
-            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored|TestStrip|TestGetDisplay|TestFormatTable' -timeout=5m" 300
+            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored|TestStrip|TestGetDisplay|TestFormatTable' -timeout=5m ./internal/colors" 300
     else
         # Local development - run more comprehensive tests
         run_test_with_timeout "Color Unit Tests" \
-            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored' -timeout=5m" 300
+            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored' -timeout=5m ./internal/colors" 300
     fi
     
     # Test 2: Table formatting and color utility tests  
     run_test_with_timeout "Color Utility Tests" \
-        "go test -v -run='TestTableFormatting|TestStripColor|TestGetDisplayLength|TestFormatTableColumn' -timeout=3m" 180
+        "go test -v -run='TestTableFormatting|TestStripColor|TestGetDisplayLength|TestFormatTableColumn' -timeout=3m ./internal/colors" 180
     
     # Test 3: Performance benchmarks for color functions
     run_test_with_timeout "Color Performance Benchmarks" \
-        "go test -bench=BenchmarkColor -run=Benchmark -timeout=2m" 120
+        "go test -bench=BenchmarkColor -run=Benchmark -timeout=2m ./internal/colors" 120
     
     print_status $GREEN "✅ Colorized Output tests completed"
 }
@@ -181,7 +181,7 @@ test_all_features() {
     
     # Performance and stress tests
     run_test_with_timeout "Performance Benchmarks" \
-        "go test -bench=. -run=Benchmark -timeout=5m" 300
+        "go test -bench=. -run=Benchmark -timeout=5m ./..." 300
     
     print_status $GREEN "✅ All Features tests completed"
 }
