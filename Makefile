@@ -1,6 +1,5 @@
 BINARY_NAME=pihole-analyzer
 TEST_BINARY=pihole-analyzer-test
-PHASE5_BINARY=pihole-analyzer-phase5
 PIHOLE_CONFIG=pihole-config.json
 
 # Build optimization variables
@@ -15,45 +14,11 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test build-phase5 build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean phase5-build phase5-test phase5-deploy docker-api-only
+.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-api-only
 
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
-
-# Phase 5 Commands
-phase5-build: ## Build Phase 5 analyzer with API-first architecture
-	@echo "🚀 Building Phase 5 analyzer..."
-	@start_time=$$(date +%s); \
-	CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags="$(LDFLAGS) -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)" \
-		-o $(PHASE5_BINARY) ./cmd/pihole-analyzer-phase5/; \
-	end_time=$$(date +%s); \
-	duration=$$((end_time - start_time)); \
-	echo "✅ Phase 5 build completed in $${duration}s"
-
-phase5-test: ## Test Phase 5 analyzer
-	@echo "🧪 Testing Phase 5 analyzer..."
-	@go test -v ./internal/analyzer/phase5_*.go
-	@echo "✅ Phase 5 tests completed"
-
-phase5-integration: ## Run Phase 5 integration tests with API scenarios
-	@echo "🔗 Running Phase 5 integration tests..."
-	@./scripts/integration-test.sh --phase5
-	@echo "✅ Phase 5 integration tests completed"
-
-phase5-deploy: build-phase5 ## Deploy Phase 5 analyzer (build + install)
-	@echo "📦 Deploying Phase 5 analyzer..."
-	@sudo cp $(PHASE5_BINARY) /usr/local/bin/
-	@echo "✅ Phase 5 analyzer deployed to /usr/local/bin/$(PHASE5_BINARY)"
-
-phase5-validate: ## Validate Phase 5 configuration
-	@echo "✅ Validating Phase 5 configuration..."
-	@if [ -f $(PHASE5_BINARY) ]; then \
-		./$(PHASE5_BINARY) --help; \
-	else \
-		echo "❌ Phase 5 binary not found. Run 'make phase5-build' first"; \
-		exit 1; \
-	fi
 
 # API-Only Container Commands
 docker-api-only: ## Build API-only container variant
@@ -77,7 +42,7 @@ docker-api-only-deploy: docker-api-only ## Deploy API-only container environment
 	@echo "✅ API-only environment deployed"
 
 # Enhanced Build Commands
-build-all: build build-test build-phase5 ## Build all binaries including Phase 5
+build-all: build build-test ## Build all binaries
 	@echo "✅ All binaries built successfully"
 
 # Cache management

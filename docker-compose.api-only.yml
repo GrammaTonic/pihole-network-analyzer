@@ -1,4 +1,4 @@
-# docker-compose.api-only.yml - API-only deployment configuration for Phase 5
+# docker-compose.api-only.yml - API-only deployment configuration
 # API-only deployment for production environments
 
 version: '3.8'

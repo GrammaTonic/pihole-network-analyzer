@@ -133,7 +133,7 @@ type LoggingConfig struct {
 	ShowCaller    bool   `json:"show_caller"`
 }
 
-// NetworkDevice represents a network device from Pi-hole API (Enhanced for Phase 5)
+// NetworkDevice represents a network device from Pi-hole API
 type NetworkDevice struct {
 	IP          string `json:"ip"`
 	Hardware    string `json:"hardware"`
@@ -142,7 +142,7 @@ type NetworkDevice struct {
 	LastSeen    string `json:"last_seen"`
 	VendorClass string `json:"vendor_class"`
 
-	// Phase 5 enhancements
+	// Enhanced network analysis fields
 	MAC      string `json:"mac"`       // Alias for Hardware for consistency
 	Hostname string `json:"hostname"`  // Alias for Name for consistency
 	Type     string `json:"type"`      // Device type classification
@@ -184,9 +184,9 @@ type ConnectionStatus struct {
 	Metadata     map[string]string `json:"metadata,omitempty"`
 }
 
-// Phase 5: Enhanced types for complete API integration and analyzer functionality
+// Enhanced types for complete API integration and analyzer functionality
 
-// AnalysisResult represents the comprehensive result of Phase 5 analysis
+// AnalysisResult represents the comprehensive result of Pi-hole analysis
 type AnalysisResult struct {
 	ClientStats    map[string]*ClientStats `json:"client_stats"`
 	NetworkDevices []NetworkDevice         `json:"network_devices"`
