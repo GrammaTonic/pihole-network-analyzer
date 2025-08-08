@@ -1,5 +1,6 @@
 BINARY_NAME=pihole-analyzer
 TEST_BINARY=pihole-analyzer-test
+PHASE5_BINARY=pihole-analyzer-phase5
 PIHOLE_CONFIG=pihole-config.json
 
 # Build optimization variables
@@ -7,16 +8,77 @@ GOCACHE_DIR=$(shell go env GOCACHE)
 GOMOD_CACHE=$(shell go env GOMODCACHE)
 BUILD_FLAGS=-trimpath
 LDFLAGS=-s -w
+VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Enable Go build cache and optimization
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean
+.PHONY: build build-test build-phase5 build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean phase5-build phase5-test phase5-deploy docker-api-only
 
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# Phase 5 Commands
+phase5-build: ## Build Phase 5 analyzer with API-first architecture
+	@echo "🚀 Building Phase 5 analyzer..."
+	@start_time=$$(date +%s); \
+	CGO_ENABLED=0 go build $(BUILD_FLAGS) -ldflags="$(LDFLAGS) -X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)" \
+		-o $(PHASE5_BINARY) ./cmd/pihole-analyzer-phase5/; \
+	end_time=$$(date +%s); \
+	duration=$$((end_time - start_time)); \
+	echo "✅ Phase 5 build completed in $${duration}s"
+
+phase5-test: ## Test Phase 5 analyzer with migration scenarios
+	@echo "🧪 Testing Phase 5 analyzer..."
+	@go test -v ./internal/analyzer/phase5_*.go
+	@echo "✅ Phase 5 tests completed"
+
+phase5-integration: ## Run Phase 5 integration tests with API and SSH scenarios
+	@echo "🔗 Running Phase 5 integration tests..."
+	@./scripts/integration-test.sh --phase5
+	@echo "✅ Phase 5 integration tests completed"
+
+phase5-deploy: build-phase5 ## Deploy Phase 5 analyzer (build + install)
+	@echo "📦 Deploying Phase 5 analyzer..."
+	@sudo cp $(PHASE5_BINARY) /usr/local/bin/
+	@echo "✅ Phase 5 analyzer deployed to /usr/local/bin/$(PHASE5_BINARY)"
+
+phase5-validate: ## Validate Phase 5 configuration and migration readiness
+	@echo "✅ Validating Phase 5 configuration..."
+	@if [ -f $(PHASE5_BINARY) ]; then \
+		./$(PHASE5_BINARY) --validate-migration --quiet; \
+	else \
+		echo "❌ Phase 5 binary not found. Run 'make phase5-build' first"; \
+		exit 1; \
+	fi
+
+# API-Only Container Commands
+docker-api-only: ## Build API-only container variant
+	@echo "🐳 Building API-only container..."
+	@docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--platform linux/amd64,linux/arm64,linux/arm/v7 \
+		-t pihole-analyzer:api-only \
+		-f Dockerfile.api-only .
+	@echo "✅ API-only container built"
+
+docker-api-only-test: docker-api-only ## Test API-only container deployment
+	@echo "🧪 Testing API-only container..."
+	@docker run --rm pihole-analyzer:api-only --help
+	@echo "✅ API-only container test completed"
+
+docker-api-only-deploy: docker-api-only ## Deploy API-only container environment
+	@echo "🚀 Deploying API-only container environment..."
+	@docker-compose -f docker-compose.api-only.yml up -d
+	@echo "✅ API-only environment deployed"
+
+# Enhanced Build Commands
+build-all: build build-test build-phase5 ## Build all binaries including Phase 5
+	@echo "✅ All binaries built successfully"
 
 # Cache management
 cache-info: ## Show build cache information

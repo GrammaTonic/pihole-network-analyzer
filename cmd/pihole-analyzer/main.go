@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
 	"pihole-analyzer/internal/analyzer"
 	"pihole-analyzer/internal/cli"
-	"pihole-analyzer/internal/colors"
 	"pihole-analyzer/internal/config"
 	"pihole-analyzer/internal/logger"
-	"pihole-analyzer/internal/network"
 	"pihole-analyzer/internal/reporting"
-	sshpkg "pihole-analyzer/internal/ssh"
+	"pihole-analyzer/internal/types"
 )
 
 func main() {
@@ -20,9 +20,6 @@ func main() {
 
 	// Handle special flags that should exit immediately
 	if cli.HandleSpecialFlags(flags) {
-		if *flags.PiholeSetup {
-			sshpkg.SetupPiholeConfig()
-		}
 		return
 	}
 
@@ -40,49 +37,124 @@ func main() {
 	// Initialize structured logger
 	loggerConfig := &logger.Config{
 		Level:         logger.LogLevel(cfg.Logging.Level),
-		EnableColors:  cfg.Logging.EnableColors,
-		EnableEmojis:  cfg.Logging.EnableEmojis,
+		EnableColors:  cfg.Logging.EnableColors && !*flags.NoColor,
+		EnableEmojis:  cfg.Logging.EnableEmojis && !*flags.NoEmoji,
 		OutputFile:    cfg.Logging.OutputFile,
 		ShowTimestamp: cfg.Logging.ShowTimestamp,
-		ShowCaller:    cfg.Logging.ShowCaller,
+		Component:     "pihole-analyzer",
 	}
 	appLogger := logger.New(loggerConfig)
-	logger.SetGlobalLogger(appLogger)
 
-	// Apply command-line flags to configuration
+	// Apply CLI flags to configuration
 	cli.ApplyFlags(flags, cfg)
 
-	// Validate input - requires Pi-hole config
+	// Validate CLI input
 	if err := cli.ValidateInput(flags); err != nil {
-		logger.Error("Validation failed: %v", err)
-		cli.ShowUsage()
+		appLogger.Error("Input validation failed: %v", err)
 		os.Exit(1)
 	}
 
 	// Print startup information
 	cli.PrintStartupInfo(flags, cfg)
 
-	// Handle Pi-hole analysis
-	configFile := *flags.Pihole
-	if configFile == "" {
-		logger.Error("Pi-hole configuration required. Use --pihole <config.json> or --pihole-setup")
-		cli.ShowUsage()
-		os.Exit(1)
+	// Handle Pi-hole specific operations
+	if *flags.Pihole != "" {
+		if err := analyzePihole(*flags.Pihole, cfg, appLogger); err != nil {
+			appLogger.Error("Error analyzing Pi-hole data: %v", err)
+			os.Exit(1)
+		}
+		return
 	}
 
-	logger.Info("Connecting to Pi-hole using config: %s", colors.Info(configFile))
+	// Handle test mode
+	if cfg.TestMode {
+		appLogger.Info("Running in test mode with mock data")
+		if err := runTestMode(appLogger); err != nil {
+			appLogger.Error("Error running test mode: %v", err)
+			os.Exit(1)
+		}
+		return
+	}
 
-	// Analyze Pi-hole data
-	clientStats, err := analyzer.AnalyzePiholeData(configFile, cfg)
+	appLogger.Info("No operation specified. Use --help for usage information.")
+}
+
+func analyzePihole(configFile string, config *types.Config, appLogger *logger.Logger) error {
+	ctx := context.Background()
+
+	if !config.Quiet {
+		appLogger.Info("🚀 Starting Pi-hole analysis...")
+	}
+
+	// Try enhanced analysis first
+	result, err := analyzer.AnalyzePiholeDataWithMigration(ctx, config, appLogger)
 	if err != nil {
-		log.Fatalf("Error analyzing Pi-hole data: %v", err)
+		// Fallback to traditional analysis
+		appLogger.Warn("⚠️  Enhanced analysis failed, using traditional method: %v", err)
+		return runTraditionalAnalysis(configFile, config, appLogger)
 	}
 
-	// Check ARP status for all clients
-	err = network.CheckARPStatus(clientStats)
+	// Display enhanced results
+	if err := displayEnhancedResults(result, config, appLogger); err != nil {
+		return fmt.Errorf("failed to display results: %w", err)
+	}
+
+	if !config.Quiet {
+		appLogger.Info("✅ Analysis completed successfully!")
+	}
+
+	return nil
+}
+
+func runTraditionalAnalysis(configFile string, config *types.Config, appLogger *logger.Logger) error {
+	// Use traditional analyzer as fallback
+	clientStats, err := analyzer.AnalyzePiholeData(configFile, config)
 	if err != nil {
-		logger.Warn("Could not check ARP status: %v", err)
+		return fmt.Errorf("traditional analysis failed: %w", err)
 	}
 
-	reporting.DisplayResultsWithConfig(clientStats, cfg)
+	if !config.Quiet {
+		appLogger.Info("📊 Generating report...")
+	}
+
+	// Display traditional results
+	reporting.DisplayResultsWithConfig(clientStats, config)
+	return nil
+}
+
+func displayEnhancedResults(result *types.AnalysisResult, cfg *types.Config, appLogger *logger.Logger) error {
+	// Display analysis summary
+	appLogger.Info("=== Enhanced Analysis Results ===")
+	appLogger.Info("Analysis Mode: %s", result.AnalysisMode)
+	appLogger.Info("Data Source: %s", result.DataSourceType)
+	appLogger.Info("Total Queries: %d", result.TotalQueries)
+	appLogger.Info("Unique Clients: %d", result.UniqueClients)
+	appLogger.Info("Analysis Time: %s", result.Timestamp)
+
+	if len(result.NetworkDevices) > 0 {
+		appLogger.Info("Network Devices: %d", len(result.NetworkDevices))
+	}
+
+	// Use traditional reporting for client statistics display
+	reporting.DisplayResultsWithConfig(result.ClientStats, cfg)
+
+	// Display migration status if in transition mode
+	if result.MigrationStatus != "" {
+		appLogger.Info("🔄 Migration Status: %s", result.MigrationStatus)
+	}
+
+	// Show performance metrics
+	if result.Performance != nil {
+		appLogger.Info("📈 Performance Metrics:")
+		appLogger.Info("  Average Response Time: %.2fms", result.Performance.AverageResponseTime)
+		appLogger.Info("  Queries Per Second: %.2f", result.Performance.QueriesPerSecond)
+	}
+
+	return nil
+}
+
+func runTestMode(appLogger *logger.Logger) error {
+	// This would implement test mode functionality
+	appLogger.Info("Test mode is not yet implemented")
+	return nil
 }
