@@ -55,63 +55,19 @@ run_test_with_timeout() {
 
 # Function to check if binary exists
 check_binary() {
-    if [ ! -f "./pihole-network-analyzer" ]; then
-        print_status $RED "❌ Binary './pihole-network-analyzer' not found. Please build first."
+    if [ ! -f "./pihole-analyzer" ]; then
+        print_status $RED "❌ Binary './pihole-analyzer' not found. Please build first."
         exit 1
     fi
     
-    if [ ! -x "./pihole-network-analyzer" ]; then
+    if [ ! -x "./pihole-analyzer" ]; then
         print_status $YELLOW "⚠️ Making binary executable..."
-        chmod +x ./pihole-network-analyzer
+        chmod +x ./pihole-analyzer
     fi
 }
 
-# Function to create a small test CSV file for CI compatibility
-create_test_csv_file() {
-    cat > test_small.csv << 'EOF'
-"DateTime","Client_IP","Domain","QueryType","Status","ReplyTime"
-"2024-08-06 10:00:01","192.168.2.110","google.com","1","2","0.002"
-"2024-08-06 10:00:02","192.168.2.210","facebook.com","1","2","0.003"
-"2024-08-06 10:00:03","192.168.2.6","api.spotify.com","1","2","0.001"
-"2024-08-06 10:00:04","172.20.0.8","kpn.com","1","2","0.002"
-"2024-08-06 10:00:05","192.168.2.210","tracking.doubleclick.net","1","9","0.002"
-"2024-08-06 10:00:06","192.168.2.110","github.com","1","2","0.004"
-"2024-08-06 10:00:07","192.168.2.6","pi.hole","1","3","0.001"
-"2024-08-06 10:00:08","172.19.0.2","microsoft.com","1","2","0.012"
-"2024-08-06 10:00:09","127.0.0.1","localhost","1","2","0.001"
-"2024-08-06 10:00:10","192.168.2.210","ads.microsoft.com","1","9","0.002"
-"2024-08-06 10:00:11","192.168.2.110","stackoverflow.com","1","2","0.005"
-"2024-08-06 10:00:12","192.168.2.6","netflix.com","1","2","0.001"
-"2024-08-06 10:00:13","192.168.2.210","malware.badsite.com","1","9","0.002"
-"2024-08-06 10:00:14","192.168.2.110","amazon.com","1","2","0.003"
-"2024-08-06 10:00:15","192.168.2.6","telemetry.microsoft.com","1","9","0.001"
-EOF
-}
 
-# Function to run CSV analysis tests
-test_csv_analysis() {
-    print_status $YELLOW "📊 Testing CSV Analysis Functionality"
-    
-    # Create a smaller test CSV file for CI compatibility
-    create_test_csv_file
-    
-    # Test 1: Basic CSV analysis
-    run_test_with_timeout "CSV Analysis - Default" \
-        "./pihole-network-analyzer --quiet test_small.csv" 120
-    
-    # Test 2: CSV with no exclusions
-    run_test_with_timeout "CSV Analysis - No Exclusions" \
-        "./pihole-network-analyzer --no-exclude --quiet test_small.csv" 60
-    
-    # Test 3: CSV online only
-    run_test_with_timeout "CSV Analysis - Online Only" \
-        "./pihole-network-analyzer --online-only --quiet test_small.csv" 60
-    
-    # Cleanup
-    rm -f test_small.csv
-    
-    print_status $GREEN "✅ CSV Analysis tests completed"
-}
+
 
 # Function to run Pi-hole database tests
 test_pihole_db() {
@@ -122,11 +78,11 @@ test_pihole_db() {
     
     # Test 1: Pi-hole analysis with mock data
     run_test_with_timeout "Pi-hole DB Analysis" \
-        "./pihole-network-analyzer --test-mode --quiet" 90
+        "./pihole-analyzer --test --quiet" 90
     
     # Test 2: Pi-hole with custom config
     run_test_with_timeout "Pi-hole Custom Config" \
-        "./pihole-network-analyzer --config=test-config.json --test-mode --quiet" 60
+        "./pihole-analyzer --config=test-config.json --test --quiet" 60
     
     # Cleanup
     rm -rf test_pihole_env
@@ -142,20 +98,20 @@ test_colorized_output() {
     if [ "$CI" = "true" ]; then
         # In CI, exclude integration tests that expect terminal colors
         run_test_with_timeout "Color Unit Tests (CI-friendly)" \
-            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored|TestStrip|TestGetDisplay|TestFormatTable' -timeout=5m" 300
+            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored|TestStrip|TestGetDisplay|TestFormatTable' -timeout=5m ./internal/colors" 300
     else
         # Local development - run more comprehensive tests
         run_test_with_timeout "Color Unit Tests" \
-            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored' -timeout=5m" 300
+            "go test -v -run='TestColor[^i]|TestHighlight|TestStatus|TestOnline|TestColored' -timeout=5m ./internal/colors" 300
     fi
     
     # Test 2: Table formatting and color utility tests  
     run_test_with_timeout "Color Utility Tests" \
-        "go test -v -run='TestTableFormatting|TestStripColor|TestGetDisplayLength|TestFormatTableColumn' -timeout=3m" 180
+        "go test -v -run='TestTableFormatting|TestStripColor|TestGetDisplayLength|TestFormatTableColumn' -timeout=3m ./internal/colors" 180
     
     # Test 3: Performance benchmarks for color functions
     run_test_with_timeout "Color Performance Benchmarks" \
-        "go test -bench=BenchmarkColor -run=Benchmark -timeout=2m" 120
+        "go test -bench=BenchmarkColor -run=Benchmark -timeout=2m ./internal/colors" 120
     
     print_status $GREEN "✅ Colorized Output tests completed"
 }
@@ -166,7 +122,7 @@ test_all_features() {
     
     # Full application test suite (this includes the main 13 tests)
     run_test_with_timeout "Comprehensive Test Suite" \
-        "./pihole-network-analyzer --test" 300
+        "./pihole-analyzer --test" 300
     
     # Additional Go tests (CI-friendly pattern)
     if [ "$CI" = "true" ]; then
@@ -181,7 +137,7 @@ test_all_features() {
     
     # Performance and stress tests
     run_test_with_timeout "Performance Benchmarks" \
-        "go test -bench=. -run=Benchmark -timeout=5m" 300
+        "go test -bench=. -run=Benchmark -timeout=5m ./..." 300
     
     print_status $GREEN "✅ All Features tests completed"
 }
@@ -205,9 +161,9 @@ validate_environment() {
         exit 1
     fi
     
-    # Check for test files
-    if [ ! -f "testdata/test.csv" ]; then
-        print_status $YELLOW "⚠️ test.csv not found, some tests may be skipped"
+    # Check for Pi-hole test data
+    if [ ! -f "test_data/mock_pihole.db" ]; then
+        print_status $YELLOW "⚠️ Pi-hole test database not found, some tests may be skipped"
     fi
     
     print_status $GREEN "✅ Environment validation completed"
@@ -244,14 +200,13 @@ main() {
         echo "Usage: $0 [scenario]"
         echo ""
         echo "Available scenarios:"
-        echo "  csv-analysis      - Test CSV processing functionality"
         echo "  pihole-db        - Test Pi-hole database operations"
         echo "  colorized-output - Test color output functionality"
         echo "  all-features     - Run comprehensive test suite (default)"
         echo ""
         echo "Examples:"
         echo "  $0                    # Run all features"
-        echo "  $0 csv-analysis       # Test CSV analysis only"
+        echo "  $0 pihole-db          # Test Pi-hole functionality only"
         echo "  $0 colorized-output   # Test color functionality"
         exit 0
     fi
@@ -266,9 +221,6 @@ main() {
     
     # Run tests based on scenario
     case "$scenario" in
-        "csv-analysis")
-            test_csv_analysis
-            ;;
         "pihole-db")
             test_pihole_db
             ;;
@@ -281,7 +233,6 @@ main() {
         *)
             print_status $RED "❌ Unknown test scenario: $scenario"
             echo "Available scenarios:"
-            echo "  - csv-analysis"
             echo "  - pihole-db"
             echo "  - colorized-output"
             echo "  - all-features"

@@ -1,6 +1,4 @@
-BINARY_NAME=dns-analyzer
-SOURCE_FILE=main.go
-CSV_FILE=test.csv
+BINARY_NAME=pihole-analyzer
 PIHOLE_CONFIG=pihole-config.json
 
 .PHONY: build run clean install-deps help setup-pihole analyze-pihole pre-push ci-test
@@ -14,22 +12,13 @@ install-deps: ## Install Go dependencies
 	go mod download
 
 build: ## Build the application
-	go build -o $(BINARY_NAME) .
-
-run: build ## Build and run the application with test.csv
-	./$(BINARY_NAME) $(CSV_FILE)
-
-analyze: build ## Alias for run
-	./$(BINARY_NAME) $(CSV_FILE)
-
-run-with-file: build ## Run with a specific CSV file (usage: make run-with-file CSV_FILE=yourfile.csv)
-	./$(BINARY_NAME) $(CSV_FILE)
-
-setup-pihole: build ## Setup Pi-hole SSH configuration
-	./$(BINARY_NAME) --pihole-setup
+	go build -o $(BINARY_NAME) ./cmd/pihole-analyzer
 
 analyze-pihole: build ## Analyze Pi-hole live data (requires pihole-config.json)
 	./$(BINARY_NAME) --pihole $(PIHOLE_CONFIG)
+
+setup-pihole: build ## Setup Pi-hole SSH configuration
+	./$(BINARY_NAME) --pihole-setup
 
 test-pihole: build ## Test Pi-hole connection and analyze data
 	@if [ ! -f $(PIHOLE_CONFIG) ]; then \
@@ -62,8 +51,8 @@ ci-test: ## Run the same tests as CI locally
 	go mod tidy
 	go mod verify
 	go mod download
-	go build -o pihole-network-analyzer .
-	./pihole-network-analyzer --test
+	go build -o pihole-analyzer ./cmd/pihole-analyzer
+	./pihole-analyzer --test
 	@if [ "$$(gofmt -s -l . | wc -l)" -gt 0 ]; then \
 		echo "❌ Code formatting issues found:"; \
 		gofmt -s -l .; \
@@ -75,9 +64,9 @@ ci-test: ## Run the same tests as CI locally
 
 multi-build: build ## Test multi-platform builds (like CI)
 	@echo "🏗️ Testing multi-platform builds..."
-	GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 .
-	GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe .
-	GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 .
+	GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 ./cmd/pihole-analyzer
+	GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe ./cmd/pihole-analyzer
+	GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 ./cmd/pihole-analyzer
 	@echo "✅ All platform builds successful!"
 	rm -f /tmp/test-*
 
