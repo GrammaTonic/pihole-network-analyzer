@@ -1,0 +1,92 @@
+version: '3.8'
+
+# Development-focused Docker Compose configuration
+# Uses local builds with extensive caching and development tools
+
+services:
+  pihole-analyzer-dev:
+    build:
+      context: .
+      target: development
+      cache_from:
+        - golang:1.23-alpine
+        - alpine:latest
+      args:
+        - BUILDPLATFORM=linux/amd64
+        - TARGETOS=linux
+        - TARGETARCH=amd64
+    container_name: pihole-analyzer-dev
+    volumes:
+      # Live development with source code mounting
+      - .:/app/source:ro
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+      # Persistent Go caches for faster builds
+      - go-cache:/go/pkg/mod
+      - build-cache:/home/appuser/.cache/go-build
+      # Development tools and workspace
+      - dev-workspace:/app/workspace
+    environment:
+      - DEVELOPMENT=true
+      - GOCACHE=/home/appuser/.cache/go-build
+      - GOMODCACHE=/go/pkg/mod
+      - LOG_LEVEL=debug
+      - HOT_RELOAD=true
+    working_dir: /app
+    command: ["./pihole-analyzer-test", "--test", "--watch"]
+    networks:
+      - dev-network
+    ports:
+      - "8080:8080"  # For future web interface
+      - "2345:2345"  # Delve debugger port
+    stdin_open: true
+    tty: true
+
+  # Development database for testing
+  test-database:
+    image: alpine:latest
+    container_name: test-database
+    volumes:
+      - ./testing/fixtures:/data:ro
+      - test-db-data:/app/data
+    command: ["tail", "-f", "/dev/null"]
+    networks:
+      - dev-network
+
+  # Development file watcher for auto-rebuild
+  file-watcher:
+    build:
+      context: .
+      target: development
+    container_name: file-watcher
+    volumes:
+      - .:/app/source
+      - go-cache:/go/pkg/mod
+      - build-cache:/home/appuser/.cache/go-build
+    environment:
+      - WATCH_MODE=true
+      - GOCACHE=/home/appuser/.cache/go-build
+      - GOMODCACHE=/go/pkg/mod
+    command: ["sh", "-c", "while true; do inotifywait -e modify,create,delete -r /app/source && make fast-build; done"]
+    networks:
+      - dev-network
+    depends_on:
+      - pihole-analyzer-dev
+
+networks:
+  dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+volumes:
+  go-cache:
+    driver: local
+  build-cache:
+    driver: local
+  dev-workspace:
+    driver: local
+  test-db-data:
+    driver: local

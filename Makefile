@@ -186,7 +186,16 @@ docker-build: ## Build Docker image with caching
 
 docker-build-dev: ## Build development Docker image
 	@echo "🐳 Building development Docker image..."
-	docker-compose build pihole-analyzer-dev
+	docker-compose -f docker-compose.dev.yml build pihole-analyzer-dev
+
+docker-build-prod: ## Build production Docker image
+	@echo "🐳 Building production Docker image..."
+	docker-compose -f docker-compose.prod.yml build pihole-analyzer
+
+docker-build-multi: ## Build multi-architecture images
+	@echo "🐳 Building multi-architecture images..."
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
+		--target production -t pihole-analyzer:latest .
 
 docker-test: ## Run tests in Docker container
 	@echo "🧪 Running tests in Docker container..."
@@ -194,13 +203,33 @@ docker-test: ## Run tests in Docker container
 
 docker-dev: ## Start development environment with Docker
 	@echo "🔧 Starting development environment..."
-	docker-compose up -d pihole-analyzer-dev
+	docker-compose -f docker-compose.dev.yml up -d pihole-analyzer-dev
 	@echo "✅ Development container started. Use 'docker exec -it pihole-analyzer-dev sh' to access"
+
+docker-prod: ## Start production environment with Docker
+	@echo "🚀 Starting production environment..."
+	docker-compose -f docker-compose.prod.yml up -d
+	@echo "✅ Production containers started"
 
 docker-clean: ## Clean Docker images and containers
 	@echo "🧹 Cleaning Docker resources..."
 	docker-compose down --rmi all --volumes --remove-orphans
+	docker-compose -f docker-compose.dev.yml down --rmi all --volumes --remove-orphans
+	docker-compose -f docker-compose.prod.yml down --rmi all --volumes --remove-orphans
 	docker system prune -f
+
+docker-logs: ## Show container logs
+	@echo "📝 Showing container logs..."
+	docker-compose logs -f
+
+docker-shell: ## Access development container shell
+	@echo "🐚 Accessing development container..."
+	docker exec -it pihole-analyzer-dev sh
+
+docker-push: ## Push images to registry (requires authentication)
+	@echo "📤 Pushing images to registry..."
+	docker tag pihole-analyzer:latest ghcr.io/grammatonic/pihole-analyzer:latest
+	docker push ghcr.io/grammatonic/pihole-analyzer:latest
 
 # Performance benchmarking
 benchmark: ## Run performance benchmarks
@@ -222,4 +251,4 @@ analyze-size: build ## Analyze binary size and dependencies
 	@echo "Dependencies:"
 	@go list -m all | head -10
 
-.PHONY: docker-build docker-build-dev docker-test docker-dev docker-clean benchmark analyze-size watch cache-info cache-clean fast-build dev-setup
+.PHONY: docker-build docker-build-dev docker-build-prod docker-build-multi docker-test docker-dev docker-prod docker-clean docker-logs docker-shell docker-push benchmark analyze-size watch cache-info cache-warm cache-clean fast-build dev-setup
