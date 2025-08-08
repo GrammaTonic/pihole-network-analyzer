@@ -2,7 +2,7 @@
 # This container variant completely removes SSH dependencies and focuses on API-only deployment
 
 # Build stage - Use exact Go version for consistency
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23.12-alpine AS builder
 
 # Build arguments for cross-compilation
 ARG TARGETOS
