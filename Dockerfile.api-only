@@ -1,5 +1,5 @@
 # Dockerfile.api-only - API-only container variant for Phase 5
-# This container variant completely removes SSH dependencies and focuses on API-only deployment
+# API-only container variant focusing on Pi-hole API connectivity
 
 # Build stage - Use exact Go version for consistency
 FROM --platform=$BUILDPLATFORM golang:1.23.12-alpine AS builder
@@ -31,7 +31,7 @@ RUN CGO_ENABLED=0 \
     GOARCH=$TARGETARCH \
     go build \
     -ldflags="-s -w -X main.version=${VERSION} -X main.buildTime=${BUILD_TIME}" \
-    -tags="api_only,no_ssh" \
+    -tags="api_only" \
     -trimpath \
     -o pihole-analyzer-api \
     ./cmd/pihole-analyzer
@@ -53,7 +53,7 @@ COPY --from=builder /app/pihole-analyzer-api /usr/local/bin/pihole-analyzer
 
 # Container metadata
 LABEL org.opencontainers.image.title="Pi-hole Network Analyzer (API-only)"
-LABEL org.opencontainers.image.description="Pi-hole network analysis tool - API-only variant without SSH dependencies"
+LABEL org.opencontainers.image.description="Pi-hole network analysis tool - API-only variant"
 LABEL org.opencontainers.image.vendor="grammatonic"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.source="https://github.com/grammatonic/pihole-network-analyzer"

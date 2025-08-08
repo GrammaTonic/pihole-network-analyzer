@@ -12,6 +12,7 @@ This file provides comprehensive guidance for AI coding assistants working on th
 **Main Files**: `cmd/pihole-analyzer/main.go`, `cmd/pihole-analyzer-test/main.go`
 **Help Command**: `pihole-analyzer --help`  
 **Architecture**: Standard Go Project Layout with API-only Pi-hole integration
+**Pi-hole API Documentation**: https://ftl.pi-hole.net/master/docs/#
 
 ### Core Purpose
 **Pi-hole-focused** DNS usage analysis tool with **API-only connectivity**. Features structured logging, colorized terminal output, network analysis, and comprehensive reporting. Includes production-ready containerization and optimized build system.
@@ -306,7 +307,7 @@ make phase5-test      # API-only test scenarios
 - **Modular Architecture**: Separated production and test binaries
 - **Container Ready**: Production-grade containerization implemented
 - **Standards**: Go formatting, comprehensive error handling, structured logging
-- **Dependencies**: Minimal external dependencies (ssh, sqlite, crypto)
+- **Dependencies**: Minimal external dependencies (sqlite, crypto)
 
 ## Key Features & Modern Implementation
 
@@ -320,18 +321,18 @@ logger := logger.New(&logger.Config{
     Level:        logger.LevelInfo,
     EnableColors: true,
     EnableEmojis: true,
-    Component:    "ssh",
+    Component:    "pihole-api",
 })
 
 // Structured logging with context
-logger.Info("SSH connection established",
+logger.Info("Pi-hole API connection established",
     slog.String("host", config.Host),
     slog.Int("port", config.Port),
-    slog.String("user", config.Username))
+    slog.Bool("https", config.UseHTTPS))
 
 // Error logging with context
-logger.Error("Database query failed",
-    slog.String("query", sqlQuery),
+logger.Error("API query failed",
+    slog.String("query", apiQuery),
     slog.String("error", err.Error()))
 ```
 
@@ -666,9 +667,9 @@ docker stats pihole-analyzer-prod
 ## Future Roadmap (Updated)
 
 ### Planned Features (Short Term)
-1. **Pi-hole API Integration** - Replace SSH with official Pi-hole REST API
-2. **Enhanced Configuration Validation** - Comprehensive config validation with structured logging
-3. **Performance Metrics Collection** - Built-in metrics for monitoring
+1. **Enhanced Configuration Validation** - Add comprehensive config validation with structured logging
+2. **Performance Metrics Collection** - Built-in metrics for monitoring
+3. **Multi-Pi-hole Support** - Connect to multiple Pi-hole instances
 4. **Multi-Pi-hole Support** - Connect to multiple Pi-hole instances
 
 ### Architecture Evolution (Medium Term)
