@@ -35,7 +35,7 @@ func ParseFlags() *Flags {
 		PiholeSetup:  flag.Bool("pihole-setup", false, "Setup Pi-hole configuration"),
 		Test:         flag.Bool("test", false, "Run test suite with mock data"),
 		TestMode:     flag.Bool("test-mode", false, "Enable test mode for development (uses mock data)"),
-		Config:       flag.String("config", "", "Configuration file path (default: ~/.dns-analyzer/config.json)"),
+		Config:       flag.String("config", "", "Configuration file path (default: ~/.pihole-analyzer/config.json)"),
 		ShowConfig:   flag.Bool("show-config", false, "Show current configuration and exit"),
 		CreateConfig: flag.Bool("create-config", false, "Create default configuration file and exit"),
 		NoColor:      flag.Bool("no-color", false, "Disable colored output"),
@@ -105,7 +105,7 @@ func ShowUsage() {
 	fmt.Printf("  %s --no-color --quiet       # Plain output for scripting\n", os.Args[0])
 
 	fmt.Printf("\n%s:\n", colors.BoldCyan("Configuration"))
-	fmt.Printf("  Default config: ~/.dns-analyzer/config.json\n")
+	fmt.Printf("  Default config: ~/.pihole-analyzer/config.json\n")
 	fmt.Printf("  Create config:  %s --create-config\n", os.Args[0])
 	fmt.Printf("  Show config:    %s --show-config\n", os.Args[0])
 }

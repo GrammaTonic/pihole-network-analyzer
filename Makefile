@@ -1,4 +1,4 @@
-BINARY_NAME=dns-analyzer
+BINARY_NAME=pihole-analyzer
 SOURCE_FILE=main.go
 CSV_FILE=test.csv
 PIHOLE_CONFIG=pihole-config.json
