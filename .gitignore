@@ -1,6 +1,6 @@
 # Go binaries
 pihole-analyzer
-pihole-analyzer-test
+/pihole-analyzer-test
 *.exe
 
 # Test output and artifacts
