@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Production service using published container
+  # Production service using published container with API configuration
   pihole-analyzer:
     image: ghcr.io/grammatonic/pihole-analyzer:latest
     container_name: pihole-analyzer
@@ -9,22 +9,50 @@ services:
       - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
       - ./reports:/app/reports
     environment:
-      - PIHOLE_CONFIG=/home/appuser/.pihole-analyzer/config.json
+      # Pi-hole API Configuration
+      PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
+      PIHOLE_API_ENABLED: "true"
+      PIHOLE_API_PASSWORD: "${PIHOLE_API_PASSWORD}"
+      PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
+      PIHOLE_API_TIMEOUT: "${PIHOLE_API_TIMEOUT:-30}"
+      
+      # Logging Configuration
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      LOG_ENABLE_COLORS: "${LOG_ENABLE_COLORS:-true}"
+      LOG_ENABLE_EMOJIS: "${LOG_ENABLE_EMOJIS:-true}"
+      
+      # Security and SSL
+      PIHOLE_VERIFY_SSL: "${PIHOLE_VERIFY_SSL:-true}"
+      
+      # Analysis Configuration
+      ANALYSIS_ONLINE_ONLY: "${ANALYSIS_ONLINE_ONLY:-false}"
+      
+      # Container Optimization
+      GOMEMLIMIT: "${GOMEMLIMIT:-128MiB}"
+      GOMAXPROCS: "${GOMAXPROCS:-2}"
+    
+    # Resource limits for production deployment
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
+    
     networks:
       - pihole-net
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "./pihole-analyzer", "--help"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
 
-  # Development service with live development environment
+  # Development service with live development environment and API testing
   pihole-analyzer-dev:
     build:
       context: .
       target: development
+      args:
+        VERSION: dev
+        BUILD_TIME: "${BUILD_TIME:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
       cache_from:
         - golang:1.23-alpine
         - alpine:latest
@@ -36,11 +64,21 @@ services:
       - go-cache:/go/pkg/mod
       - build-cache:/home/appuser/.cache/go-build
     environment:
-      - DEVELOPMENT=true
-      - GOCACHE=/home/appuser/.cache/go-build
-      - GOMODCACHE=/go/pkg/mod
+      # Development Configuration
+      DEVELOPMENT: "true"
+      GOCACHE: "/home/appuser/.cache/go-build"
+      GOMODCACHE: "/go/pkg/mod"
+      
+      # Pi-hole API Configuration for testing
+      PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
+      PIHOLE_API_ENABLED: "true"
+      PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
+      
+      # Development Logging
+      LOG_LEVEL: "debug"
+      LOG_ENABLE_COLORS: "true"
+      LOG_ENABLE_EMOJIS: "true"
     working_dir: /app
-    command: ["./pihole-analyzer-test", "--test"]
     networks:
       - pihole-net
 
