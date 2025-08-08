@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
+        go-version: '1.23.x'
         
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -53,15 +53,15 @@ jobs:
     - name: Run integration tests
       run: |
         echo "Building Pi-hole Network Analyzer..."
-        go build -o pihole-network-analyzer .
+        go build -o pihole-analyzer ./cmd/pihole-analyzer
         echo "Running comprehensive integration test suite..."
-        ./pihole-network-analyzer --test
+        ./pihole-analyzer --test
       timeout-minutes: 8
       
     - name: Run performance benchmarks
       run: |
         echo "Running performance benchmarks..."
-        go test -bench=. -run=Benchmark -timeout=3m
+        go test -bench=. -run=Benchmark -timeout=3m ./...
       timeout-minutes: 4
         
     - name: Check code formatting
@@ -89,7 +89,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
+        go-version: '1.23.x'
         
     - name: Test integration script functionality
       run: |
@@ -109,7 +109,7 @@ jobs:
     - name: Verify test scenarios are supported
       run: |
         echo "🔍 Verifying all test scenarios are supported..."
-        scenarios=("csv-analysis" "pihole-db" "colorized-output" "all-features")
+        scenarios=("pihole-db" "colorized-output" "all-features")
         
         for scenario in "${scenarios[@]}"; do
           echo "Checking scenario: $scenario"
@@ -131,8 +131,8 @@ jobs:
     
     strategy:
       matrix:
-        go-version: ['1.24.x']
-        test-scenario: ['csv-analysis', 'pihole-db', 'colorized-output', 'all-features']
+        go-version: ['1.23.x']
+        test-scenario: ['pihole-db', 'colorized-output', 'all-features']
     
     steps:
     - name: Checkout code
@@ -159,8 +159,8 @@ jobs:
     - name: Build application
       run: |
         echo "Building for integration tests with Go ${{ matrix.go-version }}..."
-        go build -race -o pihole-network-analyzer .
-        chmod +x pihole-network-analyzer
+        go build -race -o pihole-analyzer ./cmd/pihole-analyzer
+        chmod +x pihole-analyzer
       timeout-minutes: 3
       
     - name: Run scenario-specific integration tests
@@ -174,9 +174,9 @@ jobs:
     - name: Test cross-platform compatibility
       run: |
         echo "Testing cross-platform builds..."
-        GOOS=windows GOARCH=amd64 go build -o test-windows.exe .
-        GOOS=darwin GOARCH=amd64 go build -o test-darwin .
-        GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 .
+        GOOS=windows GOARCH=amd64 go build -o test-windows.exe ./cmd/pihole-analyzer
+        GOOS=darwin GOARCH=amd64 go build -o test-darwin ./cmd/pihole-analyzer
+        GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 ./cmd/pihole-analyzer
         echo "✅ Cross-platform compatibility verified"
         rm -f test-windows.exe test-darwin test-linux-arm64
       timeout-minutes: 4
@@ -215,7 +215,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
+        go-version: '1.23.x'
         
     - name: Run govulncheck
       run: |
@@ -240,7 +240,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
+        go-version: '1.23.x'
         
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -258,7 +258,7 @@ jobs:
       run: |
         echo "🔍 Verifying build compatibility for feature branch..."
         echo "Building for Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build .
+        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build ./cmd/pihole-analyzer
         echo "✅ Build verification successful - ready for merge!"
         rm -f /tmp/test-build
       timeout-minutes: 5
@@ -278,7 +278,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.x'
+        go-version: '1.23.x'
         
     - name: Cache Go modules
       uses: actions/cache@v4
@@ -307,41 +307,41 @@ jobs:
         
         # Linux builds
         echo "Building Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-amd64 .
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-amd64 ./cmd/pihole-analyzer
         echo "Building Linux ARM64..."
-        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-arm64 .
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-arm64 ./cmd/pihole-analyzer
         
         # Windows builds
         echo "Building Windows AMD64..."
-        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-amd64.exe .
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-amd64.exe ./cmd/pihole-analyzer
         echo "Building Windows ARM64..."
-        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-arm64.exe .
+        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-arm64.exe ./cmd/pihole-analyzer
         
         # macOS builds
         echo "Building macOS AMD64..."
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-amd64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-amd64 ./cmd/pihole-analyzer
         echo "Building macOS ARM64..."
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-arm64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-arm64 ./cmd/pihole-analyzer
         
         echo "✅ All platform builds completed successfully!"
         
         # Create checksums
         echo "📋 Generating checksums..."
-        sha256sum pihole-network-analyzer-* > checksums.txt
+        sha256sum pihole-analyzer-* > checksums.txt
         
         # List all files
         echo "📦 Build artifacts:"
-        ls -la pihole-network-analyzer-* checksums.txt
+        ls -la pihole-analyzer-* checksums.txt
       timeout-minutes: 8
         
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pihole-network-analyzer-${{ steps.version.outputs.version }}
+        name: pihole-analyzer-${{ steps.version.outputs.version }}
         path: |
-          pihole-network-analyzer-linux-*
-          pihole-network-analyzer-windows-*.exe
-          pihole-network-analyzer-darwin-*
+          pihole-analyzer-linux-*
+          pihole-analyzer-windows-*.exe
+          pihole-analyzer-darwin-*
           checksums.txt
         retention-days: 90
         

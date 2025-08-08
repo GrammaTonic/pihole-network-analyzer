@@ -48,7 +48,6 @@ type ColorConfig struct {
 	Enabled       bool
 	ForceDisabled bool
 	UseEmoji      bool
-	TestMode      bool // For unit testing - bypasses terminal detection
 }
 
 // Global color configuration
@@ -65,11 +64,6 @@ func colorEnabled() bool {
 
 	if !colorConfig.Enabled {
 		return false
-	}
-
-	// In test mode, bypass terminal and OS checks
-	if colorConfig.TestMode {
-		return true
 	}
 
 	// Disable colors on Windows unless explicitly enabled
@@ -119,6 +113,9 @@ func BoldBlue(text string) string   { return Colorize(ColorBoldBlue, text) }
 func BoldPurple(text string) string { return Colorize(ColorBoldPurple, text) }
 func BoldCyan(text string) string   { return Colorize(ColorBoldCyan, text) }
 func BoldWhite(text string) string  { return Colorize(ColorBoldWhite, text) }
+
+// White function for compatibility
+func White(text string) string { return Colorize(ColorWhite, text) }
 
 // Formatting helper functions
 func Bold(text string) string      { return Colorize(ColorBold, text) }
@@ -287,16 +284,19 @@ func IsColorEnabled() bool {
 	return colorEnabled()
 }
 
-// EnableTestMode enables colors for unit testing (bypasses terminal detection)
-func EnableTestMode() {
-	colorConfig.TestMode = true
-	colorConfig.Enabled = true
-	colorConfig.ForceDisabled = false
+// GetDisplayLength returns the display length of text (exported version)
+func GetDisplayLength(text string) int {
+	return getDisplayLength(text)
 }
 
-// DisableTestMode disables test mode
-func DisableTestMode() {
-	colorConfig.TestMode = false
+// IsForceDisabled returns whether colors are force disabled
+func IsForceDisabled() bool {
+	return colorConfig.ForceDisabled
+}
+
+// IsEmojiEnabled returns whether emojis are enabled
+func IsEmojiEnabled() bool {
+	return colorConfig.UseEmoji
 }
 
 // stripColorCodes removes ANSI color codes from a string to calculate its actual display length

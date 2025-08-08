@@ -55,14 +55,14 @@ run_test_with_timeout() {
 
 # Function to check if binary exists
 check_binary() {
-    if [ ! -f "./pihole-network-analyzer" ]; then
-        print_status $RED "❌ Binary './pihole-network-analyzer' not found. Please build first."
+    if [ ! -f "./pihole-analyzer" ]; then
+        print_status $RED "❌ Binary './pihole-analyzer' not found. Please build first."
         exit 1
     fi
     
-    if [ ! -x "./pihole-network-analyzer" ]; then
+    if [ ! -x "./pihole-analyzer" ]; then
         print_status $YELLOW "⚠️ Making binary executable..."
-        chmod +x ./pihole-network-analyzer
+        chmod +x ./pihole-analyzer
     fi
 }
 
@@ -97,15 +97,15 @@ test_csv_analysis() {
     
     # Test 1: Basic CSV analysis
     run_test_with_timeout "CSV Analysis - Default" \
-        "./pihole-network-analyzer --quiet test_small.csv" 120
+        "./pihole-analyzer --quiet test_small.csv" 120
     
     # Test 2: CSV with no exclusions
     run_test_with_timeout "CSV Analysis - No Exclusions" \
-        "./pihole-network-analyzer --no-exclude --quiet test_small.csv" 60
+        "./pihole-analyzer --no-exclude --quiet test_small.csv" 60
     
     # Test 3: CSV online only
     run_test_with_timeout "CSV Analysis - Online Only" \
-        "./pihole-network-analyzer --online-only --quiet test_small.csv" 60
+        "./pihole-analyzer --online-only --quiet test_small.csv" 60
     
     # Cleanup
     rm -f test_small.csv
@@ -122,11 +122,11 @@ test_pihole_db() {
     
     # Test 1: Pi-hole analysis with mock data
     run_test_with_timeout "Pi-hole DB Analysis" \
-        "./pihole-network-analyzer --test-mode --quiet" 90
+        "./pihole-analyzer --test-mode --quiet" 90
     
     # Test 2: Pi-hole with custom config
     run_test_with_timeout "Pi-hole Custom Config" \
-        "./pihole-network-analyzer --config=test-config.json --test-mode --quiet" 60
+        "./pihole-analyzer --config=test-config.json --test-mode --quiet" 60
     
     # Cleanup
     rm -rf test_pihole_env
@@ -166,7 +166,7 @@ test_all_features() {
     
     # Full application test suite (this includes the main 13 tests)
     run_test_with_timeout "Comprehensive Test Suite" \
-        "./pihole-network-analyzer --test" 300
+        "./pihole-analyzer --test" 300
     
     # Additional Go tests (CI-friendly pattern)
     if [ "$CI" = "true" ]; then

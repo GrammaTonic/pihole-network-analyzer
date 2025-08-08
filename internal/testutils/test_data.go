@@ -8,51 +8,60 @@ import (
 	"strconv"
 	"time"
 
-	"pihole-network-analyzer/internal/types"
+	"pihole-analyzer/internal/types"
 
 	_ "modernc.org/sqlite"
 )
 
+// getStatusCodeFromString converts status strings to status codes
+func getStatusCodeFromString(status string) int {
+	switch status {
+	case "Blocked (gravity)":
+		return 1
+	case "Forwarded":
+		return 2
+	case "Cached":
+		return 3
+	case "Blocked (regex/wildcard)":
+		return 4
+	case "Blocked (exact)":
+		return 5
+	case "Blocked (external)":
+		return 6
+	case "CNAME":
+		return 7
+	case "Retried":
+		return 8
+	case "Retried but ignored":
+		return 9
+	case "Already forwarded":
+		return 10
+	case "Already cached":
+		return 11
+	case "Config blocked":
+		return 12
+	case "Gravity blocked":
+		return 13
+	case "Regex blocked":
+		return 14
+	default:
+		return 0
+	}
+}
+
 // MockData contains all the mock data for testing
+// MockData contains all the mock data for testing (CSV support removed)
 type MockData struct {
-	DNSRecords    []types.DNSRecord
 	PiholeRecords []types.PiholeRecord
 	ARPEntries    map[string]*types.ARPEntry
 	Hostnames     map[string]string
 }
 
-// CreateMockData generates realistic test data
+// CreateMockData generates realistic test data (Pi-hole only, CSV support removed)
 func CreateMockData() *MockData {
 	mock := &MockData{
 		ARPEntries: make(map[string]*types.ARPEntry),
 		Hostnames:  make(map[string]string),
-	}
-
-	// Mock DNS records (simulating CSV data)
-	mock.DNSRecords = []types.DNSRecord{
-		{ID: 1, DateTime: "2024-08-06 10:00:01", Domain: "google.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.003245},
-		{ID: 2, DateTime: "2024-08-06 10:00:02", Domain: "facebook.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.002134},
-		{ID: 3, DateTime: "2024-08-06 10:00:03", Domain: "youtube.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.004567},
-		{ID: 4, DateTime: "2024-08-06 10:00:04", Domain: "tracking.doubleclick.net", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001234},
-		{ID: 5, DateTime: "2024-08-06 10:00:05", Domain: "api.spotify.com", Type: 1, Client: "192.168.2.6", ResponseTime: 0.002876},
-		{ID: 6, DateTime: "2024-08-06 10:00:06", Domain: "docker.internal", Type: 1, Client: "172.20.0.8", ResponseTime: 0.000234},
-		{ID: 7, DateTime: "2024-08-06 10:00:07", Domain: "github.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.003456},
-		{ID: 8, DateTime: "2024-08-06 10:00:08", Domain: "ads.microsoft.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001567},
-		{ID: 9, DateTime: "2024-08-06 10:00:09", Domain: "cdn.jsdelivr.net", Type: 1, Client: "192.168.2.202", ResponseTime: 0.004123},
-		{ID: 10, DateTime: "2024-08-06 10:00:10", Domain: "malware.badsite.com", Type: 1, Client: "192.168.2.119", ResponseTime: 0.000456},
-		// Add more records for variety
-		{ID: 11, DateTime: "2024-08-06 10:00:11", Domain: "netflix.com", Type: 1, Client: "192.168.2.202", ResponseTime: 0.005234},
-		{ID: 12, DateTime: "2024-08-06 10:00:12", Domain: "amazon.com", Type: 1, Client: "192.168.2.119", ResponseTime: 0.003789},
-		{ID: 13, DateTime: "2024-08-06 10:00:13", Domain: "microsoft.com", Type: 1, Client: "192.168.2.110", ResponseTime: 0.002345},
-		{ID: 14, DateTime: "2024-08-06 10:00:14", Domain: "telemetry.microsoft.com", Type: 1, Client: "192.168.2.210", ResponseTime: 0.001234},
-		{ID: 15, DateTime: "2024-08-06 10:00:15", Domain: "pi.hole", Type: 1, Client: "192.168.2.6", ResponseTime: 0.000123},
-		// Docker container traffic
-		{ID: 16, DateTime: "2024-08-06 10:00:16", Domain: "registry-1.docker.io", Type: 1, Client: "172.20.0.8", ResponseTime: 0.002456},
-		{ID: 17, DateTime: "2024-08-06 10:00:17", Domain: "hub.docker.com", Type: 1, Client: "172.19.0.2", ResponseTime: 0.003123},
-		{ID: 18, DateTime: "2024-08-06 10:00:18", Domain: "auth.docker.io", Type: 1, Client: "172.20.0.8", ResponseTime: 0.001789},
-		// IPv6 and other addresses
-		{ID: 19, DateTime: "2024-08-06 10:00:19", Domain: "ipv6.google.com", Type: 28, Client: "2001:db8::1", ResponseTime: 0.004567},
-		{ID: 20, DateTime: "2024-08-06 10:00:20", Domain: "localhost", Type: 1, Client: "127.0.0.1", ResponseTime: 0.000045},
 	}
 
 	// Mock Pi-hole records (simulating database data)
@@ -103,42 +112,6 @@ func CreateMockData() *MockData {
 	}
 
 	return mock
-}
-
-// CreateMockCSVFile creates a CSV file with mock DNS data
-func CreateMockCSVFile(filename string, mockData *MockData) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return fmt.Errorf("error creating mock CSV file: %v", err)
-	}
-	defer file.Close()
-
-	// Write CSV header
-	_, err = file.WriteString("ID,DateTime,Domain,Type,Status,Client,Forward,AdditionalInfo,ReplyType,ReplyTime,DNSSEC,ListID,EDE\n")
-	if err != nil {
-		return err
-	}
-
-	// Write mock data records
-	for _, record := range mockData.types.DNSRecords {
-		line := fmt.Sprintf("%d,%s,%s,%d,%d,%s,,%s,%d,%.6f,0,0,0\n",
-			record.ID,
-			record.DateTime,
-			record.Domain,
-			record.Type,
-			record.Status,
-			record.Client,
-			record.AdditionalInfo,
-			record.ReplyType,
-			record.ReplyTime,
-		)
-		_, err = file.WriteString(line)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // CreateMockPiholeDatabase creates a SQLite database with mock Pi-hole data
@@ -227,9 +200,10 @@ func CreateMockPiholeDatabase(filename string, mockData *MockData) error {
 	// Insert query records
 	queryInsert := `INSERT INTO queries (timestamp, type, status, domain, client, forward) VALUES (?, ?, ?, ?, ?, ?)`
 
-	for _, record := range mockData.types.PiholeRecords {
-		statusCode := getStatusCodeFromString(record.Status)
-		_, err = db.Exec(queryInsert, int64(record.Timestamp), 1, statusCode, record.Domain, record.Client, "")
+	for _, record := range mockData.PiholeRecords {
+		// record.Status is already an int in types.PiholeRecord
+		timestamp := time.Now().Unix() // Use current time if record.Timestamp is not available
+		_, err = db.Exec(queryInsert, timestamp, 1, record.Status, record.Domain, record.Client, "")
 		if err != nil {
 			return fmt.Errorf("error inserting query: %v", err)
 		}
@@ -278,13 +252,6 @@ func SetupTestEnvironment() (*MockData, error) {
 		return nil, fmt.Errorf("error creating test directory: %v", err)
 	}
 
-	// Create mock CSV file
-	csvFile := filepath.Join(testDir, "mock_dns_data.csv")
-	err = CreateMockCSVFile(csvFile, mockData)
-	if err != nil {
-		return nil, fmt.Errorf("error creating mock CSV: %v", err)
-	}
-
 	// Create mock Pi-hole database
 	dbFile := filepath.Join(testDir, "mock_pihole.db")
 	err = CreateMockPiholeDatabase(dbFile, mockData)
@@ -299,10 +266,9 @@ func SetupTestEnvironment() (*MockData, error) {
 		return nil, fmt.Errorf("error creating mock config: %v", err)
 	}
 
-	fmt.Printf("✓ Mock CSV file created: %s\n", csvFile)
 	fmt.Printf("✓ Mock Pi-hole database created: %s\n", dbFile)
 	fmt.Printf("✓ Mock configuration created: %s\n", configFile)
-	fmt.Println("✓ Test environment setup complete!")
+	fmt.Println("✓ Test environment setup complete (CSV support removed)!")
 
 	return mockData, nil
 }

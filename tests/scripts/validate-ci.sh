@@ -31,7 +31,7 @@ print_warning() {
 cleanup() {
     echo "🧹 Cleaning up..."
     rm -f dns-analyzer-test
-    rm -f pihole-network-analyzer
+    rm -f pihole-analyzer
     rm -rf test_data/
     rm -rf reports/
     rm -f test-config.json
@@ -57,7 +57,7 @@ else
 fi
 
 # Also build with the same name as CI uses
-if go build -o pihole-network-analyzer . >/dev/null 2>&1; then
+if go build -o pihole-analyzer . >/dev/null 2>&1; then
     print_status "CI-compatible build successful"
 else
     print_error "CI-compatible build failed"
@@ -88,7 +88,7 @@ fi
 echo ""
 echo "🚀 Step 3.5: Testing CI-exact commands"
 echo "Testing the exact same commands that GitHub Actions runs..."
-if ./pihole-network-analyzer --test > ci_test_output.log 2>&1; then
+if ./pihole-analyzer --test > ci_test_output.log 2>&1; then
     if grep -q "All tests passed!" ci_test_output.log; then
         print_status "CI-exact test suite passed"
     else

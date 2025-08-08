@@ -60,24 +60,24 @@ go vet ./...
 print_status $? "Static analysis passed"
 
 print_info "Step 5: Building application..."
-go build -o pihole-network-analyzer .
+go build -o pihole-analyzer ./cmd/pihole-analyzer
 print_status $? "Application built successfully"
 
 print_info "Step 6: Running test suite..."
-./pihole-network-analyzer --test
+./pihole-analyzer --test
 print_status $? "All tests passed"
 
 print_info "Step 7: Testing multi-platform builds..."
 echo "  - Linux AMD64..."
-GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 .
+GOOS=linux GOARCH=amd64 go build -o /tmp/test-linux-amd64 ./cmd/pihole-analyzer
 print_status $? "Linux AMD64 build"
 
 echo "  - Windows AMD64..."
-GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe .
+GOOS=windows GOARCH=amd64 go build -o /tmp/test-windows-amd64.exe ./cmd/pihole-analyzer
 print_status $? "Windows AMD64 build"
 
 echo "  - macOS ARM64..."
-GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 .
+GOOS=darwin GOARCH=arm64 go build -o /tmp/test-darwin-arm64 ./cmd/pihole-analyzer
 print_status $? "macOS ARM64 build"
 
 # Cleanup test builds
@@ -113,4 +113,4 @@ echo "  git commit -m 'Your commit message'"
 echo "  git push origin $CURRENT_BRANCH"
 
 # Cleanup
-rm -f pihole-network-analyzer
+rm -f pihole-analyzer

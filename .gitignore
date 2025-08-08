@@ -1,7 +1,5 @@
 # Binaries
-pihole-network-analyzer
-pihole-network-analyzer-*
-dns-analyzer
+pihole-analyzer
 *.exe
 *.exe~
 *.dll
@@ -19,7 +17,6 @@ go.work
 
 # Generated reports
 reports/
-dns_usage_report_*.txt
 
 # Pi-hole related files
 pihole-config.json
@@ -27,7 +24,6 @@ pihole-data-*.db
 
 # CI/CD test artifacts
 /tmp/test-*
-test_data/
 
 # IDE files
 .vscode/

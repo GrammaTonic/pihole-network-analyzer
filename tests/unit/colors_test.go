@@ -1,15 +1,17 @@
-package main
+package colors_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
-	"pihole-network-analyzer/internal/colors"
+	"pihole-analyzer/internal/colors"
 )
 
 func TestBasicColors(t *testing.T) {
-	colors.EnableTestMode()
-	defer colors.DisableColors()
+	// Ensure terminal environment for color detection
+	os.Setenv("TERM", "xterm-256color")
+	defer os.Unsetenv("TERM")
 
 	result := colors.Red("test")
 	if !strings.Contains(result, "test") {
@@ -18,8 +20,9 @@ func TestBasicColors(t *testing.T) {
 }
 
 func TestStatusColors(t *testing.T) {
-	colors.EnableTestMode()
-	defer colors.DisableColors()
+	// Ensure terminal environment for color detection
+	os.Setenv("TERM", "xterm-256color")
+	defer os.Unsetenv("TERM")
 
 	result := colors.Success("OK")
 	if !strings.Contains(result, "OK") {
