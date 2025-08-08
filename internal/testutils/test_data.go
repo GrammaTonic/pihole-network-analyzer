@@ -166,7 +166,7 @@ func CreateMockCSVFile(filename string, mockData *MockData) error {
 			record.Client,
 			"", // AdditionalInfo - not in types.DNSRecord
 			0,  // ReplyType - not in types.DNSRecord
-			record.ResponseTime,
+			record.ReplyTime,
 		)
 		_, err = file.WriteString(line)
 		if err != nil {
