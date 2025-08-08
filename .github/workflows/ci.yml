@@ -53,7 +53,7 @@ jobs:
     - name: Run integration tests
       run: |
         echo "Building Pi-hole Network Analyzer..."
-        go build -o pihole-network-analyzer .
+        go build -o pihole-network-analyzer ./cmd/pihole-analyzer
         echo "Running comprehensive integration test suite..."
         ./pihole-network-analyzer --test
       timeout-minutes: 8
@@ -159,7 +159,7 @@ jobs:
     - name: Build application
       run: |
         echo "Building for integration tests with Go ${{ matrix.go-version }}..."
-        go build -race -o pihole-network-analyzer .
+        go build -race -o pihole-network-analyzer ./cmd/pihole-analyzer
         chmod +x pihole-network-analyzer
       timeout-minutes: 3
       
@@ -174,9 +174,9 @@ jobs:
     - name: Test cross-platform compatibility
       run: |
         echo "Testing cross-platform builds..."
-        GOOS=windows GOARCH=amd64 go build -o test-windows.exe .
-        GOOS=darwin GOARCH=amd64 go build -o test-darwin .
-        GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 .
+        GOOS=windows GOARCH=amd64 go build -o test-windows.exe ./cmd/pihole-analyzer
+        GOOS=darwin GOARCH=amd64 go build -o test-darwin ./cmd/pihole-analyzer
+        GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 ./cmd/pihole-analyzer
         echo "✅ Cross-platform compatibility verified"
         rm -f test-windows.exe test-darwin test-linux-arm64
       timeout-minutes: 4
@@ -258,7 +258,7 @@ jobs:
       run: |
         echo "🔍 Verifying build compatibility for feature branch..."
         echo "Building for Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build .
+        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build ./cmd/pihole-analyzer
         echo "✅ Build verification successful - ready for merge!"
         rm -f /tmp/test-build
       timeout-minutes: 5
@@ -307,21 +307,21 @@ jobs:
         
         # Linux builds
         echo "Building Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-amd64 .
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-amd64 ./cmd/pihole-analyzer
         echo "Building Linux ARM64..."
-        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-arm64 .
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-linux-arm64 ./cmd/pihole-analyzer
         
         # Windows builds
         echo "Building Windows AMD64..."
-        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-amd64.exe .
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-amd64.exe ./cmd/pihole-analyzer
         echo "Building Windows ARM64..."
-        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-arm64.exe .
+        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-windows-arm64.exe ./cmd/pihole-analyzer
         
         # macOS builds
         echo "Building macOS AMD64..."
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-amd64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-amd64 ./cmd/pihole-analyzer
         echo "Building macOS ARM64..."
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-arm64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-network-analyzer-darwin-arm64 ./cmd/pihole-analyzer
         
         echo "✅ All platform builds completed successfully!"
         

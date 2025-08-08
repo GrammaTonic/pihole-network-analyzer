@@ -1,0 +1,175 @@
+name: ✨ Feature Request
+description: Suggest a new feature or improvement for Pi-hole Network Analyzer
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide details about your idea to help us understand and evaluate it.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm you have completed these steps
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested
+          required: true
+        - label: I have checked the project roadmap and documentation
+          required: true
+        - label: This feature aligns with the project's goals and scope
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: What category does this feature fall into?
+      options:
+        - Analysis & Reporting
+        - Output & Visualization
+        - Pi-hole Integration
+        - Performance & Optimization
+        - Configuration & Setup
+        - API & Integration
+        - Testing & CI/CD
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered
+      placeholder: I also considered...
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Significantly impacts usability
+        - Critical - Blocking current usage
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: Implementation Considerations
+      description: Which areas might this feature impact?
+      options:
+        - label: Core analysis engine
+        - label: Colorized output system
+        - label: SSH/Pi-hole connectivity
+        - label: CSV file processing
+        - label: Configuration management
+        - label: Command-line interface
+        - label: Performance/memory usage
+        - label: Cross-platform compatibility
+        - label: Testing framework
+        - label: Documentation
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Describe specific scenarios where this feature would be valuable
+      placeholder: |
+        1. When analyzing large networks...
+        2. For monitoring production Pi-hole servers...
+        3. To identify security issues...
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or Mockups
+      description: Provide examples, command-line usage, or visual mockups
+      placeholder: |
+        Example command:
+        ./pihole-analyzer --new-feature --option value file.csv
+        
+        Expected output:
+        ...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple - Minor code changes
+        - Moderate - New functionality, limited scope
+        - Complex - Major changes or refactoring
+        - Very Complex - Architectural changes
+        - Unknown
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility Requirements
+      description: What compatibility considerations are important?
+      options:
+        - label: Must work with existing CSV format
+        - label: Must maintain Pi-hole SSH compatibility
+        - label: Should preserve colorized output capability
+        - label: Must work on Linux, macOS, and Windows
+        - label: Should maintain backward compatibility
+        - label: Must work in CI/automated environments
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, links, or screenshots about the feature request
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Are you interested in contributing to this feature?
+      options:
+        - label: I would like to work on implementing this feature
+        - label: I can provide testing and feedback
+        - label: I can help with documentation
+        - label: I can provide domain expertise
+        - label: I'm interested but need guidance on where to start
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        **Next Steps:**
+        1. Maintainers will evaluate the feature request
+        2. If approved, it will be added to the project roadmap
+        3. Implementation will follow our branch protection workflow
+        4. All features must pass CI tests before merging
+        
+        See our [Contributing Guide](../CONTRIBUTING.md) and [Project Roadmap](../docs/ROADMAP_DOCKER_MONITORING.md) for more information.

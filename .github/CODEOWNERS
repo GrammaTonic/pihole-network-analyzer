@@ -1,0 +1,42 @@
+# Code Owners for Pi-hole Network Analyzer
+# 
+# This file defines code owners for different parts of the repository.
+# Code owners are automatically requested for review when changes are made.
+# 
+# GitHub will automatically request reviews from code owners when:
+# 1. A pull request is opened that affects owned files
+# 2. Branch protection is configured to require code owner reviews
+#
+# For more information: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - these users/teams are requested for review on all changes
+* @GrammaTonic
+
+# Core application code
+/cmd/ @GrammaTonic
+/internal/ @GrammaTonic
+
+# Documentation owners
+*.md @GrammaTonic
+/docs/ @GrammaTonic
+
+# Configuration and build system
+Makefile @GrammaTonic
+go.mod @GrammaTonic
+go.sum @GrammaTonic
+
+# CI/CD and GitHub configuration
+/.github/ @GrammaTonic
+/scripts/ @GrammaTonic
+
+# Testing framework
+/tests/ @GrammaTonic
+/testdata/ @GrammaTonic
+
+# Branch protection and repository security
+/.github/BRANCH_PROTECTION.md @GrammaTonic
+/scripts/setup-branch-protection.sh @GrammaTonic
+/CONTRIBUTING.md @GrammaTonic
+
+# Security-sensitive files
+/.github/workflows/ @GrammaTonic

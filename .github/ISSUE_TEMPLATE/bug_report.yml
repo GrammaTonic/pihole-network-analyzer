@@ -1,0 +1,174 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve Pi-hole Network Analyzer
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the sections below to help us understand and fix the issue.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm you have completed these steps
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have tested with the latest version of the application
+          required: true
+        - label: I have read the documentation and troubleshooting guides
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior
+      placeholder: |
+        1. Run command '...'
+        2. With file '...'
+        3. See error '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Describe the expected behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Analysis Mode
+      description: Which mode were you using when the bug occurred?
+      options:
+        - CSV file analysis
+        - Pi-hole live analysis (SSH)
+        - Test mode (--test)
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command Used
+      description: The exact command you ran when the bug occurred
+      placeholder: "./pihole-network-analyzer --option file.csv"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux (Ubuntu/Debian)
+        - Linux (Red Hat/CentOS/Fedora)
+        - Linux (Other)
+        - macOS
+        - Windows 10/11
+        - Windows (Other)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go Version
+      description: What version of Go are you using? (run `go version`)
+      placeholder: "go version go1.24.5 linux/amd64"
+
+  - type: dropdown
+    id: terminal
+    attributes:
+      label: Terminal
+      description: What terminal are you using?
+      options:
+        - gnome-terminal (Linux)
+        - konsole (KDE)
+        - xterm (Linux)
+        - Terminal.app (macOS)
+        - iTerm2 (macOS)
+        - Windows Terminal
+        - Command Prompt (Windows)
+        - PowerShell (Windows)
+        - Other
+
+  - type: checkboxes
+    id: output-options
+    attributes:
+      label: Output Options Used
+      description: Which output options were enabled when the bug occurred?
+      options:
+        - label: Default colorized output
+        - label: --no-color flag
+        - label: --no-emoji flag
+        - label: --quiet flag
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: Error Output
+      description: Please paste any error messages or unexpected output
+      render: shell
+
+  - type: textarea
+    id: file-info
+    attributes:
+      label: File Information (if applicable)
+      description: Information about the CSV file or Pi-hole setup
+      placeholder: |
+        CSV File:
+        - Size: X MB
+        - Number of records: ~X
+        - Time range: YYYY-MM-DD to YYYY-MM-DD
+        
+        Pi-hole Setup:
+        - Pi-hole version: X.X.X
+        - SSH connection method: key/password
+        - Database size: X MB
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here, including screenshots if relevant
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        
+        **Next Steps:**
+        1. Our automated CI will validate any fixes
+        2. Branch protection ensures all tests pass before merging
+        3. You'll be notified when the issue is addressed
+        
+        See our [Contributing Guide](../CONTRIBUTING.md) for more information.

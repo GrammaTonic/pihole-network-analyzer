@@ -40,13 +40,14 @@ go run main.go --quiet --no-color your-logs.csv
 
 ## 🚀 Development Workflow
 
-This project uses **feature branch development** with automated CI/CD:
+This project uses **feature branch development** with **branch protection** and automated CI/CD:
 
+- **🛡️ Branch Protection**: All changes must go through pull requests with review
 - **🌿 Feature Branches**: Tests run, builds verify, no artifacts created
 - **🏗️ Main Branch**: Full builds with multi-platform binaries and releases  
 - **⚡ Quick Feedback**: Fast validation for rapid development
 
-See [FEATURE_WORKFLOW.md](FEATURE_WORKFLOW.md) for detailed workflow guide.
+See [FEATURE_WORKFLOW.md](FEATURE_WORKFLOW.md) for detailed workflow guide and [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines.
 
 ### Quick Start for Developers
 ```bash
@@ -54,6 +55,9 @@ See [FEATURE_WORKFLOW.md](FEATURE_WORKFLOW.md) for detailed workflow guide.
 make ci-test           # Run same tests as CI
 ./pre-push-test.sh     # Full pre-push validation
 make feature-branch    # Validate feature branch ready for push
+
+# Setup branch protection (maintainers only)
+./scripts/setup-branch-protection.sh
 ```
 
 ## 🔮 Coming Soon: Monitoring & Docker Support
