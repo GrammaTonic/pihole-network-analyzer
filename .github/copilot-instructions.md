@@ -210,8 +210,8 @@ sshConfig := &ssh.ClientConfig{
 
 ### High Priority
 1. **Improve error handling** in SSH operations
-2. **Add connection pooling** for multiple Pi-hole servers
-3. **Add structured logging** (replace fmt.Printf)
+2. **Add structured logging** (replace fmt.Printf)
+3. **🚧 ACTIVE: Separate testing utilities** - Remove testing code from production binary (see TESTING_SEPARATION_PLAN.md)
 4. **Implement configuration validation**
 
 ### Medium Priority
@@ -223,6 +223,8 @@ sshConfig := &ssh.ClientConfig{
 ## Integration Points
 
 ### CI/CD Pipeline
+- **Speed**: Fast builds with caching
+- **Artifacts**: Store build artifacts for easy access
 - **GitHub Actions**: `.github/workflows/` (when created)
 - **Test Commands**: `make ci-test`, `scripts/integration-test.sh`
 - **Cross-Platform**: Linux, macOS, Windows builds
@@ -256,10 +258,6 @@ sshConfig := &ssh.ClientConfig{
 4. **Multi-Platform ARM64**: Raspberry Pi deployment support
 
 ### Architecture Evolution
-1. **Microservices**: Split monolithic main.go
-2. **API Endpoints**: REST API for external integration
-3. **Database Support**: PostgreSQL/MySQL alternatives
-4. **Real-time Processing**: WebSocket streams for live analysis
 
 ---
 
@@ -267,8 +265,8 @@ sshConfig := &ssh.ClientConfig{
 
 When working on this project:
 
-1. **Always check** the naming consistency between `dns-analyzer` and `pihole-analyzer`
-2. **Use the internal packages** for colors, config, and types
+1. **Always check** the naming consistency `pihole-analyzer`
+2. **Use the internal packages** for modular functionality
 3. **Test Pi-hole SSH connectivity** for any changes
 4. **Maintain colorized output compatibility** with `--no-color` flag
 5. **Follow the Standard Go Project Layout** conventions
