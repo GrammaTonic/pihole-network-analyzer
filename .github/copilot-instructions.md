@@ -18,6 +18,8 @@ This file provides comprehensive guidance for AI coding assistants working on th
 
 **🚨 IMPORTANT**: 
 - CSV functionality completely removed as of August 2025
+- SSH functionality is completely removed as of August 2025
+- Getting data from Pi-Hole is now done via API calls instead of direct database access
 - Structured logging implemented with Go's `log/slog` package
 - Comprehensive Docker/container support added
 - Fast builds with advanced caching strategies implemented

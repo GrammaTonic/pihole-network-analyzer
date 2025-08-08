@@ -12,20 +12,18 @@ import (
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *types.Config {
-	homeDir, _ := os.UserHomeDir()
-
 	return &types.Config{
 		OnlineOnly: false,
 		NoExclude:  false,
 		TestMode:   false,
 
 		Pihole: types.PiholeConfig{
-			Host:     "",
-			Port:     22,
-			Username: "pi",
-			Password: "",
-			KeyFile:  filepath.Join(homeDir, ".ssh", "id_rsa"),
-			DBPath:   "/etc/pihole/pihole-FTL.db",
+			Host:        "",
+			Port:        80,
+			APIEnabled:  true,
+			APIPassword: "",
+			UseHTTPS:    false,
+			APITimeout:  30,
 		},
 
 		Exclusions: types.ExclusionConfig{
@@ -142,14 +140,14 @@ func ShowConfig(config *types.Config) {
 	logger.Info("\nPi-hole Configuration:")
 	logger.Info("  Host:            %s", config.Pihole.Host)
 	logger.Info("  Port:            %d", config.Pihole.Port)
-	logger.Info("  Username:        %s", config.Pihole.Username)
-	if config.Pihole.Password != "" {
-		logger.Info("  Password:        %s", "***configured***")
+	logger.Info("  API Enabled:     %t", config.Pihole.APIEnabled)
+	if config.Pihole.APIPassword != "" {
+		logger.Info("  API Password:    %s", "***configured***")
 	} else {
-		logger.Info("  Password:        %s", "not set")
+		logger.Info("  API Password:    %s", "not set")
 	}
-	logger.Info("  Key File:        %s", config.Pihole.KeyFile)
-	logger.Info("  Database Path:   %s", config.Pihole.DBPath)
+	logger.Info("  Use HTTPS:       %t", config.Pihole.UseHTTPS)
+	logger.Info("  API Timeout:     %d", config.Pihole.APITimeout)
 
 	logger.Info("\nExclusion Networks:")
 	for _, network := range config.Exclusions.ExcludeNetworks {
