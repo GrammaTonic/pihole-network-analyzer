@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 	_ "modernc.org/sqlite"
 
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 )
 
@@ -31,20 +33,39 @@ func AnalyzePiholeData(configFile string) (map[string]*types.ClientStats, error)
 		return nil, fmt.Errorf("error loading config: %v", err)
 	}
 
-	// Connect via SSH
-	client, err := connectSSH(config)
+	// Create connection manager with enhanced error handling
+	connMgr := NewConnectionManager(config)
+
+	// Connect via SSH with retry logic
+	ctx := context.Background()
+	client, err := connMgr.Connect(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("SSH connection failed: %v", err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			logger.Warn("Failed to close SSH connection: %v", closeErr)
+		}
+	}()
 
-	// Download Pi-hole database
+	// Test connection before proceeding
+	if err := connMgr.TestConnection(ctx); err != nil {
+		return nil, fmt.Errorf("SSH connection test failed: %v", err)
+	}
+
+	// Download Pi-hole database with enhanced file transfer
 	localDBPath := fmt.Sprintf("pihole-data-%d.db", time.Now().Unix())
-	err = downloadFile(client, config.DBPath, localDBPath)
+	fileTransfer := NewFileTransfer(client, &DefaultLogger{})
+
+	err = fileTransfer.DownloadFile(ctx, config.DBPath, localDBPath, DefaultTransferOptions())
 	if err != nil {
 		return nil, fmt.Errorf("error downloading database: %v", err)
 	}
-	defer os.Remove(localDBPath) // Clean up
+	defer func() {
+		if removeErr := os.Remove(localDBPath); removeErr != nil {
+			logger.Warn("Failed to cleanup database file %s: %v", localDBPath, removeErr)
+		}
+	}()
 
 	// Analyze the database
 	return AnalyzePiholeDatabase(localDBPath)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -9,6 +8,7 @@ import (
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/colors"
 	"pihole-analyzer/internal/config"
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/network"
 	"pihole-analyzer/internal/reporting"
 	sshpkg "pihole-analyzer/internal/ssh"
@@ -37,12 +37,24 @@ func main() {
 		log.Fatalf("Error loading configuration: %v", err)
 	}
 
+	// Initialize structured logger
+	loggerConfig := &logger.Config{
+		Level:         logger.LogLevel(cfg.Logging.Level),
+		EnableColors:  cfg.Logging.EnableColors,
+		EnableEmojis:  cfg.Logging.EnableEmojis,
+		OutputFile:    cfg.Logging.OutputFile,
+		ShowTimestamp: cfg.Logging.ShowTimestamp,
+		ShowCaller:    cfg.Logging.ShowCaller,
+	}
+	appLogger := logger.New(loggerConfig)
+	logger.SetGlobalLogger(appLogger)
+
 	// Apply command-line flags to configuration
 	cli.ApplyFlags(flags, cfg)
 
 	// Validate input - requires Pi-hole config
 	if err := cli.ValidateInput(flags); err != nil {
-		fmt.Printf("Error: %v\n", err)
+		logger.Error("Validation failed: %v", err)
 		cli.ShowUsage()
 		os.Exit(1)
 	}
@@ -53,12 +65,12 @@ func main() {
 	// Handle Pi-hole analysis
 	configFile := *flags.Pihole
 	if configFile == "" {
-		fmt.Printf("Error: Pi-hole configuration required. Use --pihole <config.json> or --pihole-setup\n")
+		logger.Error("Pi-hole configuration required. Use --pihole <config.json> or --pihole-setup")
 		cli.ShowUsage()
 		os.Exit(1)
 	}
 
-	fmt.Printf("Connecting to Pi-hole using config: %s\n", colors.Info(configFile))
+	logger.Info("Connecting to Pi-hole using config: %s", colors.Info(configFile))
 
 	// Analyze Pi-hole data
 	clientStats, err := analyzer.AnalyzePiholeData(configFile, cfg)
@@ -69,7 +81,7 @@ func main() {
 	// Check ARP status for all clients
 	err = network.CheckARPStatus(clientStats)
 	if err != nil {
-		fmt.Printf("%s: Could not check ARP status: %v\n", colors.Warning("Warning"), err)
+		logger.Warn("Could not check ARP status: %v", err)
 	}
 
 	reporting.DisplayResultsWithConfig(clientStats, cfg)

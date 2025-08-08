@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 )
 
@@ -43,6 +44,14 @@ func DefaultConfig() *types.Config {
 			MaxClients:    20,
 			MaxDomains:    10,
 		},
+
+		Logging: types.LoggingConfig{
+			Level:         "INFO",
+			EnableColors:  true,
+			EnableEmojis:  true,
+			ShowTimestamp: true,
+			ShowCaller:    false,
+		},
 	}
 }
 
@@ -52,7 +61,7 @@ func LoadConfig(configPath string) (*types.Config, error) {
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		fmt.Printf("Config file not found at %s, using defaults\n", configPath)
+		logger.Info("Config file not found at %s, using defaults", configPath)
 		return config, nil
 	}
 
@@ -67,7 +76,7 @@ func LoadConfig(configPath string) (*types.Config, error) {
 		return nil, fmt.Errorf("error parsing config file: %v", err)
 	}
 
-	fmt.Printf("Configuration loaded from %s\n", configPath)
+	logger.Success("Configuration loaded from %s", configPath)
 	return config, nil
 }
 
@@ -90,7 +99,7 @@ func SaveConfig(config *types.Config, configPath string) error {
 		return fmt.Errorf("error writing config file: %v", err)
 	}
 
-	fmt.Printf("Configuration saved to %s\n", configPath)
+	logger.Success("Configuration saved to %s", configPath)
 	return nil
 }
 
@@ -119,46 +128,46 @@ func CreateDefaultConfigFile(configPath string) error {
 
 // ShowConfig displays the current configuration
 func ShowConfig(config *types.Config) {
-	fmt.Println("\nCurrent Configuration:")
-	fmt.Println("======================")
-	fmt.Printf("Online Only:       %t\n", config.OnlineOnly)
-	fmt.Printf("No Exclude:        %t\n", config.NoExclude)
-	fmt.Printf("Test Mode:         %t\n", config.TestMode)
-	fmt.Printf("Max Clients:       %d\n", config.Output.MaxClients)
-	fmt.Printf("Max Domains:       %d\n", config.Output.MaxDomains)
-	fmt.Printf("Save Reports:      %t\n", config.Output.SaveReports)
-	fmt.Printf("Report Directory:  %s\n", config.Output.ReportDir)
-	fmt.Printf("Verbose Output:    %t\n", config.Output.VerboseOutput)
+	logger.Info("\nCurrent Configuration:")
+	logger.Info("======================")
+	logger.Info("Online Only:       %t", config.OnlineOnly)
+	logger.Info("No Exclude:        %t", config.NoExclude)
+	logger.Info("Test Mode:         %t", config.TestMode)
+	logger.Info("Max Clients:       %d", config.Output.MaxClients)
+	logger.Info("Max Domains:       %d", config.Output.MaxDomains)
+	logger.Info("Save Reports:      %t", config.Output.SaveReports)
+	logger.Info("Report Directory:  %s", config.Output.ReportDir)
+	logger.Info("Verbose Output:    %t", config.Output.VerboseOutput)
 
-	fmt.Println("\nPi-hole Configuration:")
-	fmt.Printf("  Host:            %s\n", config.Pihole.Host)
-	fmt.Printf("  Port:            %d\n", config.Pihole.Port)
-	fmt.Printf("  Username:        %s\n", config.Pihole.Username)
+	logger.Info("\nPi-hole Configuration:")
+	logger.Info("  Host:            %s", config.Pihole.Host)
+	logger.Info("  Port:            %d", config.Pihole.Port)
+	logger.Info("  Username:        %s", config.Pihole.Username)
 	if config.Pihole.Password != "" {
-		fmt.Printf("  Password:        %s\n", "***configured***")
+		logger.Info("  Password:        %s", "***configured***")
 	} else {
-		fmt.Printf("  Password:        %s\n", "not set")
+		logger.Info("  Password:        %s", "not set")
 	}
-	fmt.Printf("  Key File:        %s\n", config.Pihole.KeyFile)
-	fmt.Printf("  Database Path:   %s\n", config.Pihole.DBPath)
+	logger.Info("  Key File:        %s", config.Pihole.KeyFile)
+	logger.Info("  Database Path:   %s", config.Pihole.DBPath)
 
-	fmt.Println("\nExclusion Networks:")
+	logger.Info("\nExclusion Networks:")
 	for _, network := range config.Exclusions.ExcludeNetworks {
-		fmt.Printf("  - %s\n", network)
+		logger.Info("  - %s", network)
 	}
 	if len(config.Exclusions.ExcludeIPs) > 0 {
-		fmt.Println("Exclusion IPs:")
+		logger.Info("Exclusion IPs:")
 		for _, ip := range config.Exclusions.ExcludeIPs {
-			fmt.Printf("  - %s\n", ip)
+			logger.Info("  - %s", ip)
 		}
 	}
 	if len(config.Exclusions.ExcludeHosts) > 0 {
-		fmt.Println("Exclusion Hosts:")
+		logger.Info("Exclusion Hosts:")
 		for _, host := range config.Exclusions.ExcludeHosts {
-			fmt.Printf("  - %s\n", host)
+			logger.Info("  - %s", host)
 		}
 	}
-	fmt.Println()
+	logger.Info("")
 }
 
 // GetConfigPath returns the default configuration file path

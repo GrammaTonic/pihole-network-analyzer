@@ -7,6 +7,7 @@ import (
 
 	"pihole-analyzer/internal/colors"
 	"pihole-analyzer/internal/config"
+	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 )
 
@@ -52,11 +53,11 @@ func HandleSpecialFlags(flags *Flags) bool {
 	if *flags.ShowConfig {
 		cfg, err := config.LoadConfig(*flags.Config)
 		if err != nil {
-			fmt.Printf("Error loading config: %v\n", err)
+			logger.Error("Error loading config: %v", err)
 			return true
 		}
 
-		fmt.Printf("%s\n", colors.Header("Current Configuration"))
+		logger.Info("%s", colors.Header("Current Configuration"))
 		config.ShowConfig(cfg)
 		return true
 	}
@@ -69,9 +70,9 @@ func HandleSpecialFlags(flags *Flags) bool {
 
 		err := config.CreateDefaultConfigFile(configPath)
 		if err != nil {
-			fmt.Printf("Error creating config: %v\n", err)
+			logger.Error("Error creating config: %v", err)
 		} else {
-			fmt.Printf("Default configuration created at: %s\n", configPath)
+			logger.Success("Default configuration created at: %s", configPath)
 		}
 		return true
 	}
@@ -100,14 +101,14 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 // ShowUsage displays usage information
 func ShowUsage() {
-	fmt.Printf("Usage: %s [options]\n\n", os.Args[0])
-	fmt.Printf("Pi-hole Network Analyzer - Analyze Pi-hole DNS queries and network traffic\n\n")
-	fmt.Printf("Examples:\n")
-	fmt.Printf("  %s --pihole config.json     # Analyze live Pi-hole data\n", os.Args[0])
-	fmt.Printf("  %s --pihole-setup           # Setup Pi-hole SSH configuration\n", os.Args[0])
-	fmt.Printf("  %s --show-config            # Show current configuration\n", os.Args[0])
-	fmt.Printf("  %s --create-config          # Create default config file\n", os.Args[0])
-	fmt.Printf("\nOptions:\n")
+	logger.Info("Usage: %s [options]\n", os.Args[0])
+	logger.Info("Pi-hole Network Analyzer - Analyze Pi-hole DNS queries and network traffic\n")
+	logger.Info("Examples:")
+	logger.Info("  %s --pihole config.json     # Analyze live Pi-hole data", os.Args[0])
+	logger.Info("  %s --pihole-setup           # Setup Pi-hole SSH configuration", os.Args[0])
+	logger.Info("  %s --show-config            # Show current configuration", os.Args[0])
+	logger.Info("  %s --create-config          # Create default config file", os.Args[0])
+	logger.Info("\nOptions:")
 	flag.PrintDefaults()
 }
 
@@ -122,7 +123,7 @@ func ValidateInput(flags *Flags) error {
 // PrintStartupInfo prints startup information
 func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 	if !cfg.Quiet {
-		fmt.Printf("%s\n", colors.Header("🕳️ Pi-hole Network Analyzer"))
-		fmt.Printf("Analyzing Pi-hole DNS data with network insights\n\n")
+		logger.Info("%s", colors.Header("🕳️ Pi-hole Network Analyzer"))
+		logger.Info("Analyzing Pi-hole DNS data with network insights\n")
 	}
 }
