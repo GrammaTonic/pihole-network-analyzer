@@ -11,8 +11,8 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 - **Storage**: 50MB free space
 
 ### Network Requirements
-- SSH access to Pi-hole server
-- Network connectivity to analyze Pi-hole databases
+- Pi-hole API access enabled
+- Network connectivity to Pi-hole server
 - Terminal with color support (recommended)
 
 ## Installation Methods

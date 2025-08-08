@@ -1,5 +1,5 @@
 # docker-compose.api-only.yml - API-only deployment configuration for Phase 5
-# Complete SSH removal deployment for production environments
+# API-only deployment for production environments
 
 version: '3.8'
 

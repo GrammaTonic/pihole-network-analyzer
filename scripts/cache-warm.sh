@@ -16,19 +16,19 @@ go mod download
 
 # Warm up build cache by building core packages
 echo "🏗️  Pre-building core packages..."
-packages=(
-    "./internal/types"
-    "./internal/config" 
-    "./internal/colors"
-    "./internal/logger"
-    "./internal/cli"
-    "./internal/network"
-    "./internal/ssh"
+WARM_DIRS=(
+    "./cmd"
     "./internal/analyzer"
+    "./internal/cli"
+    "./internal/colors"
+    "./internal/config"
+    "./internal/interfaces"
+    "./internal/logger"
+    "./internal/network"
+    "./internal/pihole"
     "./internal/reporting"
-)
-
-for pkg in "${packages[@]}"; do
+    "./internal/types"
+)for pkg in "${packages[@]}"; do
     echo "  Building $pkg..."
     go build -i "$pkg" >/dev/null 2>&1 || true
 done

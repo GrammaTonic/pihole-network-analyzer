@@ -94,10 +94,10 @@ Example configuration:
 {
   "pihole": {
     "host": "192.168.1.50",
-    "port": 22,
-    "username": "pi",
-    "keyPath": "~/.ssh/id_rsa",
-    "dbPath": "/etc/pihole/pihole-FTL.db"
+    "port": 80,
+    "apiEnabled": true,
+    "apiPassword": "your-api-password",
+    "useHTTPS": false
   },
   "exclusions": {
     "networks": ["172.16.0.0/12", "127.0.0.0/8"],
@@ -146,10 +146,11 @@ The project follows the Standard Go Project Layout:
 │   ├── cli/                # Command-line interface
 │   ├── colors/             # Terminal colorization
 │   ├── config/             # Configuration management
+│   ├── interfaces/         # Data source abstraction
+│   ├── logger/             # Structured logging
 │   ├── network/            # Network analysis & ARP
+│   ├── pihole/             # Pi-hole API client
 │   ├── reporting/          # Output formatting
-│   ├── ssh/                # Pi-hole SSH connectivity
-│   ├── testutils/          # Testing utilities
 │   └── types/              # Core data structures
 ├── docs/                   # Documentation
 ├── scripts/                # Build and automation
@@ -189,7 +190,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Pi-hole](https://pi-hole.net/) - Network-wide ad blocking
-- [Go SSH Library](https://pkg.go.dev/golang.org/x/crypto/ssh) - SSH connectivity
+- [Pi-hole API](https://docs.pi-hole.net/api/) - Official Pi-hole API
 - [SQLite](https://www.sqlite.org/) - Database support
 
 ## 📞 Support

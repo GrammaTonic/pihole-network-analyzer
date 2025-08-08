@@ -7,7 +7,7 @@ cat << 'EOF'
 
 OVERVIEW:
 This tool analyzes DNS usage patterns from CSV files or directly from Pi-hole
-servers via SSH connection. It provides comprehensive statistics per client
+servers via API connection. It provides comprehensive statistics per client
 including query counts, domain patterns, and performance metrics.
 
 USAGE MODES:
@@ -21,7 +21,7 @@ USAGE MODES:
    
    a) First-time setup:
       ./dns-analyzer --pihole-setup
-      (This creates pihole-config.json with your SSH credentials)
+      (This creates pihole-config.json with your Pi-hole API credentials)
       
    b) Analyze Pi-hole data:
       ./dns-analyzer --pihole pihole-config.json
@@ -42,23 +42,22 @@ COMMAND LINE FLAGS:
    --pihole-setup    Setup Pi-hole configuration interactively
 
 PI-HOLE SETUP REQUIREMENTS:
-- SSH access to Pi-hole server
-- Pi-hole database at /etc/pihole/pihole-FTL.db (or custom path)
-- Either SSH key authentication, SSH agent, or password
-- Sudo access to read Pi-hole database
+- Pi-hole API access enabled
+- Pi-hole API password or TOTP setup
+- Either password authentication or 2FA
+- Network access to Pi-hole server
 
 CONFIGURATION FILE (pihole-config.json):
 {
   "host": "192.168.2.6",
-  "port": "22",
-  "username": "grammatonic",
-  "password": "",
-  "keyfile": "",
-  "dbpath": "/etc/pihole/pihole-FTL.db"
+  "port": "80",
+  "apiEnabled": true,
+  "apiPassword": "your-api-password",
+  "useHTTPS": false
 }
 
-Note: Configuration supports SSH agent authentication (recommended for security).
-Leave password and keyfile empty to use SSH agent with tools like 1Password.
+Note: Configuration supports 2FA TOTP authentication (recommended for security).
+API password can be generated in Pi-hole Settings > API / Web interface.
 
 EXCLUSION CONFIGURATION:
 By default, the analyzer excludes:
@@ -69,7 +68,7 @@ By default, the analyzer excludes:
 
 FEATURES:
 ✓ CSV file analysis (supports large files 90MB+)
-✓ Live Pi-hole database analysis via SSH
+✓ Live Pi-hole database analysis via API
 ✓ Client ranking by query volume
 ✓ Domain usage patterns
 ✓ Query type distribution (A, AAAA, CNAME, etc.)
@@ -131,12 +130,12 @@ DEVELOPMENT WORKFLOW:
    ./test.sh pihole        # Test Pi-hole functionality
 
 TROUBLESHOOTING:
-- Ensure Go 1.21+ is installed
-- For Pi-hole: verify SSH access and database permissions
-- Large CSV files may take several minutes to process
+- Ensure Go 1.23+ is installed
+- For Pi-hole: verify API access and permissions
+- Large datasets may take several minutes to process
 - Check network connectivity for Pi-hole connections
 - Use --test-mode for development without network dependencies
-- SSH agent authentication is recommended for security
+- API authentication is recommended for security
 - ARP table functionality requires appropriate network permissions
 - Hostname resolution may be slow on some networks
 
