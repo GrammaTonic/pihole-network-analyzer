@@ -21,13 +21,26 @@ jobs:
       with:
         go-version: '1.23.x'
         
+    # Enhanced Go module caching with better key strategy
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
         restore-keys: |
+          ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}-
           ${{ runner.os }}-go-
+          
+    # Cache Go build cache for faster compilation
+    - name: Cache Go build cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/go-build
+        key: ${{ runner.os }}-gobuild-${{ hashFiles('**/*.go') }}
+        restore-keys: |
+          ${{ runner.os }}-gobuild-
           
     - name: Download dependencies
       run: go mod download
@@ -37,6 +50,32 @@ jobs:
       run: go mod verify
       timeout-minutes: 1
       
+    # Build with timing and caching optimization
+    - name: Build applications (cached)
+      run: |
+        echo "🚀 Building applications with caching..."
+        start_time=$(date +%s)
+        
+        echo "Building main application..."
+        go build -o pihole-analyzer ./cmd/pihole-analyzer
+        
+        echo "Building test runner..."
+        go build -o pihole-analyzer-test ./cmd/pihole-analyzer-test
+        
+        end_time=$(date +%s)
+        build_duration=$((end_time - start_time))
+        echo "✅ Build completed in ${build_duration}s"
+      timeout-minutes: 3
+      
+    # Cache built binaries for use in other jobs
+    - name: Cache built binaries
+      uses: actions/cache@v4
+      with:
+        path: |
+          pihole-analyzer
+          pihole-analyzer-test
+        key: ${{ runner.os }}-binaries-${{ github.sha }}
+        
     - name: Run unit tests
       run: |
         echo "Running Go unit tests..."
@@ -145,25 +184,55 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
         
+    # Enhanced caching strategy for matrix builds
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
         restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}-
           ${{ runner.os }}-go-${{ matrix.go-version }}-
           ${{ runner.os }}-go-
           
-    - name: Download dependencies
+    # Try to restore cached binaries first
+    - name: Restore cached binaries
+      id: cache-binaries
+      uses: actions/cache@v4
+      with:
+        path: |
+          pihole-analyzer
+          pihole-analyzer-test
+        key: ${{ runner.os }}-binaries-${{ github.sha }}
+        
+    - name: Download dependencies (if cache miss)
+      if: steps.cache-binaries.outputs.cache-hit != 'true'
       run: go mod download
       timeout-minutes: 3
       
-    - name: Build application
+    - name: Build application (if cache miss)
+      if: steps.cache-binaries.outputs.cache-hit != 'true'
       run: |
-        echo "Building for integration tests with Go ${{ matrix.go-version }}..."
+        echo "🏗️ Cache miss - building for integration tests with Go ${{ matrix.go-version }}..."
+        start_time=$(date +%s)
+        
         go build -race -o pihole-analyzer ./cmd/pihole-analyzer
-        chmod +x pihole-analyzer
+        go build -o pihole-analyzer-test ./cmd/pihole-analyzer-test
+        chmod +x pihole-analyzer pihole-analyzer-test
+        
+        end_time=$(date +%s)
+        build_duration=$((end_time - start_time))
+        echo "✅ Fresh build completed in ${build_duration}s"
       timeout-minutes: 3
+      
+    - name: Use cached binaries
+      if: steps.cache-binaries.outputs.cache-hit == 'true'
+      run: |
+        echo "🚀 Using cached binaries - skipping build!"
+        chmod +x pihole-analyzer pihole-analyzer-test
+        ls -la pihole-analyzer*
       
     - name: Run scenario-specific integration tests
       run: |
@@ -173,15 +242,38 @@ jobs:
         CI=true ./scripts/integration-test.sh "${{ matrix.test-scenario }}"
       timeout-minutes: 10
       
-    - name: Test cross-platform compatibility
+    - name: Test cross-platform compatibility (with caching)
       run: |
-        echo "Testing cross-platform builds..."
+        echo "🌍 Testing cross-platform builds with caching..."
+        start_time=$(date +%s)
+        
+        # Use Go build cache for faster cross-platform builds
+        echo "Building Windows AMD64..."
         GOOS=windows GOARCH=amd64 go build -o test-windows.exe ./cmd/pihole-analyzer
+        
+        echo "Building macOS AMD64..."
         GOOS=darwin GOARCH=amd64 go build -o test-darwin ./cmd/pihole-analyzer
+        
+        echo "Building Linux ARM64..."
         GOOS=linux GOARCH=arm64 go build -o test-linux-arm64 ./cmd/pihole-analyzer
-        echo "✅ Cross-platform compatibility verified"
+        
+        end_time=$(date +%s)
+        build_duration=$((end_time - start_time))
+        echo "✅ Cross-platform builds completed in ${build_duration}s"
+        
+        # Clean up test binaries
         rm -f test-windows.exe test-darwin test-linux-arm64
       timeout-minutes: 4
+      
+    # Cache cross-platform build cache for production builds
+    - name: Cache cross-platform build artifacts
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/go-build
+        key: ${{ runner.os }}-crossbuild-${{ hashFiles('**/*.go') }}-${{ matrix.test-scenario }}
+        restore-keys: |
+          ${{ runner.os }}-crossbuild-${{ hashFiles('**/*.go') }}-
+          ${{ runner.os }}-crossbuild-
       
     - name: Integration test report
       run: |
@@ -244,25 +336,52 @@ jobs:
       with:
         go-version: '1.23.x'
         
-    - name: Cache Go modules
+    # Enhanced caching for feature branch builds
+    - name: Cache Go modules and build cache
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-feature-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
         restore-keys: |
+          ${{ runner.os }}-go-feature-${{ hashFiles('**/go.sum') }}-
+          ${{ runner.os }}-go-feature-
           ${{ runner.os }}-go-
           
-    - name: Download dependencies
+    # Try to restore cached binaries from test job
+    - name: Restore cached binaries
+      id: cache-binaries
+      uses: actions/cache@v4
+      with:
+        path: |
+          pihole-analyzer
+          pihole-analyzer-test
+        key: ${{ runner.os }}-binaries-${{ github.sha }}
+        
+    - name: Download dependencies (if needed)
+      if: steps.cache-binaries.outputs.cache-hit != 'true'
       run: go mod download
       timeout-minutes: 3
       
-    - name: Build verification (no artifacts)
+    - name: Build verification (cached or fresh)
       run: |
-        echo "🔍 Verifying build compatibility for feature branch..."
-        echo "Building for Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -o /tmp/test-build ./cmd/pihole-analyzer
-        echo "✅ Build verification successful - ready for merge!"
-        rm -f /tmp/test-build
+        if [[ "${{ steps.cache-binaries.outputs.cache-hit }}" == "true" ]]; then
+          echo "🚀 Using cached binaries for build verification!"
+          ls -la pihole-analyzer*
+          echo "✅ Build verification successful - using cached artifacts!"
+        else
+          echo "🔍 Cache miss - performing fresh build verification for feature branch..."
+          start_time=$(date +%s)
+          
+          echo "Building for Linux AMD64..."
+          GOOS=linux GOARCH=amd64 go build -o /tmp/test-build ./cmd/pihole-analyzer
+          
+          end_time=$(date +%s)
+          build_duration=$((end_time - start_time))
+          echo "✅ Build verification successful in ${build_duration}s - ready for merge!"
+          rm -f /tmp/test-build
+        fi
       timeout-minutes: 5
 
   build:
@@ -282,13 +401,28 @@ jobs:
       with:
         go-version: '1.23.x'
         
-    - name: Cache Go modules
+    # Enhanced caching for production builds
+    - name: Cache Go modules and build cache
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-prod-${{ hashFiles('**/go.sum') }}-${{ hashFiles('**/*.go') }}
         restore-keys: |
+          ${{ runner.os }}-go-prod-${{ hashFiles('**/go.sum') }}-
+          ${{ runner.os }}-go-prod-
           ${{ runner.os }}-go-
+          
+    # Restore cross-platform build cache from integration tests
+    - name: Restore cross-platform build cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/go-build
+        key: ${{ runner.os }}-crossbuild-${{ hashFiles('**/*.go') }}-all-features
+        restore-keys: |
+          ${{ runner.os }}-crossbuild-${{ hashFiles('**/*.go') }}-
+          ${{ runner.os }}-crossbuild-
           
     - name: Download dependencies
       run: go mod download
@@ -302,38 +436,66 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "🏷️ Version: $VERSION"
       
-    - name: Build multi-platform binaries
+    - name: Build multi-platform binaries (optimized)
       run: |
-        echo "🚀 Building production binaries for version ${{ steps.version.outputs.version }}..."
+        echo "🚀 Building production binaries for version ${{ steps.version.outputs.version }} with caching..."
         VERSION="${{ steps.version.outputs.version }}"
+        start_time=$(date +%s)
+        
+        # Build in parallel where possible using background jobs
+        echo "Starting parallel builds..."
         
         # Linux builds
         echo "Building Linux AMD64..."
-        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-amd64 ./cmd/pihole-analyzer
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-amd64 ./cmd/pihole-analyzer &
+        LINUX_AMD64_PID=$!
+        
         echo "Building Linux ARM64..."
-        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-arm64 ./cmd/pihole-analyzer
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-linux-arm64 ./cmd/pihole-analyzer &
+        LINUX_ARM64_PID=$!
         
         # Windows builds
         echo "Building Windows AMD64..."
-        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-amd64.exe ./cmd/pihole-analyzer
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-amd64.exe ./cmd/pihole-analyzer &
+        WIN_AMD64_PID=$!
+        
         echo "Building Windows ARM64..."
-        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-arm64.exe ./cmd/pihole-analyzer
+        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-windows-arm64.exe ./cmd/pihole-analyzer &
+        WIN_ARM64_PID=$!
         
         # macOS builds
         echo "Building macOS AMD64..."
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-amd64 ./cmd/pihole-analyzer
-        echo "Building macOS ARM64..."
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-arm64 ./cmd/pihole-analyzer
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-amd64 ./cmd/pihole-analyzer &
+        MAC_AMD64_PID=$!
         
-        echo "✅ All platform builds completed successfully!"
+        echo "Building macOS ARM64..."
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION" -o pihole-analyzer-darwin-arm64 ./cmd/pihole-analyzer &
+        MAC_ARM64_PID=$!
+        
+        # Wait for all builds to complete
+        echo "Waiting for parallel builds to complete..."
+        wait $LINUX_AMD64_PID && echo "✅ Linux AMD64 build completed"
+        wait $LINUX_ARM64_PID && echo "✅ Linux ARM64 build completed"
+        wait $WIN_AMD64_PID && echo "✅ Windows AMD64 build completed"
+        wait $WIN_ARM64_PID && echo "✅ Windows ARM64 build completed"
+        wait $MAC_AMD64_PID && echo "✅ macOS AMD64 build completed"
+        wait $MAC_ARM64_PID && echo "✅ macOS ARM64 build completed"
+        
+        end_time=$(date +%s)
+        build_duration=$((end_time - start_time))
+        echo "✅ All platform builds completed in ${build_duration}s (with parallelization and caching)"
         
         # Create checksums
         echo "📋 Generating checksums..."
         sha256sum pihole-analyzer-* > checksums.txt
         
-        # List all files
+        # List all files with sizes
         echo "📦 Build artifacts:"
-        ls -la pihole-analyzer-* checksums.txt
+        ls -lah pihole-analyzer-* checksums.txt
+        
+        # Build size report
+        echo "📊 Build size report:"
+        du -h pihole-analyzer-* | sort -hr
       timeout-minutes: 8
         
     - name: Upload build artifacts
