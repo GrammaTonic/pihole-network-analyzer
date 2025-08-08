@@ -83,6 +83,7 @@ type Config struct {
 	Pihole     PiholeConfig    `json:"pihole"`
 	Output     OutputConfig    `json:"output"`
 	Exclusions ExclusionConfig `json:"exclusions"`
+	Logging    LoggingConfig   `json:"logging"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -120,4 +121,14 @@ type ExclusionConfig struct {
 	ExcludeNetworks []string `json:"exclude_networks"`
 	ExcludeIPs      []string `json:"exclude_ips"`
 	ExcludeHosts    []string `json:"exclude_hosts"`
+}
+
+// LoggingConfig represents logging configuration
+type LoggingConfig struct {
+	Level         string `json:"level"`
+	EnableColors  bool   `json:"enable_colors"`
+	EnableEmojis  bool   `json:"enable_emojis"`
+	OutputFile    string `json:"output_file"`
+	ShowTimestamp bool   `json:"show_timestamp"`
+	ShowCaller    bool   `json:"show_caller"`
 }
