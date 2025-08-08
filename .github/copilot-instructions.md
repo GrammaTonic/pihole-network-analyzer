@@ -209,9 +209,8 @@ sshConfig := &ssh.ClientConfig{
 ## Refactoring Opportunities
 
 ### High Priority
-1. **Add structured logging** (replace fmt.Printf)
-2. **🚧 ACTIVE: Separate testing utilities** - Remove testing code from production binary (see TESTING_SEPARATION_PLAN.md)
-3. **Implement configuration validation**
+1. **🚧 ACTIVE: Separate testing utilities** - Remove testing code from production binary (see TESTING_SEPARATION_PLAN.md)
+2. **Implement configuration validation**
 
 ### Medium Priority
 1. **Add metrics/monitoring endpoints**
