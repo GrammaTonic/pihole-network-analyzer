@@ -79,13 +79,13 @@ func (a *APIDataSource) IsConnected() bool {
 	return a.connected && a.client != nil
 }
 
-// GetQueries retrieves DNS queries using enhanced API with SSH parity
+// GetQueries retrieves DNS queries using enhanced API functionality
 func (a *APIDataSource) GetQueries(ctx context.Context, params interfaces.QueryParams) ([]types.PiholeRecord, error) {
 	if !a.connected {
 		return nil, fmt.Errorf("not connected to Pi-hole API")
 	}
 
-	a.logger.Info("Using enhanced API query retrieval for exact SSH parity")
+	a.logger.Info("Using enhanced API query retrieval functionality")
 
 	// Convert interface params to pihole params
 	piholeParams := QueryParams{
@@ -102,13 +102,13 @@ func (a *APIDataSource) GetQueries(ctx context.Context, params interfaces.QueryP
 	return records, nil
 }
 
-// GetClientStats builds client statistics using enhanced API with SSH parity
+// GetClientStats builds client statistics using enhanced API functionality
 func (a *APIDataSource) GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error) {
 	if !a.connected {
 		return nil, fmt.Errorf("not connected to Pi-hole API")
 	}
 
-	a.logger.Info("Building enhanced client statistics with SSH parity")
+	a.logger.Info("Building enhanced client statistics with API functionality")
 
 	// Get queries for analysis (last 7 days) using enhanced method
 	params := interfaces.QueryParams{

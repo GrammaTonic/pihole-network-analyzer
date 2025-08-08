@@ -184,7 +184,7 @@ type ConnectionStatus struct {
 	Metadata     map[string]string `json:"metadata,omitempty"`
 }
 
-// Phase 5: Enhanced types for complete SSH replacement and analyzer integration
+// Phase 5: Enhanced types for complete API integration and analyzer functionality
 
 // AnalysisResult represents the comprehensive result of Phase 5 analysis
 type AnalysisResult struct {

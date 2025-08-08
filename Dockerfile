@@ -34,7 +34,7 @@ RUN addgroup -g 1001 -S appuser && \
     adduser -u 1001 -S appuser -G appuser
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates openssh-client
+RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
