@@ -156,7 +156,7 @@ func CreateMockCSVFile(filename string, mockData *MockData) error {
 	}
 
 	// Write mock data records
-	for _, record := range mockData.DNSRecords {
+	for _, record := range mockData.types.DNSRecords {
 		line := fmt.Sprintf("%d,%s,%s,%d,%s,%s,,%s,%d,%.6f,0,0,0\n",
 			record.ID,
 			record.DateTime,
