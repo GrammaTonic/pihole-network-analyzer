@@ -37,9 +37,9 @@ func (a *APIDataSource) Connect(ctx context.Context) error {
 	apiConfig := &Config{
 		Host:     a.config.Host,
 		Port:     a.config.Port,
-		Password: a.config.Password,
-		UseHTTPS: false,
-		Timeout:  30,
+		Password: a.config.APIPassword,
+		UseHTTPS: a.config.UseHTTPS,
+		Timeout:  time.Duration(a.config.APITimeout) * time.Second,
 	}
 
 	// Create and configure API client

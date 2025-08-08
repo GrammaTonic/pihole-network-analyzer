@@ -188,15 +188,14 @@ type ConnectionStatus struct {
 
 // AnalysisResult represents the comprehensive result of Phase 5 analysis
 type AnalysisResult struct {
-	ClientStats     map[string]*ClientStats `json:"client_stats"`
-	NetworkDevices  []NetworkDevice         `json:"network_devices"`
-	TotalQueries    int                     `json:"total_queries"`
-	UniqueClients   int                     `json:"unique_clients"`
-	AnalysisMode    string                  `json:"analysis_mode"`
-	DataSourceType  string                  `json:"data_source_type"`
-	Timestamp       string                  `json:"timestamp"`
-	Performance     *QueryPerformance       `json:"performance,omitempty"`
-	MigrationStatus string                  `json:"migration_status,omitempty"`
+	ClientStats    map[string]*ClientStats `json:"client_stats"`
+	NetworkDevices []NetworkDevice         `json:"network_devices"`
+	TotalQueries   int                     `json:"total_queries"`
+	UniqueClients  int                     `json:"unique_clients"`
+	AnalysisMode   string                  `json:"analysis_mode"`
+	DataSourceType string                  `json:"data_source_type"`
+	Timestamp      string                  `json:"timestamp"`
+	Performance    *QueryPerformance       `json:"performance,omitempty"`
 }
 
 // QueryParams represents parameters for querying DNS data
@@ -217,14 +216,4 @@ type DataSourceInfo struct {
 	Mode        string       `json:"mode"`
 	Config      PiholeConfig `json:"config"`
 	LastError   string       `json:"last_error,omitempty"`
-}
-
-// MigrationReport represents the result of migration analysis
-type MigrationReport struct {
-	CurrentMode     string   `json:"current_mode"`
-	RecommendedMode string   `json:"recommended_mode"`
-	Issues          []string `json:"issues"`
-	Warnings        []string `json:"warnings"`
-	NextSteps       []string `json:"next_steps"`
-	ReadinessScore  int      `json:"readiness_score"`
 }

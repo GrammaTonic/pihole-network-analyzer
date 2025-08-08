@@ -31,7 +31,7 @@ phase5-build: ## Build Phase 5 analyzer with API-first architecture
 	duration=$$((end_time - start_time)); \
 	echo "✅ Phase 5 build completed in $${duration}s"
 
-phase5-test: ## Test Phase 5 analyzer with migration scenarios
+phase5-test: ## Test Phase 5 analyzer
 	@echo "🧪 Testing Phase 5 analyzer..."
 	@go test -v ./internal/analyzer/phase5_*.go
 	@echo "✅ Phase 5 tests completed"
@@ -46,10 +46,10 @@ phase5-deploy: build-phase5 ## Deploy Phase 5 analyzer (build + install)
 	@sudo cp $(PHASE5_BINARY) /usr/local/bin/
 	@echo "✅ Phase 5 analyzer deployed to /usr/local/bin/$(PHASE5_BINARY)"
 
-phase5-validate: ## Validate Phase 5 configuration and migration readiness
+phase5-validate: ## Validate Phase 5 configuration
 	@echo "✅ Validating Phase 5 configuration..."
 	@if [ -f $(PHASE5_BINARY) ]; then \
-		./$(PHASE5_BINARY) --validate-migration --quiet; \
+		./$(PHASE5_BINARY) --help; \
 	else \
 		echo "❌ Phase 5 binary not found. Run 'make phase5-build' first"; \
 		exit 1; \

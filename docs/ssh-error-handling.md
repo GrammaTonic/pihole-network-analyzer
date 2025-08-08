@@ -204,15 +204,9 @@ go test ./internal/ssh/...
 go test -bench=. ./internal/ssh/...
 ```
 
-## Migration Notes
+## Legacy Documentation
 
-### From Old Implementation
-
-The old `connectSSH` and `downloadFile` functions are deprecated. Update existing code:
-
-**Old:**
-```go
-client, err := connectSSH(config)
+**Note**: SSH functionality has been removed from pihole-analyzer. This documentation is preserved for reference only.
 if err != nil {
     return fmt.Errorf("SSH connection failed: %v", err)
 }
