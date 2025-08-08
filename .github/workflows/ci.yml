@@ -19,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.x'
+        go-version: '1.23.12'
         
     # Enhanced Go module caching with better key strategy
     - name: Cache Go modules
@@ -130,7 +130,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.x'
+        go-version: '1.23.12'
         
     - name: Test integration script functionality
       run: |
@@ -172,7 +172,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: ['1.23.x']
+        go-version: ['1.23.12']
         test-scenario: ['pihole-db', 'colorized-output', 'all-features']
     
     steps:
@@ -309,7 +309,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.x'
+        go-version: '1.23.12'
         
     - name: Run govulncheck
       run: |
@@ -334,7 +334,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.x'
+        go-version: '1.23.12'
         
     # Enhanced caching for feature branch builds
     - name: Cache Go modules and build cache
@@ -399,7 +399,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.x'
+        go-version: '1.23.12'
         
     # Enhanced caching for production builds
     - name: Cache Go modules and build cache
