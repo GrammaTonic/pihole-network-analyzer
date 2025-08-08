@@ -88,16 +88,8 @@ type Config struct {
 
 // PiholeConfig represents Pi-hole specific configuration
 type PiholeConfig struct {
-	Host         string `json:"host"`
-	Port         int    `json:"port"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	DatabasePath string `json:"database_path"`
-	UseSSH       bool   `json:"use_ssh"`
-	SSHKeyPath   string `json:"ssh_key_path"`
-	KeyFile      string `json:"key_file"`
-	DBPath       string `json:"db_path"`
-	KeyPath      string `json:"key_path"` // SSH key path
+	Host string `json:"host"`
+	Port int    `json:"port"`
 
 	// API Configuration
 	APIEnabled  bool   `json:"api_enabled"`
@@ -105,9 +97,6 @@ type PiholeConfig struct {
 	APITOTP     string `json:"api_totp"`
 	UseHTTPS    bool   `json:"use_https"`
 	APITimeout  int    `json:"api_timeout"`
-
-	// Migration Configuration (Phase 4)
-	MigrationMode string `json:"migration_mode"` // "ssh-only", "api-first", "api-only-warn", "api-only", "auto"
 }
 
 // OutputConfig represents output formatting configuration

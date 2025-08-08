@@ -7,15 +7,14 @@ import (
 	"pihole-analyzer/internal/types"
 )
 
-// DataSource defines the interface for Pi-hole data access
-// This abstraction allows switching between SSH database access and Pi-hole API
+// DataSource defines the interface for Pi-hole data access via API
 type DataSource interface {
 	// Connection management
 	Connect(ctx context.Context) error
 	Close() error
 	IsConnected() bool
 
-	// Core data retrieval - must provide identical output regardless of implementation
+	// Core data retrieval
 	GetQueries(ctx context.Context, params QueryParams) ([]types.PiholeRecord, error)
 	GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error)
 	GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error)
@@ -31,7 +30,6 @@ type DataSource interface {
 }
 
 // QueryParams represents parameters for DNS query requests
-// Must be compatible between SSH and API implementations
 type QueryParams struct {
 	StartTime    time.Time
 	EndTime      time.Time
@@ -46,7 +44,6 @@ type QueryParams struct {
 type DataSourceType string
 
 const (
-	DataSourceTypeSSH DataSourceType = "ssh"
 	DataSourceTypeAPI DataSourceType = "api"
 )
 

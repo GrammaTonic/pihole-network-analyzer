@@ -3,48 +3,12 @@ package analyzer
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
-	"pihole-analyzer/internal/colors"
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
-	"pihole-analyzer/internal/network"
-	"pihole-analyzer/internal/ssh"
 	"pihole-analyzer/internal/types"
 )
-
-// AnalyzePiholeData performs DNS data analysis from Pi-hole database (legacy SSH-only method)
-// Deprecated: Use Phase5Analyzer for modern API-first analysis with migration support
-func AnalyzePiholeData(configFile string, config *types.Config) (map[string]*types.ClientStats, error) {
-	if !config.Quiet {
-		fmt.Println(colors.ProcessingIndicator("Connecting to Pi-hole server..."))
-	}
-
-	// Show deprecation warning if using SSH mode
-	if config.Pihole.Host != "" && config.Pihole.Username != "" {
-		log.Printf("⚠️  Warning: Using deprecated SSH analysis method")
-		log.Printf("   Consider using Phase 5 analyzer with API support")
-		log.Printf("   Migration guide: docs/migration-ssh-to-api.md")
-	}
-
-	clientStats, err := ssh.AnalyzePiholeData(configFile)
-	if err != nil {
-		return nil, fmt.Errorf("error analyzing Pi-hole data: %v", err)
-	}
-
-	if !config.Quiet {
-		fmt.Println(colors.ProcessingIndicator("Checking ARP status and resolving hostnames..."))
-	}
-
-	// Resolve hostnames and check ARP status
-	network.ResolveHostnames(clientStats)
-	if err := network.CheckARPStatus(clientStats); err != nil {
-		log.Printf("Warning: Could not check ARP status: %v", err)
-	}
-
-	return clientStats, nil
-}
 
 // EnhancedAnalyzer provides universal analysis logic regardless of data source
 type EnhancedAnalyzer struct {
@@ -167,14 +131,9 @@ func (a *EnhancedAnalyzer) enhanceWithNetworkAnalysis(clientStats map[string]*ty
 	}
 }
 
-// getAnalysisMode returns the current analysis mode based on configuration
+// getAnalysisMode returns the current analysis mode
 func (a *EnhancedAnalyzer) getAnalysisMode() string {
-	if a.config.Pihole.MigrationMode == "api-first" {
-		return "Enhanced API-First Analysis"
-	} else if a.config.Pihole.MigrationMode == "ssh-only" {
-		return "Traditional SSH Analysis"
-	}
-	return "Automatic Migration Analysis"
+	return "API-Only Analysis"
 }
 
 // AnalyzePiholeDataWithMigration performs modern API-first analysis with migration support
