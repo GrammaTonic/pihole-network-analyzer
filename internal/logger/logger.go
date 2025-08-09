@@ -137,17 +137,17 @@ func (l *Logger) WithFields(fields map[string]any) *Logger {
 
 // InfoFields logs an info message with structured fields
 func (l *Logger) InfoFields(msg string, fields map[string]any) {
-	l.WithFields(fields).Info(msg)
+	l.WithFields(fields).slogger.Info(msg)
 }
 
 // DebugFields logs a debug message with structured fields
 func (l *Logger) DebugFields(msg string, fields map[string]any) {
-	l.WithFields(fields).Debug(msg)
+	l.WithFields(fields).slogger.Debug(msg)
 }
 
 // ErrorFields logs an error message with structured fields
 func (l *Logger) ErrorFields(msg string, fields map[string]any) {
-	l.WithFields(fields).Error(msg)
+	l.WithFields(fields).slogger.Error(msg)
 }
 
 // log performs the actual logging with emoji and color support
