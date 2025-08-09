@@ -1,6 +1,6 @@
 module pihole-analyzer
 
-go 1.23.12
+go 1.24
 
 require (
 	github.com/prometheus/client_golang v1.23.0

@@ -8,6 +8,7 @@ import (
 
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
+	"pihole-analyzer/internal/validation"
 )
 
 // DefaultConfig returns the default configuration
@@ -18,7 +19,7 @@ func DefaultConfig() *types.Config {
 		TestMode:   false,
 
 		Pihole: types.PiholeConfig{
-			Host:        "",
+			Host:        "192.168.1.100", // Changed from empty string to valid IP
 			Port:        80,
 			APIEnabled:  true,
 			APIPassword: "",
@@ -74,49 +75,110 @@ func DefaultConfig() *types.Config {
 
 // LoadConfig loads configuration from file, falling back to defaults
 func LoadConfig(configPath string) (*types.Config, error) {
+	log := logger.Component("config")
 	config := DefaultConfig()
 
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		logger.Info("Config file not found at %s, using defaults", configPath)
+		log.InfoFields("Config file not found, using defaults", map[string]any{
+			"config_path": configPath,
+		})
 		return config, nil
 	}
 
 	// Read config file
 	data, err := os.ReadFile(configPath)
 	if err != nil {
+		log.ErrorFields("Failed to read config file", map[string]any{
+			"config_path": configPath,
+			"error":       err.Error(),
+		})
 		return nil, fmt.Errorf("error reading config file: %v", err)
 	}
 
 	// Parse JSON
 	if err := json.Unmarshal(data, config); err != nil {
+		log.ErrorFields("Failed to parse config file", map[string]any{
+			"config_path": configPath,
+			"error":       err.Error(),
+		})
 		return nil, fmt.Errorf("error parsing config file: %v", err)
 	}
 
-	logger.Success("Configuration loaded from %s", configPath)
+	// Validate configuration
+	validator := validation.NewValidator(log)
+	result := validator.ValidateConfig(config)
+
+	if !result.Valid {
+		log.ErrorFields("Configuration validation failed", map[string]any{
+			"config_path":   configPath,
+			"error_count":   len(result.Errors),
+			"warning_count": len(result.Warnings),
+		})
+
+		// Apply defaults to fix critical issues
+		validator.ApplyDefaults(config)
+
+		// Re-validate after applying defaults
+		result = validator.ValidateConfig(config)
+		if !result.Valid {
+			return nil, fmt.Errorf("configuration validation failed even after applying defaults")
+		}
+
+		log.InfoFields("Configuration fixed with defaults", map[string]any{
+			"config_path": configPath,
+		})
+	}
+
+	log.Success("Configuration loaded and validated successfully from %s", configPath)
 	return config, nil
 }
 
 // SaveConfig saves the current configuration to file
 func SaveConfig(config *types.Config, configPath string) error {
+	log := logger.Component("config")
+
+	// Validate configuration before saving
+	validator := validation.NewValidator(log)
+	result := validator.ValidateConfig(config)
+
+	if !result.Valid {
+		log.ErrorFields("Cannot save invalid configuration", map[string]any{
+			"config_path": configPath,
+			"error_count": len(result.Errors),
+		})
+		return fmt.Errorf("configuration validation failed, cannot save")
+	}
+
 	// Ensure directory exists
 	dir := filepath.Dir(configPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.ErrorFields("Failed to create config directory", map[string]any{
+			"directory": dir,
+			"error":     err.Error(),
+		})
 		return fmt.Errorf("error creating config directory: %v", err)
 	}
 
 	// Marshal to JSON with indentation
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
+		log.ErrorFields("Failed to marshal config", map[string]any{
+			"error": err.Error(),
+		})
 		return fmt.Errorf("error marshaling config: %v", err)
 	}
 
 	// Write to file
 	if err := os.WriteFile(configPath, data, 0600); err != nil {
+		log.ErrorFields("Failed to write config file", map[string]any{
+			"config_path": configPath,
+			"error":       err.Error(),
+		})
 		return fmt.Errorf("error writing config file: %v", err)
 	}
 
-	logger.Success("Configuration saved to %s", configPath)
+	log.Success("Configuration saved to %s", configPath)
 	return nil
 }
 
@@ -139,52 +201,70 @@ func MergeFlags(config *types.Config, onlineOnly, noExclude, testMode bool, piho
 
 // CreateDefaultConfigFile creates a default configuration file
 func CreateDefaultConfigFile(configPath string) error {
+	log := logger.Component("config")
 	config := DefaultConfig()
+
+	log.InfoFields("Creating default configuration file", map[string]any{
+		"config_path": configPath,
+	})
+
 	return SaveConfig(config, configPath)
 }
 
 // ShowConfig displays the current configuration
 func ShowConfig(config *types.Config) {
-	logger.Info("\nCurrent Configuration:")
-	logger.Info("======================")
-	logger.Info("Online Only:       %t", config.OnlineOnly)
-	logger.Info("No Exclude:        %t", config.NoExclude)
-	logger.Info("Test Mode:         %t", config.TestMode)
-	logger.Info("Max Clients:       %d", config.Output.MaxClients)
-	logger.Info("Max Domains:       %d", config.Output.MaxDomains)
-	logger.Info("Save Reports:      %t", config.Output.SaveReports)
-	logger.Info("Report Directory:  %s", config.Output.ReportDir)
-	logger.Info("Verbose Output:    %t", config.Output.VerboseOutput)
+	log := logger.Component("config")
 
-	logger.Info("\nPi-hole Configuration:")
-	logger.Info("  Host:            %s", config.Pihole.Host)
-	logger.Info("  Port:            %d", config.Pihole.Port)
-	logger.Info("  API Enabled:     %t", config.Pihole.APIEnabled)
+	log.Info("\nCurrent Configuration:")
+	log.Info("======================")
+	log.InfoFields("Global settings", map[string]any{
+		"online_only": config.OnlineOnly,
+		"no_exclude":  config.NoExclude,
+		"test_mode":   config.TestMode,
+		"quiet":       config.Quiet,
+	})
+
+	log.InfoFields("Output settings", map[string]any{
+		"max_clients":    config.Output.MaxClients,
+		"max_domains":    config.Output.MaxDomains,
+		"save_reports":   config.Output.SaveReports,
+		"report_dir":     config.Output.ReportDir,
+		"verbose_output": config.Output.VerboseOutput,
+	})
+
+	piholeInfo := map[string]any{
+		"host":        config.Pihole.Host,
+		"port":        config.Pihole.Port,
+		"api_enabled": config.Pihole.APIEnabled,
+		"use_https":   config.Pihole.UseHTTPS,
+		"api_timeout": config.Pihole.APITimeout,
+	}
+
 	if config.Pihole.APIPassword != "" {
-		logger.Info("  API Password:    %s", "***configured***")
+		piholeInfo["api_password"] = "***configured***"
 	} else {
-		logger.Info("  API Password:    %s", "not set")
+		piholeInfo["api_password"] = "not set"
 	}
-	logger.Info("  Use HTTPS:       %t", config.Pihole.UseHTTPS)
-	logger.Info("  API Timeout:     %d", config.Pihole.APITimeout)
 
-	logger.Info("\nExclusion Networks:")
-	for _, network := range config.Exclusions.ExcludeNetworks {
-		logger.Info("  - %s", network)
-	}
-	if len(config.Exclusions.ExcludeIPs) > 0 {
-		logger.Info("Exclusion IPs:")
-		for _, ip := range config.Exclusions.ExcludeIPs {
-			logger.Info("  - %s", ip)
-		}
-	}
-	if len(config.Exclusions.ExcludeHosts) > 0 {
-		logger.Info("Exclusion Hosts:")
-		for _, host := range config.Exclusions.ExcludeHosts {
-			logger.Info("  - %s", host)
-		}
-	}
-	logger.Info("")
+	log.InfoFields("Pi-hole settings", piholeInfo)
+
+	log.InfoFields("Exclusion settings", map[string]any{
+		"exclude_networks_count": len(config.Exclusions.ExcludeNetworks),
+		"exclude_ips_count":      len(config.Exclusions.ExcludeIPs),
+		"exclude_hosts_count":    len(config.Exclusions.ExcludeHosts),
+		"exclude_networks":       config.Exclusions.ExcludeNetworks,
+		"exclude_ips":            config.Exclusions.ExcludeIPs,
+		"exclude_hosts":          config.Exclusions.ExcludeHosts,
+	})
+
+	log.InfoFields("Logging settings", map[string]any{
+		"level":          config.Logging.Level,
+		"output_file":    config.Logging.OutputFile,
+		"enable_colors":  config.Logging.EnableColors,
+		"enable_emojis":  config.Logging.EnableEmojis,
+		"show_timestamp": config.Logging.ShowTimestamp,
+		"show_caller":    config.Logging.ShowCaller,
+	})
 }
 
 // GetConfigPath returns the default configuration file path
