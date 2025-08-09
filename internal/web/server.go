@@ -138,12 +138,12 @@ func (s *Server) Stop() error {
 func (s *Server) setupRoutes(mux *http.ServeMux) {
 	// Main dashboard
 	mux.HandleFunc("/", s.handleDashboard)
-	
+
 	// API endpoints
 	mux.HandleFunc("/api/status", s.handleAPIStatus)
 	mux.HandleFunc("/api/analysis", s.handleAPIAnalysis)
 	mux.HandleFunc("/api/clients", s.handleAPIClients)
-	
+
 	// Health check
 	mux.HandleFunc("/health", s.handleHealth)
 
@@ -154,13 +154,13 @@ func (s *Server) setupRoutes(mux *http.ServeMux) {
 func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+
 		// Create a response writer wrapper to capture status code
 		wrapper := &responseWrapper{ResponseWriter: w, statusCode: http.StatusOK}
-		
+
 		// Process request
 		next.ServeHTTP(wrapper, r)
-		
+
 		// Log request
 		duration := time.Since(start)
 		s.logger.InfoFields("HTTP request", map[string]any{
@@ -193,7 +193,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	
+
 	// Get analysis data
 	analysisResult, err := s.dataSource.GetAnalysisResult(ctx)
 	if err != nil {
@@ -239,7 +239,7 @@ func (s *Server) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := s.dataSource.GetConnectionStatus()
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		s.logger.Error("Failed to encode status response: %v", err)
@@ -256,7 +256,7 @@ func (s *Server) handleAPIAnalysis(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	
+
 	analysisResult, err := s.dataSource.GetAnalysisResult(ctx)
 	if err != nil {
 		s.logger.Error("Failed to get analysis result for API: %v", err)
@@ -280,7 +280,7 @@ func (s *Server) handleAPIClients(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	
+
 	analysisResult, err := s.dataSource.GetAnalysisResult(ctx)
 	if err != nil {
 		s.logger.Error("Failed to get client data for API: %v", err)
@@ -309,9 +309,9 @@ func (s *Server) handleAPIClients(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := struct {
-		Clients     []*types.ClientStats `json:"clients"`
-		TotalCount  int                  `json:"total_count"`
-		LimitApplied int                 `json:"limit_applied"`
+		Clients      []*types.ClientStats `json:"clients"`
+		TotalCount   int                  `json:"total_count"`
+		LimitApplied int                  `json:"limit_applied"`
 	}{
 		Clients:      clients,
 		TotalCount:   len(analysisResult.ClientStats),
@@ -334,7 +334,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	connectionStatus := s.dataSource.GetConnectionStatus()
-	
+
 	health := struct {
 		Status     string `json:"status"`
 		Timestamp  string `json:"timestamp"`

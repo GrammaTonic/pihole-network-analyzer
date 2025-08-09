@@ -22,10 +22,10 @@ type Flags struct {
 	ShowConfig   *bool
 	PiholeSetup  *bool
 	// Web UI flags
-	EnableWeb    *bool
-	WebPort      *int
-	WebHost      *string
-	DaemonMode   *bool
+	EnableWeb  *bool
+	WebPort    *int
+	WebHost    *string
+	DaemonMode *bool
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -42,10 +42,10 @@ func ParseFlags() *Flags {
 		ShowConfig:   flag.Bool("show-config", false, "Show current configuration and exit"),
 		PiholeSetup:  flag.Bool("pihole-setup", false, "Setup Pi-hole configuration"),
 		// Web UI flags
-		EnableWeb:    flag.Bool("web", false, "Enable web interface (starts HTTP server)"),
-		WebPort:      flag.Int("web-port", 8080, "Port for web interface (default: 8080)"),
-		WebHost:      flag.String("web-host", "localhost", "Host for web interface (default: localhost)"),
-		DaemonMode:   flag.Bool("daemon", false, "Run in daemon mode (implies --web)"),
+		EnableWeb:  flag.Bool("web", false, "Enable web interface (starts HTTP server)"),
+		WebPort:    flag.Int("web-port", 8080, "Port for web interface (default: 8080)"),
+		WebHost:    flag.String("web-host", "localhost", "Host for web interface (default: localhost)"),
+		DaemonMode: flag.Bool("daemon", false, "Run in daemon mode (implies --web)"),
 	}
 
 	flag.Parse()

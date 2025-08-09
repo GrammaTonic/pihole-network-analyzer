@@ -180,7 +180,7 @@ func runTestMode(appLogger *logger.Logger) error {
 
 func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) error {
 	webLogger := appLogger.Component("web-mode")
-	
+
 	webLogger.InfoFields("Starting web mode", map[string]any{
 		"port":        cfg.Web.Port,
 		"host":        cfg.Web.Host,
@@ -202,23 +202,23 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	if *flags.Pihole != "" {
 		// Use Pi-hole API data source
 		webLogger.Info("Configuring Pi-hole API data source")
-		
+
 		// Load Pi-hole configuration
 		piholeConfig, err := loadPiholeConfig(*flags.Pihole)
 		if err != nil {
 			return fmt.Errorf("failed to load Pi-hole config: %w", err)
 		}
-		
+
 		// Update main config with Pi-hole settings
 		cfg.Pihole = *piholeConfig
-		
+
 		// Create Pi-hole data source using factory
 		factory := interfaces.NewDataSourceFactory(webLogger)
 		dataSource, err = factory.CreateDataSource(cfg)
 		if err != nil {
 			return fmt.Errorf("failed to create Pi-hole data source: %w", err)
 		}
-		
+
 		webLogger.InfoFields("Pi-hole data source configured", map[string]any{
 			"host":      cfg.Pihole.Host,
 			"use_https": cfg.Pihole.UseHTTPS,
@@ -255,13 +255,13 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	serverErrChan := make(chan error, 1)
 	go func() {
 		webLogger.Success("Web interface starting on http://%s:%d", cfg.Web.Host, cfg.Web.Port)
-		
+
 		if cfg.Web.DaemonMode {
 			webLogger.Info("Running in daemon mode - server will run until stopped")
 		} else {
 			webLogger.Info("Running in web mode - use Ctrl+C to stop")
 		}
-		
+
 		err := server.Start(ctx)
 		if err != nil {
 			serverErrChan <- err
@@ -273,11 +273,11 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	case sig := <-sigChan:
 		webLogger.Info("Received shutdown signal: %v", sig)
 		cancel()
-		
+
 		// Wait a moment for graceful shutdown
 		time.Sleep(1 * time.Second)
 		webLogger.Success("Web server shutdown complete")
-		
+
 	case err := <-serverErrChan:
 		webLogger.Error("Web server error: %v", err)
 		return err

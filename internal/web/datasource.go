@@ -145,17 +145,17 @@ func (d *DataSourceAdapter) updateConnectionStatus() {
 	defer cancel()
 
 	start := time.Now()
-	
+
 	// Try to get a single record to test connectivity
 	params := interfaces.QueryParams{
 		Limit: 1,
 	}
-	
+
 	_, err := d.dataSource.GetQueries(ctx, params)
 	duration := time.Since(start)
-	
+
 	status.ResponseTime = float64(duration.Milliseconds())
-	
+
 	if err != nil {
 		status.Connected = false
 		status.LastError = err.Error()
@@ -169,7 +169,7 @@ func (d *DataSourceAdapter) updateConnectionStatus() {
 
 	status.Metadata["test_duration_ms"] = fmt.Sprintf("%.2f", status.ResponseTime)
 	status.Metadata["data_source_type"] = "pihole_api"
-	
+
 	d.lastStatus = status
 }
 
@@ -187,14 +187,14 @@ func (d *DataSourceAdapter) analyzeRecordsToClientStats(records []types.PiholeRe
 		// Initialize client stats if not exists
 		if _, exists := clientStats[client]; !exists {
 			clientStats[client] = &types.ClientStats{
-				IP:            client,
-				QueryCount:    0,
-				Domains:       make(map[string]int),
-				DomainCount:   0,
-				IsOnline:      false,
-				Hostname:      "Unknown",
-				QueryTypes:    make(map[int]int),
-				StatusCodes:   make(map[int]int),
+				IP:          client,
+				QueryCount:  0,
+				Domains:     make(map[string]int),
+				DomainCount: 0,
+				IsOnline:    false,
+				Hostname:    "Unknown",
+				QueryTypes:  make(map[int]int),
+				StatusCodes: make(map[int]int),
 			}
 		}
 

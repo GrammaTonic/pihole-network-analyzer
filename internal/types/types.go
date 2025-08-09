@@ -136,13 +136,13 @@ type LoggingConfig struct {
 
 // WebConfig represents web server configuration
 type WebConfig struct {
-	Enabled      bool `json:"enabled"`
-	Port         int  `json:"port"`
+	Enabled      bool   `json:"enabled"`
+	Port         int    `json:"port"`
 	Host         string `json:"host"`
-	DaemonMode   bool `json:"daemon_mode"`
-	ReadTimeout  int  `json:"read_timeout_seconds"`
-	WriteTimeout int  `json:"write_timeout_seconds"`
-	IdleTimeout  int  `json:"idle_timeout_seconds"`
+	DaemonMode   bool   `json:"daemon_mode"`
+	ReadTimeout  int    `json:"read_timeout_seconds"`
+	WriteTimeout int    `json:"write_timeout_seconds"`
+	IdleTimeout  int    `json:"idle_timeout_seconds"`
 }
 
 // NetworkDevice represents a network device from Pi-hole API
