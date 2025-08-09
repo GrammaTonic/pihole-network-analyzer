@@ -50,6 +50,16 @@ func DefaultConfig() *types.Config {
 			ShowTimestamp: true,
 			ShowCaller:    false,
 		},
+
+		Web: types.WebConfig{
+			Enabled:      false,
+			Port:         8080,
+			Host:         "localhost",
+			DaemonMode:   false,
+			ReadTimeout:  10,
+			WriteTimeout: 10,
+			IdleTimeout:  60,
+		},
 	}
 }
 

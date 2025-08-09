@@ -84,6 +84,7 @@ type Config struct {
 	Output     OutputConfig    `json:"output"`
 	Exclusions ExclusionConfig `json:"exclusions"`
 	Logging    LoggingConfig   `json:"logging"`
+	Web        WebConfig       `json:"web"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -131,6 +132,17 @@ type LoggingConfig struct {
 	OutputFile    string `json:"output_file"`
 	ShowTimestamp bool   `json:"show_timestamp"`
 	ShowCaller    bool   `json:"show_caller"`
+}
+
+// WebConfig represents web server configuration
+type WebConfig struct {
+	Enabled      bool `json:"enabled"`
+	Port         int  `json:"port"`
+	Host         string `json:"host"`
+	DaemonMode   bool `json:"daemon_mode"`
+	ReadTimeout  int  `json:"read_timeout_seconds"`
+	WriteTimeout int  `json:"write_timeout_seconds"`
+	IdleTimeout  int  `json:"idle_timeout_seconds"`
 }
 
 // NetworkDevice represents a network device from Pi-hole API

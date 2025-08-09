@@ -21,6 +21,11 @@ type Flags struct {
 	CreateConfig *bool
 	ShowConfig   *bool
 	PiholeSetup  *bool
+	// Web UI flags
+	EnableWeb    *bool
+	WebPort      *int
+	WebHost      *string
+	DaemonMode   *bool
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -36,6 +41,11 @@ func ParseFlags() *Flags {
 		CreateConfig: flag.Bool("create-config", false, "Create default configuration file and exit"),
 		ShowConfig:   flag.Bool("show-config", false, "Show current configuration and exit"),
 		PiholeSetup:  flag.Bool("pihole-setup", false, "Setup Pi-hole configuration"),
+		// Web UI flags
+		EnableWeb:    flag.Bool("web", false, "Enable web interface (starts HTTP server)"),
+		WebPort:      flag.Int("web-port", 8080, "Port for web interface (default: 8080)"),
+		WebHost:      flag.String("web-host", "localhost", "Host for web interface (default: localhost)"),
+		DaemonMode:   flag.Bool("daemon", false, "Run in daemon mode (implies --web)"),
 	}
 
 	flag.Parse()
@@ -91,6 +101,26 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 	}
 }
 
+// IsWebModeEnabled returns true if web mode is requested
+func IsWebModeEnabled(flags *Flags) bool {
+	return *flags.EnableWeb || *flags.DaemonMode
+}
+
+// IsDaemonMode returns true if daemon mode is requested
+func IsDaemonMode(flags *Flags) bool {
+	return *flags.DaemonMode
+}
+
+// GetWebConfig extracts web configuration from flags
+func GetWebConfig(flags *Flags) map[string]any {
+	return map[string]any{
+		"enabled":     IsWebModeEnabled(flags),
+		"port":        *flags.WebPort,
+		"host":        *flags.WebHost,
+		"daemon_mode": *flags.DaemonMode,
+	}
+}
+
 // ValidateInput validates command-line input
 func ValidateInput(flags *Flags) error {
 	// No specific validation needed for API-only version
@@ -103,6 +133,12 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 		fmt.Println("🔍 Pi-hole Network Analyzer (API-only)")
 		if *flags.Pihole != "" {
 			fmt.Printf("📊 Analyzing Pi-hole data from: %s\n", *flags.Pihole)
+		}
+		if IsWebModeEnabled(flags) {
+			fmt.Printf("🌐 Web interface enabled on http://%s:%d\n", *flags.WebHost, *flags.WebPort)
+			if *flags.DaemonMode {
+				fmt.Println("🔄 Running in daemon mode")
+			}
 		}
 	}
 }
