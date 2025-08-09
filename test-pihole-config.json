@@ -1,0 +1,8 @@
+{
+  "host": "localhost",
+  "port": 80,
+  "api_enabled": true,
+  "api_password": "",
+  "use_https": false,
+  "api_timeout": 30
+}
