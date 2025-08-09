@@ -84,6 +84,7 @@ type Config struct {
 	Output     OutputConfig    `json:"output"`
 	Exclusions ExclusionConfig `json:"exclusions"`
 	Logging    LoggingConfig   `json:"logging"`
+	Metrics    MetricsConfig   `json:"metrics"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -131,6 +132,16 @@ type LoggingConfig struct {
 	OutputFile    string `json:"output_file"`
 	ShowTimestamp bool   `json:"show_timestamp"`
 	ShowCaller    bool   `json:"show_caller"`
+}
+
+// MetricsConfig represents metrics collection and server configuration
+type MetricsConfig struct {
+	Enabled               bool   `json:"enabled"`
+	Port                  string `json:"port"`
+	Host                  string `json:"host"`
+	EnableEndpoint        bool   `json:"enable_endpoint"`
+	CollectMetrics        bool   `json:"collect_metrics"`
+	EnableDetailedMetrics bool   `json:"enable_detailed_metrics"`
 }
 
 // NetworkDevice represents a network device from Pi-hole API
