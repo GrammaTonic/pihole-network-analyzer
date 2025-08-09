@@ -51,6 +51,16 @@ func DefaultConfig() *types.Config {
 			ShowCaller:    false,
 		},
 
+		Web: types.WebConfig{
+			Enabled:      false,
+			Port:         8080,
+			Host:         "localhost",
+			DaemonMode:   false,
+			ReadTimeout:  10,
+			WriteTimeout: 10,
+			IdleTimeout:  60,
+		},
+
 		Metrics: types.MetricsConfig{
 			Enabled:               true,
 			Port:                  "9090",
