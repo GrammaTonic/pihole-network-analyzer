@@ -69,17 +69,34 @@ func (d *DataSourceAdapter) GetAnalysisResult(ctx context.Context) (*types.Analy
 		"count": len(records),
 	})
 
-	// Analyze the data using the simple analyzer
-	result := d.analyzeRecords(records)
-	if result == nil {
-		d.logger.Error("Analyzer returned nil result")
-		return nil, fmt.Errorf("analyzer returned nil result")
+	// Get client statistics from data source
+	clientStats, err := d.dataSource.GetClientStats(ctx)
+	if err != nil {
+		d.logger.Error("Failed to get client statistics: %v", err)
+		// Fall back to analyzing records if client stats fail
+		clientStats = d.analyzeRecordsToClientStats(records)
 	}
 
-	// Enhance the result with additional metadata
-	result.DataSourceType = "api"
-	result.AnalysisMode = "web"
-	result.Timestamp = time.Now().Format(time.RFC3339)
+	// Get network devices if available
+	networkDevices, err := d.dataSource.GetNetworkInfo(ctx)
+	if err != nil {
+		d.logger.Debug("Failed to get network info (not critical): %v", err)
+		networkDevices = []types.NetworkDevice{}
+	}
+
+	// Enhance client statistics with network device information
+	d.enhanceClientStatsWithNetworkInfo(clientStats, networkDevices)
+
+	// Create analysis result
+	result := &types.AnalysisResult{
+		ClientStats:    clientStats,
+		NetworkDevices: networkDevices,
+		TotalQueries:   len(records),
+		UniqueClients:  len(clientStats),
+		AnalysisMode:   "web",
+		DataSourceType: "api",
+		Timestamp:      time.Now().Format(time.RFC3339),
+	}
 
 	// Add performance data if available
 	if result.Performance == nil {
@@ -156,8 +173,8 @@ func (d *DataSourceAdapter) updateConnectionStatus() {
 	d.lastStatus = status
 }
 
-// analyzeRecords performs basic analysis on the records
-func (d *DataSourceAdapter) analyzeRecords(records []types.PiholeRecord) *types.AnalysisResult {
+// analyzeRecordsToClientStats performs basic analysis on the records (fallback method)
+func (d *DataSourceAdapter) analyzeRecordsToClientStats(records []types.PiholeRecord) map[string]*types.ClientStats {
 	clientStats := make(map[string]*types.ClientStats)
 
 	// Process records to build client statistics
@@ -213,18 +230,33 @@ func (d *DataSourceAdapter) analyzeRecords(records []types.PiholeRecord) *types.
 		stats.DomainCount = len(stats.Domains)
 	}
 
-	// Create analysis result
-	result := &types.AnalysisResult{
-		ClientStats:   clientStats,
-		TotalQueries:  len(records),
-		UniqueClients: len(clientStats),
-		AnalysisMode:  "web",
-		DataSourceType: "api",
-		Timestamp:     time.Now().Format(time.RFC3339),
-		NetworkDevices: []types.NetworkDevice{}, // Empty for now
+	return clientStats
+}
+
+// enhanceClientStatsWithNetworkInfo enhances client statistics with network device information
+func (d *DataSourceAdapter) enhanceClientStatsWithNetworkInfo(clientStats map[string]*types.ClientStats, networkDevices []types.NetworkDevice) {
+	if len(networkDevices) == 0 {
+		return
 	}
 
-	return result
+	// Create a map of IP to network device for quick lookup
+	deviceMap := make(map[string]*types.NetworkDevice)
+	for i := range networkDevices {
+		deviceMap[networkDevices[i].IP] = &networkDevices[i]
+	}
+
+	// Enhance client statistics with network device information
+	for clientIP, stats := range clientStats {
+		if device, exists := deviceMap[clientIP]; exists {
+			if device.Hostname != "" {
+				stats.Hostname = device.Hostname
+			}
+			if device.MAC != "" {
+				stats.MACAddress = device.MAC
+			}
+			stats.IsOnline = device.IsOnline
+		}
+	}
 }
 
 // RefreshCache forces a cache refresh on next request

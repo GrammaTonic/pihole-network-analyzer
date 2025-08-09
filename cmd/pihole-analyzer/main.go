@@ -225,12 +225,8 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 		})
 	} else {
 		// Use mock data source for testing
-		webLogger.Info("Using mock data source (no Pi-hole config provided)")
-		dataSource = createMockDataSource()
-		
-		if dataSource == nil {
-			return fmt.Errorf("mock data source not implemented yet - please provide --pihole config for web mode")
-		}
+		webLogger.Info("Using mock data source for web interface demonstration")
+		dataSource = web.NewMockWebDataSource()
 	}
 
 	// Create data source adapter for web interface
@@ -301,10 +297,4 @@ func loadPiholeConfig(configFile string) (*types.PiholeConfig, error) {
 		UseHTTPS:    false,
 		APITimeout:  30,
 	}, nil
-}
-
-func createMockDataSource() interfaces.DataSource {
-	// For now, return nil - this would be replaced with a proper mock
-	// This is a placeholder for when we want to add test mode to web interface
-	return nil
 }
