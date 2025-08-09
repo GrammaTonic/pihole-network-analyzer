@@ -86,6 +86,7 @@ type Config struct {
 	Logging    LoggingConfig   `json:"logging"`
 	Web        WebConfig       `json:"web"`
 	Metrics    MetricsConfig   `json:"metrics"`
+	ML         MLConfig        `json:"ml"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -239,4 +240,56 @@ type DataSourceInfo struct {
 	Mode        string       `json:"mode"`
 	Config      PiholeConfig `json:"config"`
 	LastError   string       `json:"last_error,omitempty"`
+}
+
+// MLConfig represents configuration for machine learning features
+type MLConfig struct {
+	// Anomaly Detection Configuration
+	AnomalyDetection AnomalyDetectionConfig `json:"anomaly_detection"`
+
+	// Trend Analysis Configuration
+	TrendAnalysis TrendAnalysisConfig `json:"trend_analysis"`
+
+	// Model Training Configuration
+	Training TrainingConfig `json:"training"`
+
+	// Performance Configuration
+	Performance PerformanceConfig `json:"performance"`
+}
+
+// AnomalyDetectionConfig configures anomaly detection
+type AnomalyDetectionConfig struct {
+	Enabled       bool               `json:"enabled"`
+	Sensitivity   float64            `json:"sensitivity"`    // 0-1
+	MinConfidence float64            `json:"min_confidence"` // 0-1
+	WindowSize    string             `json:"window_size"`    // duration string
+	AnomalyTypes  []string           `json:"anomaly_types"`
+	Thresholds    map[string]float64 `json:"thresholds"`
+}
+
+// TrendAnalysisConfig configures trend analysis
+type TrendAnalysisConfig struct {
+	Enabled         bool    `json:"enabled"`
+	AnalysisWindow  string  `json:"analysis_window"` // duration string
+	ForecastWindow  string  `json:"forecast_window"` // duration string
+	MinDataPoints   int     `json:"min_data_points"`
+	SmoothingFactor float64 `json:"smoothing_factor"`
+}
+
+// TrainingConfig configures model training
+type TrainingConfig struct {
+	AutoRetrain     bool    `json:"auto_retrain"`
+	RetrainInterval string  `json:"retrain_interval"` // duration string
+	MinTrainingSize int     `json:"min_training_size"`
+	MaxTrainingSize int     `json:"max_training_size"`
+	ValidationSplit float64 `json:"validation_split"`
+}
+
+// PerformanceConfig configures performance settings
+type PerformanceConfig struct {
+	MaxConcurrency  int    `json:"max_concurrency"`
+	TimeoutDuration string `json:"timeout_duration"` // duration string
+	CacheEnabled    bool   `json:"cache_enabled"`
+	CacheDuration   string `json:"cache_duration"` // duration string
+	BatchSize       int    `json:"batch_size"`
 }
