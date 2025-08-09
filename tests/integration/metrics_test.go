@@ -30,7 +30,7 @@ func TestMetricsIntegration(t *testing.T) {
 	// Create metrics server config
 	serverConfig := metrics.ServerConfig{
 		Port:    "19099",
-		Host:    "localhost", 
+		Host:    "localhost",
 		Enabled: true,
 	}
 
@@ -171,8 +171,8 @@ func TestMetricsIntegration(t *testing.T) {
 func TestMetricsConfigurationIntegration(t *testing.T) {
 	// Test different configurations
 	testCases := []struct {
-		name   string
-		config types.MetricsConfig
+		name         string
+		config       types.MetricsConfig
 		expectServer bool
 	}{
 		{

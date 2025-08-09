@@ -136,12 +136,12 @@ type LoggingConfig struct {
 
 // MetricsConfig represents metrics collection and server configuration
 type MetricsConfig struct {
-	Enabled         bool   `json:"enabled"`
-	Port            string `json:"port"`
-	Host            string `json:"host"`
-	EnableEndpoint  bool   `json:"enable_endpoint"`
-	CollectMetrics  bool   `json:"collect_metrics"`
-	EnableDetailedMetrics bool `json:"enable_detailed_metrics"`
+	Enabled               bool   `json:"enabled"`
+	Port                  string `json:"port"`
+	Host                  string `json:"host"`
+	EnableEndpoint        bool   `json:"enable_endpoint"`
+	CollectMetrics        bool   `json:"collect_metrics"`
+	EnableDetailedMetrics bool   `json:"enable_detailed_metrics"`
 }
 
 // NetworkDevice represents a network device from Pi-hole API

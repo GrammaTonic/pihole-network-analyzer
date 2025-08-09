@@ -13,9 +13,9 @@ import (
 
 // EnhancedAnalyzer provides universal analysis logic regardless of data source
 type EnhancedAnalyzer struct {
-	dataSource     interfaces.DataSource
-	config         *types.Config
-	logger         *logger.Logger
+	dataSource       interfaces.DataSource
+	config           *types.Config
+	logger           *logger.Logger
 	metricsCollector *metrics.Collector
 }
 
@@ -59,7 +59,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 
 	// Start timing the analysis
 	analysisStart := time.Now()
-	
+
 	a.logger.Info("📊 Starting enhanced data analysis")
 
 	// Set data source health to healthy initially
@@ -79,7 +79,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 		}
 		return nil, fmt.Errorf("failed to get DNS queries: %w", err)
 	}
-	
+
 	// Record API call time
 	if a.metricsCollector != nil {
 		a.metricsCollector.RecordPiholeAPICallTime(time.Since(queryStart))
@@ -102,7 +102,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 		}
 		return nil, fmt.Errorf("failed to get client statistics: %w", err)
 	}
-	
+
 	// Record API call time
 	if a.metricsCollector != nil {
 		a.metricsCollector.RecordPiholeAPICallTime(time.Since(clientStart))
@@ -195,7 +195,7 @@ func (a *EnhancedAnalyzer) enhanceWithNetworkAnalysis(clientStats map[string]*ty
 			stats.Hostname = device.Hostname
 			stats.HWAddr = device.Hardware
 			stats.IsOnline = device.IsOnline
-			
+
 			// Record top client metrics
 			if a.metricsCollector != nil {
 				a.metricsCollector.RecordTopClient(clientIP, device.Hostname, float64(stats.TotalQueries))

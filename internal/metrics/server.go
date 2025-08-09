@@ -26,17 +26,17 @@ type ServerConfig struct {
 // NewServer creates a new metrics HTTP server
 func NewServer(config ServerConfig, collector *Collector, logger *slog.Logger) *Server {
 	mux := http.NewServeMux()
-	
+
 	// Prometheus metrics endpoint using the collector's registry
 	mux.Handle("/metrics", promhttp.HandlerFor(collector.GetRegistry(), promhttp.HandlerOpts{}))
-	
+
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"healthy","component":"metrics-server"}`))
 	})
-	
+
 	// Root endpoint with information
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
@@ -58,7 +58,7 @@ func NewServer(config ServerConfig, collector *Collector, logger *slog.Logger) *
 </html>
 		`))
 	})
-	
+
 	addr := config.Host + ":" + config.Port
 	server := &http.Server{
 		Addr:         addr,
@@ -67,7 +67,7 @@ func NewServer(config ServerConfig, collector *Collector, logger *slog.Logger) *
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
-	
+
 	return &Server{
 		server:    server,
 		collector: collector,
@@ -80,14 +80,14 @@ func (s *Server) Start() error {
 	s.logger.Info("🚀 Starting metrics server",
 		slog.String("component", "metrics-server"),
 		slog.String("address", s.server.Addr))
-	
+
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		s.logger.Error("❌ Failed to start metrics server",
 			slog.String("component", "metrics-server"),
 			slog.String("error", err.Error()))
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -100,7 +100,7 @@ func (s *Server) StartInBackground() {
 				slog.String("error", err.Error()))
 		}
 	}()
-	
+
 	s.logger.Info("📡 Metrics server started in background",
 		slog.String("component", "metrics-server"),
 		slog.String("address", s.server.Addr))
@@ -110,17 +110,17 @@ func (s *Server) StartInBackground() {
 func (s *Server) Stop(ctx context.Context) error {
 	s.logger.Info("🛑 Stopping metrics server",
 		slog.String("component", "metrics-server"))
-	
+
 	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Error("❌ Error stopping metrics server",
 			slog.String("component", "metrics-server"),
 			slog.String("error", err.Error()))
 		return err
 	}
-	
+
 	s.logger.Info("✅ Metrics server stopped gracefully",
 		slog.String("component", "metrics-server"))
-	
+
 	return nil
 }
 

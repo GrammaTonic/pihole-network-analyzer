@@ -90,10 +90,10 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 	// Initialize metrics collector if enabled
 	var metricsCollector *metrics.Collector
 	var metricsServer *metrics.Server
-	
+
 	if config.Metrics.Enabled && config.Metrics.CollectMetrics {
 		metricsCollector = metrics.New(appLogger.GetSlogger())
-		
+
 		if config.Metrics.EnableEndpoint {
 			// Start metrics server in background
 			serverConfig := metrics.ServerConfig{
@@ -103,7 +103,7 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 			}
 			metricsServer = metrics.NewServer(serverConfig, metricsCollector, appLogger.GetSlogger())
 			metricsServer.StartInBackground()
-			
+
 			// Ensure server is stopped when function exits
 			defer func() {
 				if metricsServer != nil {
@@ -120,7 +120,7 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 		if metricsCollector != nil {
 			metricsCollector.RecordError("enhanced_analysis_failed")
 		}
-		
+
 		// Fallback to traditional analysis
 		appLogger.Warn("⚠️  Enhanced analysis failed, using traditional method: %v", err)
 		return runTraditionalAnalysis(configFile, config, appLogger, metricsCollector)
@@ -137,7 +137,7 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 	if !config.Quiet {
 		appLogger.Info("✅ Analysis completed successfully!")
 		if metricsServer != nil {
-			appLogger.Info("📊 Metrics endpoint available at: http://%s:%s/metrics", 
+			appLogger.Info("📊 Metrics endpoint available at: http://%s:%s/metrics",
 				config.Metrics.Host, config.Metrics.Port)
 		}
 	}
