@@ -10,6 +10,7 @@ import (
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/config"
 	"pihole-analyzer/internal/logger"
+	"pihole-analyzer/internal/metrics"
 	"pihole-analyzer/internal/reporting"
 	"pihole-analyzer/internal/types"
 )
@@ -86,32 +87,73 @@ func analyzePihole(configFile string, config *types.Config, appLogger *logger.Lo
 		appLogger.Info("🚀 Starting Pi-hole analysis...")
 	}
 
+	// Initialize metrics collector if enabled
+	var metricsCollector *metrics.Collector
+	var metricsServer *metrics.Server
+	
+	if config.Metrics.Enabled && config.Metrics.CollectMetrics {
+		metricsCollector = metrics.New(appLogger.GetSlogger())
+		
+		if config.Metrics.EnableEndpoint {
+			// Start metrics server in background
+			serverConfig := metrics.ServerConfig{
+				Port:    config.Metrics.Port,
+				Host:    config.Metrics.Host,
+				Enabled: config.Metrics.EnableEndpoint,
+			}
+			metricsServer = metrics.NewServer(serverConfig, metricsCollector, appLogger.GetSlogger())
+			metricsServer.StartInBackground()
+			
+			// Ensure server is stopped when function exits
+			defer func() {
+				if metricsServer != nil {
+					metricsServer.Stop(ctx)
+				}
+			}()
+		}
+	}
+
 	// Try enhanced analysis first
-	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger)
+	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger, metricsCollector)
 	if err != nil {
+		// Record error in metrics if available
+		if metricsCollector != nil {
+			metricsCollector.RecordError("enhanced_analysis_failed")
+		}
+		
 		// Fallback to traditional analysis
 		appLogger.Warn("⚠️  Enhanced analysis failed, using traditional method: %v", err)
-		return runTraditionalAnalysis(configFile, config, appLogger)
+		return runTraditionalAnalysis(configFile, config, appLogger, metricsCollector)
 	}
 
 	// Display enhanced results
 	if err := displayEnhancedResults(result, config, appLogger); err != nil {
+		if metricsCollector != nil {
+			metricsCollector.RecordError("display_results_failed")
+		}
 		return fmt.Errorf("failed to display results: %w", err)
 	}
 
 	if !config.Quiet {
 		appLogger.Info("✅ Analysis completed successfully!")
+		if metricsServer != nil {
+			appLogger.Info("📊 Metrics endpoint available at: http://%s:%s/metrics", 
+				config.Metrics.Host, config.Metrics.Port)
+		}
 	}
 
 	return nil
 }
 
-func runTraditionalAnalysis(configFile string, config *types.Config, appLogger *logger.Logger) error {
+func runTraditionalAnalysis(configFile string, config *types.Config, appLogger *logger.Logger, metricsCollector *metrics.Collector) error {
 	ctx := context.Background()
 
 	// Use traditional analyzer as fallback
-	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger)
+	result, err := analyzer.AnalyzePiholeData(ctx, config, appLogger, metricsCollector)
 	if err != nil {
+		if metricsCollector != nil {
+			metricsCollector.RecordError("traditional_analysis_failed")
+		}
 		return fmt.Errorf("traditional analysis failed: %w", err)
 	}
 

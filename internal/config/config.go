@@ -50,6 +50,15 @@ func DefaultConfig() *types.Config {
 			ShowTimestamp: true,
 			ShowCaller:    false,
 		},
+
+		Metrics: types.MetricsConfig{
+			Enabled:               true,
+			Port:                  "9090",
+			Host:                  "localhost",
+			EnableEndpoint:        true,
+			CollectMetrics:        true,
+			EnableDetailedMetrics: true,
+		},
 	}
 }
 
