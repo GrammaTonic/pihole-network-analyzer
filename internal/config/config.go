@@ -60,6 +60,15 @@ func DefaultConfig() *types.Config {
 			WriteTimeout: 10,
 			IdleTimeout:  60,
 		},
+
+		Metrics: types.MetricsConfig{
+			Enabled:               true,
+			Port:                  "9090",
+			Host:                  "localhost",
+			EnableEndpoint:        true,
+			CollectMetrics:        true,
+			EnableDetailedMetrics: true,
+		},
 	}
 }
 

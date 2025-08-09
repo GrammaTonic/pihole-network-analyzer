@@ -85,6 +85,7 @@ type Config struct {
 	Exclusions ExclusionConfig `json:"exclusions"`
 	Logging    LoggingConfig   `json:"logging"`
 	Web        WebConfig       `json:"web"`
+	Metrics    MetricsConfig   `json:"metrics"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -143,6 +144,16 @@ type WebConfig struct {
 	ReadTimeout  int    `json:"read_timeout_seconds"`
 	WriteTimeout int    `json:"write_timeout_seconds"`
 	IdleTimeout  int    `json:"idle_timeout_seconds"`
+}
+
+// MetricsConfig represents metrics collection and server configuration
+type MetricsConfig struct {
+	Enabled               bool   `json:"enabled"`
+	Port                  string `json:"port"`
+	Host                  string `json:"host"`
+	EnableEndpoint        bool   `json:"enable_endpoint"`
+	CollectMetrics        bool   `json:"collect_metrics"`
+	EnableDetailedMetrics bool   `json:"enable_detailed_metrics"`
 }
 
 // NetworkDevice represents a network device from Pi-hole API
