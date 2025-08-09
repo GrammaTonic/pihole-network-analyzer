@@ -89,23 +89,23 @@ func LoadConfig(configPath string) (*types.Config, error) {
 	// Validate configuration
 	validator := validation.NewValidator(log)
 	result := validator.ValidateConfig(config)
-	
+
 	if !result.Valid {
 		log.ErrorFields("Configuration validation failed", map[string]any{
-			"config_path":  configPath,
-			"error_count":  len(result.Errors),
+			"config_path":   configPath,
+			"error_count":   len(result.Errors),
 			"warning_count": len(result.Warnings),
 		})
-		
+
 		// Apply defaults to fix critical issues
 		validator.ApplyDefaults(config)
-		
+
 		// Re-validate after applying defaults
 		result = validator.ValidateConfig(config)
 		if !result.Valid {
 			return nil, fmt.Errorf("configuration validation failed even after applying defaults")
 		}
-		
+
 		log.InfoFields("Configuration fixed with defaults", map[string]any{
 			"config_path": configPath,
 		})
@@ -118,15 +118,15 @@ func LoadConfig(configPath string) (*types.Config, error) {
 // SaveConfig saves the current configuration to file
 func SaveConfig(config *types.Config, configPath string) error {
 	log := logger.Component("config")
-	
+
 	// Validate configuration before saving
 	validator := validation.NewValidator(log)
 	result := validator.ValidateConfig(config)
-	
+
 	if !result.Valid {
 		log.ErrorFields("Cannot save invalid configuration", map[string]any{
-			"config_path":  configPath,
-			"error_count":  len(result.Errors),
+			"config_path": configPath,
+			"error_count": len(result.Errors),
 		})
 		return fmt.Errorf("configuration validation failed, cannot save")
 	}
@@ -184,18 +184,18 @@ func MergeFlags(config *types.Config, onlineOnly, noExclude, testMode bool, piho
 func CreateDefaultConfigFile(configPath string) error {
 	log := logger.Component("config")
 	config := DefaultConfig()
-	
+
 	log.InfoFields("Creating default configuration file", map[string]any{
 		"config_path": configPath,
 	})
-	
+
 	return SaveConfig(config, configPath)
 }
 
 // ShowConfig displays the current configuration
 func ShowConfig(config *types.Config) {
 	log := logger.Component("config")
-	
+
 	log.Info("\nCurrent Configuration:")
 	log.Info("======================")
 	log.InfoFields("Global settings", map[string]any{
@@ -206,45 +206,45 @@ func ShowConfig(config *types.Config) {
 	})
 
 	log.InfoFields("Output settings", map[string]any{
-		"max_clients":     config.Output.MaxClients,
-		"max_domains":     config.Output.MaxDomains,
-		"save_reports":    config.Output.SaveReports,
-		"report_dir":      config.Output.ReportDir,
-		"verbose_output":  config.Output.VerboseOutput,
+		"max_clients":    config.Output.MaxClients,
+		"max_domains":    config.Output.MaxDomains,
+		"save_reports":   config.Output.SaveReports,
+		"report_dir":     config.Output.ReportDir,
+		"verbose_output": config.Output.VerboseOutput,
 	})
 
 	piholeInfo := map[string]any{
-		"host":         config.Pihole.Host,
-		"port":         config.Pihole.Port,
-		"api_enabled":  config.Pihole.APIEnabled,
-		"use_https":    config.Pihole.UseHTTPS,
-		"api_timeout":  config.Pihole.APITimeout,
+		"host":        config.Pihole.Host,
+		"port":        config.Pihole.Port,
+		"api_enabled": config.Pihole.APIEnabled,
+		"use_https":   config.Pihole.UseHTTPS,
+		"api_timeout": config.Pihole.APITimeout,
 	}
-	
+
 	if config.Pihole.APIPassword != "" {
 		piholeInfo["api_password"] = "***configured***"
 	} else {
 		piholeInfo["api_password"] = "not set"
 	}
-	
+
 	log.InfoFields("Pi-hole settings", piholeInfo)
 
 	log.InfoFields("Exclusion settings", map[string]any{
 		"exclude_networks_count": len(config.Exclusions.ExcludeNetworks),
-		"exclude_ips_count":     len(config.Exclusions.ExcludeIPs),
-		"exclude_hosts_count":   len(config.Exclusions.ExcludeHosts),
-		"exclude_networks":      config.Exclusions.ExcludeNetworks,
-		"exclude_ips":          config.Exclusions.ExcludeIPs,
-		"exclude_hosts":        config.Exclusions.ExcludeHosts,
+		"exclude_ips_count":      len(config.Exclusions.ExcludeIPs),
+		"exclude_hosts_count":    len(config.Exclusions.ExcludeHosts),
+		"exclude_networks":       config.Exclusions.ExcludeNetworks,
+		"exclude_ips":            config.Exclusions.ExcludeIPs,
+		"exclude_hosts":          config.Exclusions.ExcludeHosts,
 	})
 
 	log.InfoFields("Logging settings", map[string]any{
-		"level":         config.Logging.Level,
-		"output_file":   config.Logging.OutputFile,
-		"enable_colors": config.Logging.EnableColors,
-		"enable_emojis": config.Logging.EnableEmojis,
+		"level":          config.Logging.Level,
+		"output_file":    config.Logging.OutputFile,
+		"enable_colors":  config.Logging.EnableColors,
+		"enable_emojis":  config.Logging.EnableEmojis,
 		"show_timestamp": config.Logging.ShowTimestamp,
-		"show_caller":   config.Logging.ShowCaller,
+		"show_caller":    config.Logging.ShowCaller,
 	})
 }
 

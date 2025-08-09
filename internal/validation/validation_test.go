@@ -231,7 +231,7 @@ func TestValidateConfig_Warnings(t *testing.T) {
 	validator := NewValidator(log)
 
 	config := GetDefaultValidationConfig()
-	config.Pihole.APITimeout = 600 // Very high timeout
+	config.Pihole.APITimeout = 600  // Very high timeout
 	config.Output.MaxClients = 2000 // Very high max clients
 
 	result := validator.ValidateConfig(config)
@@ -383,13 +383,13 @@ func TestApplyDefaults(t *testing.T) {
 
 	config := &types.Config{
 		Pihole: types.PiholeConfig{
-			Host:       "",      // Invalid
-			Port:       -1,      // Invalid
-			APITimeout: 0,       // Invalid
+			Host:       "", // Invalid
+			Port:       -1, // Invalid
+			APITimeout: 0,  // Invalid
 		},
 		Output: types.OutputConfig{
-			MaxClients: 0,  // Invalid
-			MaxDomains: 0,  // Invalid
+			MaxClients:  0, // Invalid
+			MaxDomains:  0, // Invalid
 			SaveReports: true,
 			ReportDir:   "", // Invalid for saving reports
 		},
@@ -419,7 +419,7 @@ func TestApplyDefaults(t *testing.T) {
 	if config.Output.ReportDir == "" {
 		t.Error("Default report directory should have been applied")
 	}
-	
+
 	validLevels := []string{"DEBUG", "INFO", "WARN", "ERROR"}
 	found := false
 	for _, level := range validLevels {

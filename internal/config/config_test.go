@@ -221,7 +221,7 @@ func TestCreateDefaultConfigFile(t *testing.T) {
 
 func TestShowConfig(t *testing.T) {
 	config := validation.GetDefaultValidationConfig()
-	
+
 	// This test mainly checks that ShowConfig doesn't panic
 	// In a real test environment, you might want to capture the output
 	// and verify the logged information
@@ -230,10 +230,10 @@ func TestShowConfig(t *testing.T) {
 
 func TestMergeFlags(t *testing.T) {
 	config := DefaultConfig()
-	
+
 	// Test merging flags
 	MergeFlags(config, true, true, true, "")
-	
+
 	if !config.OnlineOnly {
 		t.Error("OnlineOnly flag should be set")
 	}
@@ -250,12 +250,12 @@ func TestGetConfigPath(t *testing.T) {
 	if path == "" {
 		t.Error("GetConfigPath should return a non-empty path")
 	}
-	
+
 	// Should contain .pihole-analyzer
 	if filepath.Base(filepath.Dir(path)) != ".pihole-analyzer" {
 		t.Error("Config path should be in .pihole-analyzer directory")
 	}
-	
+
 	// Should end with config.json
 	if filepath.Base(path) != "config.json" {
 		t.Error("Config path should end with config.json")

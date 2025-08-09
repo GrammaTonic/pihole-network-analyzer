@@ -24,12 +24,12 @@ func (e *ValidationError) Error() string {
 
 // ValidationResult holds the results of configuration validation
 type ValidationResult struct {
-	Valid  bool
-	Errors []ValidationError
+	Valid    bool
+	Errors   []ValidationError
 	Warnings []ValidationWarning
 }
 
-// ValidationWarning represents a validation warning with context  
+// ValidationWarning represents a validation warning with context
 type ValidationWarning struct {
 	Field   string
 	Value   interface{}
@@ -54,7 +54,7 @@ func NewValidator(log *logger.Logger) *Validator {
 // ValidateConfig performs comprehensive validation of the entire configuration
 func (v *Validator) ValidateConfig(config *types.Config) *ValidationResult {
 	v.logger.Info("Starting comprehensive configuration validation")
-	
+
 	result := &ValidationResult{
 		Valid:    true,
 		Errors:   []ValidationError{},
@@ -149,10 +149,10 @@ func (v *Validator) validatePiholeConfig(config *types.PiholeConfig, result *Val
 	}
 
 	v.logger.InfoFields("Pi-hole configuration validation completed", map[string]any{
-		"errors":   errorCount,
-		"warnings": warningCount,
-		"host":     config.Host,
-		"port":     config.Port,
+		"errors":      errorCount,
+		"warnings":    warningCount,
+		"host":        config.Host,
+		"port":        config.Port,
 		"api_enabled": config.APIEnabled,
 	})
 }
@@ -209,10 +209,10 @@ func (v *Validator) validateOutputConfig(config *types.OutputConfig, result *Val
 	}
 
 	v.logger.InfoFields("Output configuration validation completed", map[string]any{
-		"max_clients": config.MaxClients,
-		"max_domains": config.MaxDomains,
+		"max_clients":  config.MaxClients,
+		"max_domains":  config.MaxDomains,
 		"save_reports": config.SaveReports,
-		"report_dir": config.ReportDir,
+		"report_dir":   config.ReportDir,
 	})
 }
 
@@ -255,8 +255,8 @@ func (v *Validator) validateExclusionConfig(config *types.ExclusionConfig, resul
 
 	v.logger.InfoFields("Exclusion configuration validation completed", map[string]any{
 		"exclude_networks_count": len(config.ExcludeNetworks),
-		"exclude_ips_count":     len(config.ExcludeIPs),
-		"exclude_hosts_count":   len(config.ExcludeHosts),
+		"exclude_ips_count":      len(config.ExcludeIPs),
+		"exclude_hosts_count":    len(config.ExcludeHosts),
 	})
 }
 
@@ -289,8 +289,8 @@ func (v *Validator) validateLoggingConfig(config *types.LoggingConfig, result *V
 	v.logger.InfoFields("Logging configuration validation completed", map[string]any{
 		"level":       config.Level,
 		"output_file": config.OutputFile,
-		"colors":     config.EnableColors,
-		"emojis":     config.EnableEmojis,
+		"colors":      config.EnableColors,
+		"emojis":      config.EnableEmojis,
 	})
 }
 
@@ -382,7 +382,7 @@ func (v *Validator) isValidHost(host string) bool {
 			allNumeric = false
 		}
 	}
-	
+
 	// If all parts are numeric but it's not a valid IP, it's invalid
 	if allNumeric && len(parts) == 4 {
 		return false // Already checked by net.ParseIP and failed
@@ -390,10 +390,10 @@ func (v *Validator) isValidHost(host string) bool {
 
 	// Simple hostname validation - allow alphanumeric, dots, and hyphens
 	for _, char := range host {
-		if !((char >= 'a' && char <= 'z') || 
-			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9') || 
-			 char == '.' || char == '-') {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '.' || char == '-') {
 			return false
 		}
 	}
@@ -505,16 +505,16 @@ func GetDefaultValidationConfig() *types.Config {
 func ValidateAndWarn(config *types.Config, log *logger.Logger) bool {
 	validator := NewValidator(log)
 	result := validator.ValidateConfig(config)
-	
+
 	return result.Valid
 }
 
 // ApplyDefaults applies default values to missing or invalid configuration fields
 func (v *Validator) ApplyDefaults(config *types.Config) {
 	v.logger.Info("Applying default values to configuration")
-	
+
 	defaults := GetDefaultValidationConfig()
-	
+
 	// Apply Pi-hole defaults
 	if config.Pihole.Host == "" {
 		config.Pihole.Host = defaults.Pihole.Host
@@ -528,7 +528,7 @@ func (v *Validator) ApplyDefaults(config *types.Config) {
 		config.Pihole.APITimeout = defaults.Pihole.APITimeout
 		v.logger.Warn("Applied default API timeout: %d", defaults.Pihole.APITimeout)
 	}
-	
+
 	// Apply output defaults
 	if config.Output.MaxClients <= 0 {
 		config.Output.MaxClients = defaults.Output.MaxClients
@@ -542,13 +542,13 @@ func (v *Validator) ApplyDefaults(config *types.Config) {
 		config.Output.ReportDir = defaults.Output.ReportDir
 		v.logger.Warn("Applied default report directory: %s", defaults.Output.ReportDir)
 	}
-	
+
 	// Apply logging defaults
 	validLevels := []string{"DEBUG", "INFO", "WARN", "ERROR"}
 	if !v.contains(validLevels, strings.ToUpper(config.Logging.Level)) {
 		config.Logging.Level = defaults.Logging.Level
 		v.logger.Warn("Applied default log level: %s", defaults.Logging.Level)
 	}
-	
+
 	v.logger.Success("Default values applied to configuration")
 }
