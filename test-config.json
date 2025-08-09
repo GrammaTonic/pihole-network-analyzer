@@ -1,0 +1,44 @@
+{
+  "test_mode": true,
+  "quiet": false,
+  "pihole": {
+    "host": "localhost",
+    "port": 80,
+    "api_enabled": true,
+    "api_password": "",
+    "use_https": false,
+    "api_timeout": 30
+  },
+  "output": {
+    "colors": true,
+    "emojis": true,
+    "verbose": false,
+    "format": "table",
+    "max_clients": 20,
+    "max_domains_display": 10,
+    "save_reports": false,
+    "report_dir": ".",
+    "verbose_output": false
+  },
+  "exclusions": {
+    "exclude_networks": ["172.16.0.0/12", "127.0.0.0/8"],
+    "exclude_ips": [],
+    "exclude_hosts": ["pi.hole"]
+  },
+  "logging": {
+    "level": "INFO",
+    "enable_colors": true,
+    "enable_emojis": true,
+    "output_file": "",
+    "show_timestamp": true,
+    "show_caller": false
+  },
+  "metrics": {
+    "enabled": true,
+    "port": "9090",
+    "host": "localhost",
+    "enable_endpoint": true,
+    "collect_metrics": true,
+    "enable_detailed_metrics": true
+  }
+}

@@ -150,6 +150,11 @@ func (l *Logger) ErrorFields(msg string, fields map[string]any) {
 	l.WithFields(fields).Error(msg)
 }
 
+// GetSlogger returns the underlying slog.Logger
+func (l *Logger) GetSlogger() *slog.Logger {
+	return l.slogger
+}
+
 // log performs the actual logging with emoji and color support
 func (l *Logger) log(level LogLevel, emoji string, msg string, args ...any) {
 	// Format the message
