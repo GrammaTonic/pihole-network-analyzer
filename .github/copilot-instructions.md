@@ -22,12 +22,13 @@ internal/
 ├── interfaces/              # DataSource abstraction (API vs mock)
 ├── pihole/                  # Pi-hole API client with session management
 ├── logger/                  # Structured logging (slog) - USE THIS, NOT fmt.Printf
-├── types/                   # Core data structures (PiholeRecord, ClientStats)
+├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig)
 ├── analyzer/                # Pi-hole data processing engine
 ├── reporting/               # Colorized terminal output
 ├── cli/                     # Centralized flag management
 ├── web/                     # Web UI server and dashboard templates
 ├── metrics/                 # Prometheus metrics collection and server
+├── ml/                      # Machine learning (anomaly detection, trend analysis)
 └── validation/              # Configuration validation with structured logging
 ```
 
@@ -59,9 +60,25 @@ type Config struct {
     Pihole     PiholeConfig    `json:"pihole"`     // Pi-hole API settings
     Web        WebConfig       `json:"web"`        // Web UI configuration  
     Metrics    MetricsConfig   `json:"metrics"`    // Prometheus metrics
+    ML         MLConfig        `json:"ml"`         // Machine learning features
     Logging    LoggingConfig   `json:"logging"`    // Structured logging
     // No SSH fields - API only
 }
+```
+
+### ML System Architecture
+Complete ML interfaces in `internal/ml/interfaces.go`:
+```go
+// Three-tier ML system
+type MLEngine interface {
+    AnomalyDetector   // Statistical anomaly detection
+    TrendAnalyzer     // Trend analysis and forecasting
+    // ProcessData combines both capabilities
+}
+
+// Engine creation with configuration
+engine := ml.NewEngine(config.ML, logger)
+results, err := engine.ProcessData(ctx, piholeRecords)
 ```
 
 ## Essential Commands
@@ -81,6 +98,18 @@ make dev-setup         # Complete development environment prep
 
 # Test binary (uses mock data)
 ./pihole-analyzer-test --test
+```
+
+### ML Development Testing
+```bash
+# Run ML tests specifically
+go test -v ./internal/ml/...
+
+# Test ML engine integration
+go test -v ./internal/ml/ -run TestEngine
+
+# Debug ML algorithms with test data
+go run debug_ml.go  # Uses internal/ml test fixtures
 ```
 
 ### Web UI and Daemon Mode
@@ -128,6 +157,7 @@ make docker-multi      # Multi-architecture builds
 7. **Web UI Foundation**: Use `internal/web` for dashboard features, ensure localhost:8080 default
 8. **Metrics Integration**: Prometheus endpoints at localhost:9090, use `internal/metrics`
 9. **Configuration Validation**: Use `internal/validation` with structured logging for all config checks
+10. **ML Algorithm Calibration**: Always test threshold values - confidence (0.75), score normalization (≤1.0), sensitivity (0.01-0.1)
 
 ## Common Tasks
 
@@ -137,7 +167,8 @@ make docker-multi      # Multi-architecture builds
 **Output Formatting**: Use `internal/reporting` with color support (`--no-color` flag)  
 **Web UI Development**: Use `internal/web` templates and server, ensure daemon mode compatibility  
 **Metrics Addition**: Extend `internal/metrics` for new Prometheus endpoints  
-**Configuration Updates**: Add validation in `internal/validation` with proper error handling
+**Configuration Updates**: Add validation in `internal/validation` with proper error handling  
+**ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`
 
 ## Web UI Development Patterns
 
@@ -184,6 +215,39 @@ http.Handle("/metrics", promhttp.Handler())
 logger.Info("Metrics server starting", slog.String("addr", addr))
 ```
 
+## ML Development Patterns
+
+### ML Engine Usage
+```go
+// Initialize ML engine with configuration
+logger := logger.New(&logger.Config{Component: "ml-engine"})
+engine := ml.NewEngine(config.ML, logger)
+if err := engine.Initialize(ctx, config.ML); err != nil {
+    logger.Error("Failed to initialize ML engine", slog.String("error", err.Error()))
+}
+
+// Process data for anomaly detection and trend analysis
+results, err := engine.ProcessData(ctx, piholeRecords)
+```
+
+### Algorithm Threshold Calibration
+```go
+// Critical ML algorithm settings - test these values:
+// - Confidence thresholds: 0.75 (not 0.6) to prevent false positives
+// - Score normalization: Always use math.Min(score, 1.0) to cap at 1.0
+// - Sensitivity settings: 0.01-0.1 range for trend analysis
+// - Window sizes: Use time.Duration for consistency
+```
+
+### ML Testing Patterns
+```go
+// Always test ML algorithms with expected behavior
+go test -v ./internal/ml/ -run TestAnomalyDetector
+go test -v ./internal/ml/ -run TestTrendAnalyzer
+// Check that confidence filtering works: score ≥ confidence threshold
+// Verify score normalization: all scores ≤ 1.0
+```
+
 ## Roadmap
 
 ### Current Focus (Q1 2025)
@@ -191,6 +255,7 @@ logger.Info("Metrics server starting", slog.String("addr", addr))
 - **Prometheus Metrics**: Built-in metrics endpoints at localhost:9090 for monitoring ✅
 - **Enhanced Configuration Validation**: Comprehensive config validation with structured logging ✅
 - **Daemon Mode**: Background service for continuous Pi-hole monitoring ✅
+- **Machine Learning**: AI-powered anomaly detection and trend analysis ✅
 
 ### Near Term (Q2 2025)
 - **Multi-Pi-hole Support**: Connect and analyze multiple Pi-hole instances
@@ -205,9 +270,9 @@ logger.Info("Metrics server starting", slog.String("addr", addr))
 - **Enhanced Network Analysis**: Deep packet inspection and traffic patterns
 
 ### Long Term (2026+)
-- **Machine Learning**: AI-powered anomaly detection and trend analysis
+- **Enhanced ML Models**: Advanced machine learning with custom model training
 - **Multi-format Export**: JSON, XML, CSV export capabilities
 - **Integration Ecosystem**: Grafana, InfluxDB, and monitoring platform connectors
 - **Mobile App**: Companion mobile application for network monitoring
 
-This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, and **beautiful terminal output**.
+This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, and **beautiful terminal output**.
