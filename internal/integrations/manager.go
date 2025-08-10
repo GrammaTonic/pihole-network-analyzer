@@ -224,6 +224,7 @@ func (m *Manager) TestAll(ctx context.Context) map[string]error {
 				slog.String("integration", name),
 				slog.String("error", err.Error()))
 		} else {
+			results[name] = nil // Add successful test result
 			m.logger.Info("✅ Integration test passed",
 				slog.String("component", "integrations"),
 				slog.String("integration", name))
