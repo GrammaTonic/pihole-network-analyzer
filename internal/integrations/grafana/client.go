@@ -33,10 +33,10 @@ func NewClient(config *types.GrafanaConfig, logger *slog.Logger) *Client {
 	if timeout <= 0 {
 		timeout = 30 // 30 seconds default
 	}
-	
+
 	return &Client{
-		config:     config,
-		logger:     logger,
+		config: config,
+		logger: logger,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
@@ -149,7 +149,7 @@ func (c *Client) TestConnection(ctx context.Context) error {
 
 	// Test with health endpoint
 	url := c.config.URL + "/api/health"
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -245,7 +245,7 @@ func (c *Client) DeleteDashboard(ctx context.Context, uid string) error {
 		slog.String("uid", uid))
 
 	url := fmt.Sprintf("/api/dashboards/uid/%s", uid)
-	
+
 	req, err := c.createRequest(ctx, "DELETE", url, nil)
 	if err != nil {
 		return err
@@ -296,10 +296,10 @@ func (c *Client) ListDashboards(ctx context.Context) ([]interfaces.Dashboard, er
 	dashboards := make([]interfaces.Dashboard, len(searchResults))
 	for i, result := range searchResults {
 		dashboards[i] = interfaces.Dashboard{
-			ID:          result.UID,
-			Title:       result.Title,
-			FolderID:    fmt.Sprintf("%d", result.FolderID),
-			Tags:        result.Tags,
+			ID:       result.UID,
+			Title:    result.Title,
+			FolderID: fmt.Sprintf("%d", result.FolderID),
+			Tags:     result.Tags,
 		}
 	}
 
@@ -313,7 +313,7 @@ func (c *Client) GetDashboard(ctx context.Context, uid string) (*interfaces.Dash
 	}
 
 	url := fmt.Sprintf("/api/dashboards/uid/%s", uid)
-	
+
 	req, err := c.createRequest(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -395,7 +395,7 @@ func (c *Client) provisionDashboards(ctx context.Context, data *types.AnalysisRe
 
 	// Create Pi-hole Network Analyzer dashboard
 	dashboard := c.createMainDashboard(data)
-	
+
 	if err := c.CreateDashboard(ctx, dashboard); err != nil {
 		return fmt.Errorf("failed to provision main dashboard: %w", err)
 	}
@@ -576,7 +576,7 @@ func (c *Client) convertToGrafanaDashboard(dashboard interfaces.Dashboard) map[s
 
 func (c *Client) convertPanels(panels []interfaces.Panel) []map[string]interface{} {
 	grafanaPanels := make([]map[string]interface{}, len(panels))
-	
+
 	for i, panel := range panels {
 		grafanaPanels[i] = map[string]interface{}{
 			"id":    panel.ID,

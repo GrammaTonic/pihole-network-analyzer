@@ -400,5 +400,5 @@ func (m *mockLogIntegration) AddStaticLabels(labels map[string]string) {
 // Compile-time interface checks
 var (
 	_ interfaces.MonitoringIntegration = (*mockIntegration)(nil)
-	_ interfaces.LogsIntegration      = (*mockLogIntegration)(nil)
+	_ interfaces.LogsIntegration       = (*mockLogIntegration)(nil)
 )

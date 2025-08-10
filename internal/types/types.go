@@ -76,18 +76,18 @@ type ARPEntry struct {
 
 // Config represents the application configuration
 type Config struct {
-	OnlineOnly   bool                `json:"online_only"`
-	NoExclude    bool                `json:"no_exclude"`
-	TestMode     bool                `json:"test_mode"`
-	Quiet        bool                `json:"quiet"`
-	Pihole       PiholeConfig        `json:"pihole"`
-	Output       OutputConfig        `json:"output"`
-	Exclusions   ExclusionConfig     `json:"exclusions"`
-	Logging      LoggingConfig       `json:"logging"`
-	Web          WebConfig           `json:"web"`
-	Metrics      MetricsConfig       `json:"metrics"`
-	ML           MLConfig            `json:"ml"`
-	Integrations IntegrationsConfig  `json:"integrations"`
+	OnlineOnly   bool               `json:"online_only"`
+	NoExclude    bool               `json:"no_exclude"`
+	TestMode     bool               `json:"test_mode"`
+	Quiet        bool               `json:"quiet"`
+	Pihole       PiholeConfig       `json:"pihole"`
+	Output       OutputConfig       `json:"output"`
+	Exclusions   ExclusionConfig    `json:"exclusions"`
+	Logging      LoggingConfig      `json:"logging"`
+	Web          WebConfig          `json:"web"`
+	Metrics      MetricsConfig      `json:"metrics"`
+	ML           MLConfig           `json:"ml"`
+	Integrations IntegrationsConfig `json:"integrations"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -297,29 +297,29 @@ type PerformanceConfig struct {
 
 // IntegrationsConfig represents configuration for external integrations
 type IntegrationsConfig struct {
-	Enabled   bool           `json:"enabled"`
-	Grafana   GrafanaConfig  `json:"grafana"`
-	Loki      LokiConfig     `json:"loki"`
-	Prometheus PrometheusExtConfig `json:"prometheus"`
-	Generic   []GenericIntegrationConfig `json:"generic"`
+	Enabled    bool                       `json:"enabled"`
+	Grafana    GrafanaConfig              `json:"grafana"`
+	Loki       LokiConfig                 `json:"loki"`
+	Prometheus PrometheusExtConfig        `json:"prometheus"`
+	Generic    []GenericIntegrationConfig `json:"generic"`
 }
 
 // GrafanaConfig represents Grafana integration configuration
 type GrafanaConfig struct {
-	Enabled       bool   `json:"enabled"`
-	URL           string `json:"url"`
-	APIKey        string `json:"api_key"`
-	Organization  string `json:"organization"`
-	
+	Enabled      bool   `json:"enabled"`
+	URL          string `json:"url"`
+	APIKey       string `json:"api_key"`
+	Organization string `json:"organization"`
+
 	// Data source configuration
 	DataSource DataSourceConfig `json:"data_source"`
-	
+
 	// Dashboard management
 	Dashboards DashboardConfig `json:"dashboards"`
-	
+
 	// Alert management
 	Alerts AlertConfig `json:"alerts"`
-	
+
 	// Connection settings
 	Timeout    int  `json:"timeout_seconds"`
 	VerifyTLS  bool `json:"verify_tls"`
@@ -340,19 +340,19 @@ type DataSourceConfig struct {
 
 // DashboardConfig configures Grafana dashboard management
 type DashboardConfig struct {
-	AutoProvision   bool     `json:"auto_provision"`
-	FolderName      string   `json:"folder_name"`
-	DashboardFiles  []string `json:"dashboard_files"`
-	OverwriteExisting bool   `json:"overwrite_existing"`
-	Tags            []string `json:"tags"`
+	AutoProvision     bool     `json:"auto_provision"`
+	FolderName        string   `json:"folder_name"`
+	DashboardFiles    []string `json:"dashboard_files"`
+	OverwriteExisting bool     `json:"overwrite_existing"`
+	Tags              []string `json:"tags"`
 }
 
 // AlertConfig configures Grafana alerting
 type AlertConfig struct {
-	Enabled         bool                   `json:"enabled"`
+	Enabled              bool              `json:"enabled"`
 	NotificationChannels []string          `json:"notification_channels"`
-	Rules           []AlertRuleConfig      `json:"rules"`
-	DefaultSeverity string                 `json:"default_severity"`
+	Rules                []AlertRuleConfig `json:"rules"`
+	DefaultSeverity      string            `json:"default_severity"`
 }
 
 // AlertRuleConfig represents an alert rule configuration
@@ -369,47 +369,47 @@ type AlertRuleConfig struct {
 
 // LokiConfig represents Loki integration configuration
 type LokiConfig struct {
-	Enabled       bool   `json:"enabled"`
-	URL           string `json:"url"`
-	Username      string `json:"username"`
-	Password      string `json:"password"`
-	TenantID      string `json:"tenant_id"`
-	
+	Enabled  bool   `json:"enabled"`
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	TenantID string `json:"tenant_id"`
+
 	// Log shipping configuration
-	BatchSize     int    `json:"batch_size"`
-	BatchTimeout  string `json:"batch_timeout"` // duration string
-	BufferSize    int    `json:"buffer_size"`
-	
+	BatchSize    int    `json:"batch_size"`
+	BatchTimeout string `json:"batch_timeout"` // duration string
+	BufferSize   int    `json:"buffer_size"`
+
 	// Label configuration
 	StaticLabels  map[string]string `json:"static_labels"`
 	DynamicLabels []string          `json:"dynamic_labels"`
-	
+
 	// Connection settings
-	Timeout       int  `json:"timeout_seconds"`
-	VerifyTLS     bool `json:"verify_tls"`
-	RetryCount    int  `json:"retry_count"`
+	Timeout       int    `json:"timeout_seconds"`
+	VerifyTLS     bool   `json:"verify_tls"`
+	RetryCount    int    `json:"retry_count"`
 	RetryInterval string `json:"retry_interval"` // duration string
 }
 
 // PrometheusExtConfig represents extended Prometheus integration configuration
 type PrometheusExtConfig struct {
-	Enabled      bool   `json:"enabled"`
-	PushGateway  PushGatewayConfig `json:"push_gateway"`
-	RemoteWrite  RemoteWriteConfig `json:"remote_write"`
+	Enabled          bool                   `json:"enabled"`
+	PushGateway      PushGatewayConfig      `json:"push_gateway"`
+	RemoteWrite      RemoteWriteConfig      `json:"remote_write"`
 	ServiceDiscovery ServiceDiscoveryConfig `json:"service_discovery"`
-	ExternalLabels map[string]string `json:"external_labels"`
+	ExternalLabels   map[string]string      `json:"external_labels"`
 }
 
 // PushGatewayConfig configures Prometheus push gateway integration
 type PushGatewayConfig struct {
-	Enabled   bool   `json:"enabled"`
-	URL       string `json:"url"`
-	Job       string `json:"job"`
-	Instance  string `json:"instance"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	Timeout   int    `json:"timeout_seconds"`
-	Interval  string `json:"push_interval"` // duration string
+	Enabled  bool   `json:"enabled"`
+	URL      string `json:"url"`
+	Job      string `json:"job"`
+	Instance string `json:"instance"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Timeout  int    `json:"timeout_seconds"`
+	Interval string `json:"push_interval"` // duration string
 }
 
 // RemoteWriteConfig configures Prometheus remote write
@@ -425,23 +425,23 @@ type RemoteWriteConfig struct {
 
 // ServiceDiscoveryConfig configures service discovery for Prometheus
 type ServiceDiscoveryConfig struct {
-	Enabled     bool     `json:"enabled"`
-	Type        string   `json:"type"` // consul, k8s, static
-	Endpoints   []string `json:"endpoints"`
-	RefreshInterval string `json:"refresh_interval"` // duration string
-	Labels      map[string]string `json:"labels"`
+	Enabled         bool              `json:"enabled"`
+	Type            string            `json:"type"` // consul, k8s, static
+	Endpoints       []string          `json:"endpoints"`
+	RefreshInterval string            `json:"refresh_interval"` // duration string
+	Labels          map[string]string `json:"labels"`
 }
 
 // GenericIntegrationConfig represents a generic monitoring platform integration
 type GenericIntegrationConfig struct {
-	Name      string            `json:"name"`
-	Type      string            `json:"type"`
-	Enabled   bool              `json:"enabled"`
-	URL       string            `json:"url"`
-	Headers   map[string]string `json:"headers"`
-	Auth      AuthConfig        `json:"auth"`
-	Settings  map[string]interface{} `json:"settings"`
-	Timeout   int               `json:"timeout_seconds"`
+	Name     string                 `json:"name"`
+	Type     string                 `json:"type"`
+	Enabled  bool                   `json:"enabled"`
+	URL      string                 `json:"url"`
+	Headers  map[string]string      `json:"headers"`
+	Auth     AuthConfig             `json:"auth"`
+	Settings map[string]interface{} `json:"settings"`
+	Timeout  int                    `json:"timeout_seconds"`
 }
 
 // AuthConfig represents authentication configuration for integrations

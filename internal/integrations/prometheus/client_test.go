@@ -337,7 +337,7 @@ func TestSetCustomMetric(t *testing.T) {
 
 	for _, test := range tests {
 		err := client.setCustomMetric(test.name, test.value)
-		
+
 		if test.hasError {
 			if err == nil {
 				t.Errorf("Expected error for test %s, got nil", test.name)

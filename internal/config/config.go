@@ -99,11 +99,11 @@ func DefaultConfig() *types.Config {
 				RetryCount: 3,
 			},
 			Loki: types.LokiConfig{
-				Enabled:       false,
-				URL:           "http://localhost:3100",
-				BatchSize:     100,
-				BatchTimeout:  "10s",
-				BufferSize:    1000,
+				Enabled:      false,
+				URL:          "http://localhost:3100",
+				BatchSize:    100,
+				BatchTimeout: "10s",
+				BufferSize:   1000,
 				StaticLabels: map[string]string{
 					"service": "pihole-analyzer",
 					"env":     "production",
