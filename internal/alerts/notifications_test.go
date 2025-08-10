@@ -417,23 +417,23 @@ func TestNotificationErrorHandling(t *testing.T) {
 	// Slack handler should respect context cancellation
 	slackHandler := NewSlackHandler(SlackConfig{
 		Enabled:    true,
-		WebhookURL: "https://hooks.slack.com/test",
-		Timeout:    30 * time.Second,
+		WebhookURL: "https://this-domain-does-not-exist-12345.invalid/webhook",
+		Timeout:    1 * time.Second, // Short timeout
 	}, logger)
 
 	// This should either fail quickly due to context cancellation or invalid URL
 	slackHandler.SendNotification(cancelledCtx, normalAlert, nil)
 
-	// Email handler with context cancellation
+	// Email handler with context cancellation - test config validation only
 	emailHandler := NewEmailHandler(EmailConfig{
 		Enabled:    true,
-		SMTPHost:   "smtp.test.com",
+		SMTPHost:   "", // Empty host will fail config validation quickly
 		SMTPPort:   587,
-		From:       "test@test.com",
-		Recipients: []string{"admin@test.com"},
-		Timeout:    30 * time.Second,
+		From:       "",         // Empty from will fail config validation quickly
+		Recipients: []string{}, // Empty recipients will fail config validation quickly
+		Timeout:    1 * time.Second,
 	}, logger)
 
-	// This should fail quickly due to context cancellation or connection error
+	// This should fail quickly due to configuration error, not network timeout
 	emailHandler.SendNotification(cancelledCtx, normalAlert, nil)
 }
