@@ -82,12 +82,12 @@ func DefaultConfig() *types.Config {
 				TimeWindow:       "1h",
 			},
 			TrafficPatterns: types.TrafficPatternsConfig{
-				Enabled:           false,
-				PatternTypes:      []string{"bandwidth", "temporal", "client"},
-				AnalysisWindow:    "2h",
-				MinDataPoints:     10,
-				PatternThreshold:  0.6,
-				AnomalyDetection:  true,
+				Enabled:          false,
+				PatternTypes:     []string{"bandwidth", "temporal", "client"},
+				AnalysisWindow:   "2h",
+				MinDataPoints:    10,
+				PatternThreshold: 0.6,
+				AnomalyDetection: true,
 			},
 			SecurityAnalysis: types.SecurityAnalysisConfig{
 				Enabled:               false,

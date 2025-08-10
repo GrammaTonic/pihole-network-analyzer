@@ -34,13 +34,13 @@ func (t *DefaultTrafficPatternAnalyzer) AnalyzePatterns(ctx context.Context, rec
 	patternID := fmt.Sprintf("pattern_%d", startTime.Unix())
 
 	result := &types.TrafficPatternsResult{
-		PatternID:        patternID,
-		DetectedPatterns: make([]types.TrafficPattern, 0),
+		PatternID:         patternID,
+		DetectedPatterns:  make([]types.TrafficPattern, 0),
 		BandwidthPatterns: make([]types.BandwidthPattern, 0),
-		TemporalPatterns: make([]types.TemporalPattern, 0),
-		ClientBehavior:   make(map[string]types.ClientBehavior),
-		Anomalies:        make([]types.TrafficAnomaly, 0),
-		PredictedTrends:  make([]types.TrafficTrend, 0),
+		TemporalPatterns:  make([]types.TemporalPattern, 0),
+		ClientBehavior:    make(map[string]types.ClientBehavior),
+		Anomalies:         make([]types.TrafficAnomaly, 0),
+		PredictedTrends:   make([]types.TrafficTrend, 0),
 	}
 
 	// Parse analysis window
@@ -220,7 +220,7 @@ func (t *DefaultTrafficPatternAnalyzer) DetectTrafficAnomalies(ctx context.Conte
 
 	// Calculate baseline statistics
 	baseline := t.calculateBaseline(records)
-	
+
 	// Detect volume anomalies
 	volumeAnomalies := t.detectVolumeAnomalies(timeWindows, baseline, config.PatternThreshold)
 	anomalies = append(anomalies, volumeAnomalies...)
@@ -268,7 +268,7 @@ func (t *DefaultTrafficPatternAnalyzer) groupRecordsByTimeSlots(records []types.
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		slotKey := timestamp.Truncate(slotDuration).Format(time.RFC3339)
-		
+
 		if _, exists := slots[slotKey]; !exists {
 			slots[slotKey] = make([]types.PiholeRecord, 0)
 		}
@@ -292,7 +292,7 @@ func (t *DefaultTrafficPatternAnalyzer) calculateAverageBandwidth(records []type
 	// Convert to Mbps (assuming records span 1 minute for estimation)
 	bytesPerSecond := float64(totalBytes) / 60.0
 	mbps := (bytesPerSecond * 8) / (1024 * 1024)
-	
+
 	return mbps
 }
 
@@ -300,7 +300,7 @@ func (t *DefaultTrafficPatternAnalyzer) calculateAverageBandwidth(records []type
 func (t *DefaultTrafficPatternAnalyzer) calculatePeakBandwidth(records []types.PiholeRecord) float64 {
 	// Group by smaller time windows to find peak
 	subSlots := t.groupRecordsByTimeSlots(records, time.Minute)
-	
+
 	maxBandwidth := 0.0
 	for _, subRecords := range subSlots {
 		bandwidth := t.calculateAverageBandwidth(subRecords)
@@ -324,7 +324,7 @@ func (t *DefaultTrafficPatternAnalyzer) calculateUsagePercentage(slotRecords []t
 func (t *DefaultTrafficPatternAnalyzer) calculateTrend(slotRecords []types.PiholeRecord, allSlots map[string][]types.PiholeRecord) string {
 	// Simple trend calculation based on comparison with other slots
 	slotSize := len(slotRecords)
-	
+
 	totalOthers := 0
 	otherCount := 0
 	for _, otherRecords := range allSlots {
@@ -339,20 +339,20 @@ func (t *DefaultTrafficPatternAnalyzer) calculateTrend(slotRecords []types.Pihol
 	}
 
 	avgOthers := float64(totalOthers) / float64(otherCount)
-	
+
 	if float64(slotSize) > avgOthers*1.2 {
 		return "increasing"
 	} else if float64(slotSize) < avgOthers*0.8 {
 		return "decreasing"
 	}
-	
+
 	return "stable"
 }
 
 // analyzeHourlyPattern analyzes traffic patterns by hour of day
 func (t *DefaultTrafficPatternAnalyzer) analyzeHourlyPattern(records []types.PiholeRecord) types.TemporalPattern {
 	hourCounts := make(map[int]int)
-	
+
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		hour := timestamp.Hour()
@@ -362,10 +362,10 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeHourlyPattern(records []types.Pih
 	// Find peak and low hours
 	peakHours := make([]int, 0)
 	lowHours := make([]int, 0)
-	
+
 	if len(hourCounts) > 0 {
 		avgCount := t.calculateAverageCount(hourCounts)
-		
+
 		for hour, count := range hourCounts {
 			if float64(count) > avgCount*1.5 {
 				peakHours = append(peakHours, hour)
@@ -390,7 +390,7 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeHourlyPattern(records []types.Pih
 // analyzeDailyPattern analyzes traffic patterns by day of week
 func (t *DefaultTrafficPatternAnalyzer) analyzeDailyPattern(records []types.PiholeRecord) types.TemporalPattern {
 	dayCounts := make(map[int]int)
-	
+
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		day := int(timestamp.Weekday())
@@ -400,10 +400,10 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeDailyPattern(records []types.Piho
 	// Convert day numbers to hour format for consistency
 	peakHours := make([]int, 0)
 	lowHours := make([]int, 0)
-	
+
 	if len(dayCounts) > 0 {
 		avgCount := t.calculateAverageCount(dayCounts)
-		
+
 		for day, count := range dayCounts {
 			if float64(count) > avgCount*1.2 {
 				peakHours = append(peakHours, day)
@@ -429,7 +429,7 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeDailyPattern(records []types.Piho
 func (t *DefaultTrafficPatternAnalyzer) analyzeWeeklyPattern(records []types.PiholeRecord) types.TemporalPattern {
 	// For weekly patterns, analyze by week number
 	weekCounts := make(map[int]int)
-	
+
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		_, week := timestamp.ISOWeek()
@@ -438,10 +438,10 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeWeeklyPattern(records []types.Pih
 
 	peakHours := make([]int, 0)
 	lowHours := make([]int, 0)
-	
+
 	if len(weekCounts) > 0 {
 		avgCount := t.calculateAverageCount(weekCounts)
-		
+
 		for week, count := range weekCounts {
 			if float64(count) > avgCount*1.2 {
 				peakHours = append(peakHours, week)
@@ -511,17 +511,17 @@ func (t *DefaultTrafficPatternAnalyzer) classifyActivityLevel(records []types.Pi
 
 // analyzeTypicalUsage analyzes typical usage patterns by hour
 func (t *DefaultTrafficPatternAnalyzer) analyzeTypicalUsage(records []types.PiholeRecord) []types.HourlyUsage {
-	hourUsage := make(map[int][]int) // hour -> list of query counts
+	hourUsage := make(map[int][]int)         // hour -> list of query counts
 	hourBandwidth := make(map[int][]float64) // hour -> list of bandwidth values
 
 	// Group by hour and day to get patterns
 	dailyHourUsage := make(map[string]map[int]int) // date -> hour -> count
-	
+
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		hour := timestamp.Hour()
 		date := timestamp.Format("2006-01-02")
-		
+
 		if _, exists := dailyHourUsage[date]; !exists {
 			dailyHourUsage[date] = make(map[int]int)
 		}
@@ -542,7 +542,7 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeTypicalUsage(records []types.Piho
 	for hour := 0; hour < 24; hour++ {
 		avgQueries := 0.0
 		avgBandwidth := 0.0
-		
+
 		if counts, exists := hourUsage[hour]; exists && len(counts) > 0 {
 			total := 0
 			for _, count := range counts {
@@ -550,7 +550,7 @@ func (t *DefaultTrafficPatternAnalyzer) analyzeTypicalUsage(records []types.Piho
 			}
 			avgQueries = float64(total) / float64(len(counts))
 		}
-		
+
 		if bandwidths, exists := hourBandwidth[hour]; exists && len(bandwidths) > 0 {
 			total := 0.0
 			for _, bw := range bandwidths {
@@ -577,7 +577,7 @@ func (t *DefaultTrafficPatternAnalyzer) detectClientAnomalies(records []types.Pi
 	if len(records) > 0 {
 		timeSlots := t.groupRecordsByTimeSlots(records, time.Minute*5)
 		avgSlotSize := float64(len(records)) / float64(len(timeSlots))
-		
+
 		for timeSlot, slotRecords := range timeSlots {
 			if float64(len(slotRecords)) > avgSlotSize*3 { // 3x average
 				anomaly := types.BehaviorAnomaly{
@@ -617,7 +617,7 @@ func (t *DefaultTrafficPatternAnalyzer) detectClientAnomalies(records []types.Pi
 // calculateRiskScore calculates a risk score for client behavior
 func (t *DefaultTrafficPatternAnalyzer) calculateRiskScore(records []types.PiholeRecord, anomalies []types.BehaviorAnomaly) float64 {
 	baseScore := 0.0
-	
+
 	// Factor in anomaly count and severity
 	for _, anomaly := range anomalies {
 		switch anomaly.Severity {
@@ -698,12 +698,12 @@ func (t *DefaultTrafficPatternAnalyzer) calculateAverageCount(counts map[int]int
 	if len(counts) == 0 {
 		return 0
 	}
-	
+
 	total := 0
 	for _, count := range counts {
 		total += count
 	}
-	
+
 	return float64(total) / float64(len(counts))
 }
 
@@ -711,22 +711,22 @@ func (t *DefaultTrafficPatternAnalyzer) calculateRegularity(counts map[int]int) 
 	if len(counts) < 2 {
 		return 0
 	}
-	
+
 	values := make([]float64, 0, len(counts))
 	for _, count := range counts {
 		values = append(values, float64(count))
 	}
-	
+
 	stdDev := calculateStandardDeviation(values)
 	avg := t.calculateAverageCount(counts)
-	
+
 	if avg == 0 {
 		return 0
 	}
-	
+
 	// Regularity is inverse of coefficient of variation
 	cv := stdDev / avg
-	return math.Max(0, 1.0 - cv)
+	return math.Max(0, 1.0-cv)
 }
 
 func (t *DefaultTrafficPatternAnalyzer) detectSeasonality(counts map[int]int) bool {
@@ -737,20 +737,20 @@ func (t *DefaultTrafficPatternAnalyzer) detectSeasonality(counts map[int]int) bo
 
 func (t *DefaultTrafficPatternAnalyzer) estimateBandwidthFromQueries(queryCount int) float64 {
 	// Estimate bandwidth from query count (rough approximation)
-	avgBytesPerQuery := 100.0 // DNS query + response
+	avgBytesPerQuery := 100.0                                           // DNS query + response
 	bytesPerSecond := (float64(queryCount) * avgBytesPerQuery) / 3600.0 // Spread over hour
-	return (bytesPerSecond * 8) / (1024 * 1024) // Convert to Mbps
+	return (bytesPerSecond * 8) / (1024 * 1024)                         // Convert to Mbps
 }
 
 func (t *DefaultTrafficPatternAnalyzer) calculateBaseline(records []types.PiholeRecord) map[string]interface{} {
 	baseline := make(map[string]interface{})
-	
+
 	// Calculate baseline query rate
 	if len(records) > 0 {
 		timeSpan := t.calculateTimeSpan(records)
 		baseline["avg_queries_per_minute"] = float64(len(records)) / timeSpan.Minutes()
 	}
-	
+
 	return baseline
 }
 

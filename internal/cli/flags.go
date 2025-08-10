@@ -27,12 +27,12 @@ type Flags struct {
 	WebHost    *string
 	DaemonMode *bool
 	// Network Analysis flags
-	EnableNetworkAnalysis *bool
-	EnableDPI             *bool
-	EnableTrafficPatterns *bool
-	EnableSecurityAnalysis *bool
+	EnableNetworkAnalysis     *bool
+	EnableDPI                 *bool
+	EnableTrafficPatterns     *bool
+	EnableSecurityAnalysis    *bool
 	EnablePerformanceAnalysis *bool
-	NetworkAnalysisConfig *string
+	NetworkAnalysisConfig     *string
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -121,8 +121,8 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 // ApplyNetworkAnalysisFlags applies network analysis related flags to configuration
 func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
 	// Enable network analysis if any of the sub-components are enabled
-	if *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns || 
-	   *flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis {
+	if *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns ||
+		*flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis {
 		cfg.NetworkAnalysis.Enabled = true
 	}
 
@@ -166,8 +166,8 @@ func GetWebConfig(flags *Flags) map[string]any {
 
 // IsNetworkAnalysisEnabled returns true if network analysis is requested
 func IsNetworkAnalysisEnabled(flags *Flags) bool {
-	return *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns || 
-		   *flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis
+	return *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns ||
+		*flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis
 }
 
 // GetNetworkAnalysisConfig extracts network analysis configuration from flags

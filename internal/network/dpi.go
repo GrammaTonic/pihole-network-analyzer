@@ -35,7 +35,7 @@ func (d *DefaultDeepPacketInspector) InspectPackets(ctx context.Context, records
 
 	// Apply sampling if configured
 	sampledRecords := d.applySampling(records, config.PacketSampling)
-	
+
 	result := &types.PacketAnalysisResult{
 		TotalPackets:           int64(len(records)),
 		AnalyzedPackets:        int64(len(sampledRecords)),
@@ -116,7 +116,7 @@ func (d *DefaultDeepPacketInspector) DetectPacketAnomalies(ctx context.Context, 
 
 	// Analyze queries by time windows
 	timeWindows := d.groupByTimeWindows(records, time.Minute*5)
-	
+
 	for timeSlot, windowRecords := range timeWindows {
 		// Check for volume spikes
 		queryCount := float64(len(windowRecords))
@@ -125,7 +125,7 @@ func (d *DefaultDeepPacketInspector) DetectPacketAnomalies(ctx context.Context, 
 				ID:          fmt.Sprintf("volume_spike_%s", timeSlot),
 				Type:        "volume_spike",
 				Description: fmt.Sprintf("Query volume spike detected: %.0f queries (baseline: %.0f)", queryCount, avgQueriesPerMinute),
-				Severity:    d.calculateSeverity(queryCount/avgQueriesPerMinute),
+				Severity:    d.calculateSeverity(queryCount / avgQueriesPerMinute),
 				Timestamp:   timeSlot,
 				Confidence:  d.calculateConfidence(queryCount/avgQueriesPerMinute, 3.0),
 			}
@@ -296,7 +296,7 @@ func (d *DefaultDeepPacketInspector) applySampling(records []types.PiholeRecord,
 func (d *DefaultDeepPacketInspector) inferProtocol(record types.PiholeRecord) string {
 	// DNS queries are typically UDP, but some use TCP
 	queryType := strings.ToUpper(record.QueryType)
-	
+
 	switch queryType {
 	case "A", "AAAA", "PTR", "CNAME", "MX", "TXT", "NS", "SOA":
 		return "DNS_UDP"
@@ -328,11 +328,11 @@ func (d *DefaultDeepPacketInspector) estimatePacketSize(record types.PiholeRecor
 	// Base DNS header: 12 bytes
 	// Question section: domain name + 4 bytes (type + class)
 	// Estimated response size varies by type
-	
-	baseSize := int64(12) // DNS header
+
+	baseSize := int64(12)                       // DNS header
 	domainSize := int64(len(record.Domain) + 1) // +1 for length encoding
 	questionSize := domainSize + 4
-	
+
 	estimatedResponseSize := int64(0)
 	switch strings.ToUpper(record.QueryType) {
 	case "A":
@@ -376,7 +376,7 @@ func (d *DefaultDeepPacketInspector) analyzePortUsage(records []types.PiholeReco
 		// DNS typically uses port 53
 		port := "53"
 		protocol := d.inferProtocol(record)
-		
+
 		portKey := fmt.Sprintf("%s/%s", port, protocol)
 		portUsage[portKey]++
 	}
@@ -478,7 +478,7 @@ func (d *DefaultDeepPacketInspector) groupByTimeWindows(records []types.PiholeRe
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		windowKey := timestamp.Truncate(windowSize).Format(time.RFC3339)
-		
+
 		if _, exists := windows[windowKey]; !exists {
 			windows[windowKey] = make([]types.PiholeRecord, 0)
 		}
@@ -507,8 +507,8 @@ func (d *DefaultDeepPacketInspector) calculateConfidence(deviation, threshold fl
 	if deviation < threshold {
 		return 0.0
 	}
-	
-	confidence := math.Min(0.95, 0.5 + (deviation-threshold)*0.1)
+
+	confidence := math.Min(0.95, 0.5+(deviation-threshold)*0.1)
 	return normalizeScore(confidence)
 }
 
@@ -518,7 +518,7 @@ func (d *DefaultDeepPacketInspector) detectDNSTunneling(records []types.PiholeRe
 
 	// Group queries by domain and client
 	domainClientQueries := make(map[string]map[string]int)
-	
+
 	for _, record := range records {
 		if _, exists := domainClientQueries[record.Domain]; !exists {
 			domainClientQueries[record.Domain] = make(map[string]int)
@@ -557,7 +557,7 @@ func (d *DefaultDeepPacketInspector) detectPortScanning(records []types.PiholeRe
 	// For DNS records, port scanning would be unusual
 	// We can detect rapid-fire queries to many different domains from the same client
 	clientDomains := make(map[string]map[string]bool)
-	
+
 	for _, record := range records {
 		if _, exists := clientDomains[record.Client]; !exists {
 			clientDomains[record.Client] = make(map[string]bool)
@@ -588,19 +588,19 @@ func (d *DefaultDeepPacketInspector) detectPortScanning(records []types.PiholeRe
 func (d *DefaultDeepPacketInspector) inferDestinationIP(record types.PiholeRecord) string {
 	// For Pi-hole records, we don't have actual destination IPs
 	// We can categorize by domain type or use domain as identifier
-	
+
 	domain := record.Domain
-	
+
 	// Check if domain looks like an IP address
 	if isIPv4(domain) {
 		return domain
 	}
-	
+
 	// For actual implementation, you might want to:
 	// 1. Perform DNS resolution to get IP
 	// 2. Use cached resolution results
 	// 3. Categorize by domain patterns
-	
+
 	// For now, return empty string to indicate no specific destination IP
 	return ""
 }

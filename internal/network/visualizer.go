@@ -91,9 +91,9 @@ func (v *DefaultNetworkVisualizer) GenerateTopologyVisualization(records []types
 
 	// Add statistics
 	stats := map[string]interface{}{
-		"total_nodes":       len(nodes),
-		"total_edges":       len(edges),
-		"total_clusters":    len(clusters),
+		"total_nodes":        len(nodes),
+		"total_edges":        len(edges),
+		"total_clusters":     len(clusters),
 		"connection_density": v.calculateConnectionDensity(nodes, edges),
 	}
 	topology["statistics"] = stats
@@ -125,7 +125,7 @@ func (v *DefaultNetworkVisualizer) GenerateTimeSeriesData(records []types.Pihole
 	for _, timeKey := range sortedTimes {
 		groupRecords := timeGroups[timeKey]
 		value := v.calculateMetricValue(groupRecords, metric)
-		
+
 		dataPoint := map[string]interface{}{
 			"timestamp": timeKey,
 			"value":     value,
@@ -149,7 +149,7 @@ func (v *DefaultNetworkVisualizer) GenerateTimeSeriesData(records []types.Pihole
 	for i, point := range dataPoints {
 		values[i] = point["value"].(float64)
 	}
-	
+
 	stats := map[string]interface{}{
 		"min":    v.calculateMin(values),
 		"max":    v.calculateMax(values),
@@ -389,7 +389,7 @@ func (v *DefaultNetworkVisualizer) generateSecurityVisualization(securityAnalysi
 	for _, threat := range securityAnalysis.DetectedThreats {
 		threatTypes[threat.Type]++
 	}
-	
+
 	threatChart := make([]map[string]interface{}, 0)
 	for threatType, count := range threatTypes {
 		threatChart = append(threatChart, map[string]interface{}{
@@ -516,12 +516,12 @@ func (v *DefaultNetworkVisualizer) generateTopologyNodes(records []types.PiholeR
 		domain string
 		count  int
 	}
-	
+
 	domains := make([]domainCount, 0, len(domainCounts))
 	for domain, count := range domainCounts {
 		domains = append(domains, domainCount{domain, count})
 	}
-	
+
 	sort.Slice(domains, func(i, j int) bool {
 		return domains[i].count > domains[j].count
 	})
@@ -630,11 +630,11 @@ func (v *DefaultNetworkVisualizer) getHealthColor(health string) string {
 }
 
 // Placeholder implementations for remaining helper methods
-func (v *DefaultNetworkVisualizer) getSizeColor(category string) string { return "#3498db" }
-func (v *DefaultNetworkVisualizer) getThreatTypeColor(threatType string) string { return "#e74c3c" }
+func (v *DefaultNetworkVisualizer) getSizeColor(category string) string            { return "#3498db" }
+func (v *DefaultNetworkVisualizer) getThreatTypeColor(threatType string) string    { return "#e74c3c" }
 func (v *DefaultNetworkVisualizer) getClientColor(stats *types.ClientStats) string { return "#3498db" }
-func (v *DefaultNetworkVisualizer) getDomainColor(domain string) string { return "#2ecc71" }
-func (v *DefaultNetworkVisualizer) getEdgeColor(count int) string { return "#95a5a6" }
+func (v *DefaultNetworkVisualizer) getDomainColor(domain string) string            { return "#2ecc71" }
+func (v *DefaultNetworkVisualizer) getEdgeColor(count int) string                  { return "#95a5a6" }
 
 func (v *DefaultNetworkVisualizer) calculateNodeSize(count int) int {
 	// Scale node size based on count (min 10, max 50)
@@ -715,10 +715,10 @@ func (v *DefaultNetworkVisualizer) calculateTrend(dataPoints []map[string]interf
 	if len(dataPoints) < 2 {
 		return "stable"
 	}
-	
+
 	first := dataPoints[0]["value"].(float64)
 	last := dataPoints[len(dataPoints)-1]["value"].(float64)
-	
+
 	if last > first*1.1 {
 		return "increasing"
 	} else if last < first*0.9 {

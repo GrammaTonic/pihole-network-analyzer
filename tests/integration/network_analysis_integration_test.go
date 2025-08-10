@@ -32,12 +32,12 @@ func TestNetworkAnalysis_Integration(t *testing.T) {
 			TimeWindow:       "1h",
 		},
 		TrafficPatterns: types.TrafficPatternsConfig{
-			Enabled:           true,
-			PatternTypes:      []string{"bandwidth", "frequency", "temporal", "client"},
-			AnalysisWindow:    "2h",
-			MinDataPoints:     10,
-			PatternThreshold:  0.6,
-			AnomalyDetection:  true,
+			Enabled:          true,
+			PatternTypes:     []string{"bandwidth", "frequency", "temporal", "client"},
+			AnalysisWindow:   "2h",
+			MinDataPoints:    10,
+			PatternThreshold: 0.6,
+			AnomalyDetection: true,
 		},
 		SecurityAnalysis: types.SecurityAnalysisConfig{
 			Enabled:               true,
@@ -88,7 +88,7 @@ func TestNetworkAnalysis_Integration(t *testing.T) {
 		}
 
 		// Log analysis performance
-		t.Logf("Analysis completed in %v for %d records and %d clients", 
+		t.Logf("Analysis completed in %v for %d records and %d clients",
 			analysisTime, len(records), len(clientStats))
 
 		// Comprehensive result validation
@@ -101,7 +101,7 @@ func TestNetworkAnalysis_Integration(t *testing.T) {
 
 		// Memory usage validation (indirect check via result complexity)
 		if result.Summary.TotalQueries != int64(len(records)) {
-			t.Errorf("Query count mismatch: expected %d, got %d", 
+			t.Errorf("Query count mismatch: expected %d, got %d",
 				len(records), result.Summary.TotalQueries)
 		}
 	})
@@ -177,7 +177,7 @@ func TestNetworkAnalysis_Integration(t *testing.T) {
 		analyzer, _ := network.NewAnalyzerFactory(logger.GetSlogger()).CreateNetworkAnalyzer(config)
 		records := generateComprehensiveTestData()
 		clientStats := generateRealisticClientStats()
-		
+
 		analysisResult, err := analyzer.AnalyzeTraffic(context.Background(), records, clientStats)
 		if err != nil {
 			t.Fatalf("Failed to create analysis result: %v", err)
@@ -244,7 +244,7 @@ func TestNetworkAnalysis_Stress(t *testing.T) {
 	}
 
 	// Generate large dataset
-	records := generateLargeTestDataset(100000) // 100k records
+	records := generateLargeTestDataset(100000)   // 100k records
 	clientStats := generateLargeClientStats(1000) // 1k clients
 
 	t.Logf("Starting stress test with %d records and %d clients", len(records), len(clientStats))
@@ -517,7 +517,7 @@ func generatePerformanceTestData() []types.PiholeRecord {
 			QueryType: "A",
 			Status:    0,
 			Timestamp: baseTime.Add(time.Duration(i) * time.Second).Format(time.RFC3339),
-			ReplyTime: float64(10 + (i%100)), // Varying response times
+			ReplyTime: float64(10 + (i % 100)), // Varying response times
 		}
 		records = append(records, record)
 	}

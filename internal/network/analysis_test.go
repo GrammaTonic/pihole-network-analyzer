@@ -25,12 +25,12 @@ func TestEnhancedNetworkAnalyzer_Initialize(t *testing.T) {
 			TimeWindow:       "1h",
 		},
 		TrafficPatterns: types.TrafficPatternsConfig{
-			Enabled:           true,
-			PatternTypes:      []string{"bandwidth", "temporal", "client"},
-			AnalysisWindow:    "1h",
-			MinDataPoints:     10,
-			PatternThreshold:  0.5,
-			AnomalyDetection:  true,
+			Enabled:          true,
+			PatternTypes:     []string{"bandwidth", "temporal", "client"},
+			AnalysisWindow:   "1h",
+			MinDataPoints:    10,
+			PatternThreshold: 0.5,
+			AnomalyDetection: true,
 		},
 		SecurityAnalysis: types.SecurityAnalysisConfig{
 			Enabled:               true,
@@ -68,11 +68,11 @@ func TestEnhancedNetworkAnalyzer_Initialize(t *testing.T) {
 
 	capabilities := analyzer.GetCapabilities()
 	expectedCapabilities := []string{
-		"basic_analysis", "deep_packet_inspection", "protocol_analysis", 
-		"packet_anomaly_detection", "traffic_patterns", "bandwidth_analysis", 
-		"temporal_patterns", "client_behavior", "security_analysis", 
-		"threat_detection", "dns_anomalies", "port_scan_detection", 
-		"performance_analysis", "latency_analysis", "throughput_analysis", 
+		"basic_analysis", "deep_packet_inspection", "protocol_analysis",
+		"packet_anomaly_detection", "traffic_patterns", "bandwidth_analysis",
+		"temporal_patterns", "client_behavior", "security_analysis",
+		"threat_detection", "dns_anomalies", "port_scan_detection",
+		"performance_analysis", "latency_analysis", "throughput_analysis",
 		"quality_assessment",
 	}
 
@@ -224,12 +224,12 @@ func TestTrafficPatternAnalyzer_AnalyzePatterns(t *testing.T) {
 	analyzer := NewTrafficPatternAnalyzer(slogger)
 
 	config := types.TrafficPatternsConfig{
-		Enabled:           true,
-		PatternTypes:      []string{"bandwidth", "temporal", "client"},
-		AnalysisWindow:    "1h",
-		MinDataPoints:     5,
-		PatternThreshold:  0.5,
-		AnomalyDetection:  true,
+		Enabled:          true,
+		PatternTypes:     []string{"bandwidth", "temporal", "client"},
+		AnalysisWindow:   "1h",
+		MinDataPoints:    5,
+		PatternThreshold: 0.5,
+		AnomalyDetection: true,
 	}
 
 	records := createTestRecords()
@@ -389,9 +389,9 @@ func TestNetworkVisualizer_GenerateTrafficVisualization(t *testing.T) {
 
 	// Create a complete network analysis result
 	result := &types.NetworkAnalysisResult{
-		Timestamp:   time.Now().Format(time.RFC3339),
-		AnalysisID:  "test_analysis",
-		Duration:    "1m30s",
+		Timestamp:  time.Now().Format(time.RFC3339),
+		AnalysisID: "test_analysis",
+		Duration:   "1m30s",
 		PacketAnalysis: &types.PacketAnalysisResult{
 			TotalPackets:           1000,
 			AnalyzedPackets:        1000,
@@ -564,48 +564,48 @@ func createTestRecords() []types.PiholeRecord {
 func createTestClientStats() map[string]*types.ClientStats {
 	return map[string]*types.ClientStats{
 		"192.168.1.100": {
-			IP:            "192.168.1.100",
-			Hostname:      "laptop-01",
-			QueryCount:    100,
-			Domains:       map[string]int{"google.com": 50, "github.com": 30, "stackoverflow.com": 20},
-			DomainCount:   3,
-			IsOnline:      true,
-			LastSeen:      time.Now().Add(-10 * time.Minute).Format(time.RFC3339),
-			FirstSeen:     time.Now().Add(-2 * time.Hour).Format(time.RFC3339),
-			DeviceType:    "laptop",
+			IP:          "192.168.1.100",
+			Hostname:    "laptop-01",
+			QueryCount:  100,
+			Domains:     map[string]int{"google.com": 50, "github.com": 30, "stackoverflow.com": 20},
+			DomainCount: 3,
+			IsOnline:    true,
+			LastSeen:    time.Now().Add(-10 * time.Minute).Format(time.RFC3339),
+			FirstSeen:   time.Now().Add(-2 * time.Hour).Format(time.RFC3339),
+			DeviceType:  "laptop",
 		},
 		"192.168.1.101": {
-			IP:            "192.168.1.101",
-			Hostname:      "desktop-01",
-			QueryCount:    75,
-			Domains:       map[string]int{"facebook.com": 40, "twitter.com": 25, "instagram.com": 10},
-			DomainCount:   3,
-			IsOnline:      true,
-			LastSeen:      time.Now().Add(-15 * time.Minute).Format(time.RFC3339),
-			FirstSeen:     time.Now().Add(-3 * time.Hour).Format(time.RFC3339),
-			DeviceType:    "desktop",
+			IP:          "192.168.1.101",
+			Hostname:    "desktop-01",
+			QueryCount:  75,
+			Domains:     map[string]int{"facebook.com": 40, "twitter.com": 25, "instagram.com": 10},
+			DomainCount: 3,
+			IsOnline:    true,
+			LastSeen:    time.Now().Add(-15 * time.Minute).Format(time.RFC3339),
+			FirstSeen:   time.Now().Add(-3 * time.Hour).Format(time.RFC3339),
+			DeviceType:  "desktop",
 		},
 		"192.168.1.102": {
-			IP:            "192.168.1.102",
-			Hostname:      "suspicious-device",
-			QueryCount:    25,
-			Domains:       map[string]int{"malicious.com": 15, "phishing.net": 10},
-			DomainCount:   2,
-			IsOnline:      false,
-			LastSeen:      time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-			FirstSeen:     time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-			DeviceType:    "unknown",
+			IP:          "192.168.1.102",
+			Hostname:    "suspicious-device",
+			QueryCount:  25,
+			Domains:     map[string]int{"malicious.com": 15, "phishing.net": 10},
+			DomainCount: 2,
+			IsOnline:    false,
+			LastSeen:    time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+			FirstSeen:   time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+			DeviceType:  "unknown",
 		},
 		"192.168.1.103": {
-			IP:            "192.168.1.103",
-			Hostname:      "phone-01",
-			QueryCount:    50,
-			Domains:       map[string]int{"stackoverflow.com": 20, "reddit.com": 15, "youtube.com": 15},
-			DomainCount:   3,
-			IsOnline:      true,
-			LastSeen:      time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
-			FirstSeen:     time.Now().Add(-4 * time.Hour).Format(time.RFC3339),
-			DeviceType:    "mobile",
+			IP:          "192.168.1.103",
+			Hostname:    "phone-01",
+			QueryCount:  50,
+			Domains:     map[string]int{"stackoverflow.com": 20, "reddit.com": 15, "youtube.com": 15},
+			DomainCount: 3,
+			IsOnline:    true,
+			LastSeen:    time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
+			FirstSeen:   time.Now().Add(-4 * time.Hour).Format(time.RFC3339),
+			DeviceType:  "mobile",
 		},
 	}
 }

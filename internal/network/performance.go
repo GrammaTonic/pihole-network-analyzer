@@ -199,13 +199,13 @@ func (p *DefaultPerformanceAnalyzer) AnalyzeBandwidth(records []types.PiholeReco
 	// Find peak bandwidth
 	peakBandwidthMbps := 0.0
 	timeDistribution := make([]types.BandwidthTimeSlot, 0)
-	
+
 	for timeSlot, bytes := range timeSlots {
 		slotBandwidth := p.bytesToMbps(bytes, time.Minute*5)
 		if slotBandwidth > peakBandwidthMbps {
 			peakBandwidthMbps = slotBandwidth
 		}
-		
+
 		timeDistribution = append(timeDistribution, types.BandwidthTimeSlot{
 			TimeSlot:  timeSlot,
 			Bandwidth: slotBandwidth,
@@ -304,7 +304,7 @@ func (p *DefaultPerformanceAnalyzer) DetectPacketLoss(records []types.PiholeReco
 
 	for _, record := range records {
 		statusCounts[record.Status]++
-		
+
 		if _, exists := clientStatusCounts[record.Client]; !exists {
 			clientStatusCounts[record.Client] = make(map[int]int)
 		}
@@ -498,13 +498,13 @@ func (p *DefaultPerformanceAnalyzer) estimateLatency(record types.PiholeRecord) 
 	if record.ReplyTime > 0 {
 		return record.ReplyTime
 	}
-	
+
 	// Estimate based on domain complexity and query type
 	baseLatency := 10.0 // Base DNS query latency in ms
-	
+
 	// Add latency based on domain length (longer domains may take longer to resolve)
 	domainLatency := float64(len(record.Domain)) * 0.1
-	
+
 	// Add latency based on query type
 	typeLatency := 0.0
 	switch record.QueryType {
@@ -519,7 +519,7 @@ func (p *DefaultPerformanceAnalyzer) estimateLatency(record types.PiholeRecord) 
 	default:
 		typeLatency = 1.0
 	}
-	
+
 	return baseLatency + domainLatency + typeLatency
 }
 
@@ -528,9 +528,9 @@ func (p *DefaultPerformanceAnalyzer) estimateQueryBytes(record types.PiholeRecor
 	// DNS header: 12 bytes
 	// Question: domain name + 4 bytes (type + class)
 	// Answer: varies by type
-	
+
 	baseSize := int64(12 + len(record.Domain) + 4)
-	
+
 	// Add estimated answer size
 	switch record.QueryType {
 	case "A":
@@ -546,7 +546,7 @@ func (p *DefaultPerformanceAnalyzer) estimateQueryBytes(record types.PiholeRecor
 	default:
 		baseSize += 20 // Default response size
 	}
-	
+
 	return baseSize
 }
 
@@ -554,10 +554,10 @@ func (p *DefaultPerformanceAnalyzer) estimateQueryBytes(record types.PiholeRecor
 func (p *DefaultPerformanceAnalyzer) estimateProcessingTime(record types.PiholeRecord) float64 {
 	// Base processing time
 	processingTime := 0.5 // 0.5ms base
-	
+
 	// Add time based on domain complexity
 	processingTime += float64(len(record.Domain)) * 0.01
-	
+
 	// Add time based on query type
 	switch record.QueryType {
 	case "A":
@@ -571,7 +571,7 @@ func (p *DefaultPerformanceAnalyzer) estimateProcessingTime(record types.PiholeR
 	default:
 		processingTime += 0.2
 	}
-	
+
 	return processingTime
 }
 
@@ -610,11 +610,11 @@ func (p *DefaultPerformanceAnalyzer) bytesToMbps(bytes int64, duration time.Dura
 	if duration.Seconds() == 0 {
 		return 0
 	}
-	
+
 	bytesPerSecond := float64(bytes) / duration.Seconds()
 	bitsPerSecond := bytesPerSecond * 8
 	mbps := bitsPerSecond / (1024 * 1024)
-	
+
 	return mbps
 }
 
@@ -623,12 +623,12 @@ func (p *DefaultPerformanceAnalyzer) calculateMean(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	
+
 	sum := 0.0
 	for _, value := range values {
 		sum += value
 	}
-	
+
 	return sum / float64(len(values))
 }
 
@@ -644,7 +644,7 @@ func (p *DefaultPerformanceAnalyzer) createLatencyDistribution(latencies []float
 	}
 
 	total := int64(len(latencies))
-	
+
 	for _, latency := range latencies {
 		for i := range buckets {
 			if latency >= buckets[i].RangeStart && latency < buckets[i].RangeEnd {

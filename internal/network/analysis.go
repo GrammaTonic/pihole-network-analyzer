@@ -40,7 +40,7 @@ func NewEnhancedNetworkAnalyzer(loggerInstance *slog.Logger) *EnhancedNetworkAna
 
 // Initialize implements NetworkAnalyzer.Initialize
 func (e *EnhancedNetworkAnalyzer) Initialize(ctx context.Context, config types.NetworkAnalysisConfig) error {
-	e.logger.Info("Initializing enhanced network analyzer", 
+	e.logger.Info("Initializing enhanced network analyzer",
 		slog.Bool("enabled", config.Enabled),
 		slog.Bool("dpi_enabled", config.DeepPacketInspection.Enabled),
 		slog.Bool("traffic_patterns_enabled", config.TrafficPatterns.Enabled),
@@ -87,9 +87,9 @@ func (e *EnhancedNetworkAnalyzer) AnalyzeTraffic(ctx context.Context, records []
 	analysisID := fmt.Sprintf("analysis_%d", startTime.Unix())
 
 	result := &types.NetworkAnalysisResult{
-		Timestamp:   startTime.Format(time.RFC3339),
-		AnalysisID:  analysisID,
-		Duration:    "",
+		Timestamp:  startTime.Format(time.RFC3339),
+		AnalysisID: analysisID,
+		Duration:   "",
 		Summary: &types.NetworkAnalysisSummary{
 			TotalClients:  len(clientStats),
 			TotalQueries:  int64(len(records)),
@@ -375,7 +375,7 @@ func calculatePercentile(values []float64, percentile float64) float64 {
 	copy(sorted, values)
 	sort.Float64s(sorted)
 
-	index := percentile/100.0 * float64(len(sorted)-1)
+	index := percentile / 100.0 * float64(len(sorted)-1)
 	lower := int(math.Floor(index))
 	upper := int(math.Ceil(index))
 

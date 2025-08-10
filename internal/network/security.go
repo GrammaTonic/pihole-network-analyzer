@@ -215,7 +215,7 @@ func (s *DefaultSecurityAnalyzer) DetectDNSTunneling(ctx context.Context, record
 
 	// Group by client and domain to detect tunneling patterns
 	clientDomainQueries := make(map[string]map[string][]types.PiholeRecord)
-	
+
 	for _, record := range records {
 		if _, exists := clientDomainQueries[record.Client]; !exists {
 			clientDomainQueries[record.Client] = make(map[string][]types.PiholeRecord)
@@ -289,16 +289,16 @@ func (s *DefaultSecurityAnalyzer) detectMaliciousDomains(records []types.PiholeR
 	// Check for suspicious domain patterns
 	suspiciousPatterns := []string{
 		"temp-mail", "10minutemail", "guerrillamail", // Temporary email services
-		"bit.ly", "tinyurl", "t.co",                   // URL shorteners (potential for abuse)
-		"tor2web", "onion.to",                         // Tor gateways
-		"duckdns", "no-ip",                            // Dynamic DNS (potential for abuse)
+		"bit.ly", "tinyurl", "t.co", // URL shorteners (potential for abuse)
+		"tor2web", "onion.to", // Tor gateways
+		"duckdns", "no-ip", // Dynamic DNS (potential for abuse)
 	}
 
 	domainCounts := make(map[string]map[string]int) // domain -> client -> count
-	
+
 	for _, record := range records {
 		domain := strings.ToLower(record.Domain)
-		
+
 		// Check blacklist
 		if blacklistMap[domain] {
 			threat := types.SecurityThreat{
@@ -407,7 +407,7 @@ func (s *DefaultSecurityAnalyzer) isSuspiciousDGADomain(domain string) bool {
 	}
 
 	subdomain := parts[0]
-	
+
 	// DGA characteristics:
 	// 1. Long random-looking strings
 	// 2. High entropy
@@ -428,7 +428,7 @@ func (s *DefaultSecurityAnalyzer) isSuspiciousDGADomain(domain string) bool {
 	}
 
 	vowelRatio := float64(vowelCount) / float64(len(subdomain))
-	
+
 	// DGA domains typically have low vowel ratio
 	if vowelRatio < 0.15 || vowelRatio > 0.5 {
 		return true
@@ -457,7 +457,7 @@ func (s *DefaultSecurityAnalyzer) detectC2Communications(records []types.PiholeR
 
 	// Look for regular periodic communications
 	clientTiming := make(map[string][]time.Time)
-	
+
 	for _, record := range records {
 		timestamp := parseTimestamp(record.Timestamp)
 		clientTiming[record.Client] = append(clientTiming[record.Client], timestamp)
@@ -537,7 +537,7 @@ func (s *DefaultSecurityAnalyzer) detectDataExfiltration(records []types.PiholeR
 
 	// Look for large volumes of data in DNS queries (unusual for normal DNS)
 	clientDataVolume := make(map[string]int64)
-	
+
 	for _, record := range records {
 		// Estimate data volume based on domain length and query frequency
 		dataVolume := int64(len(record.Domain))
@@ -571,7 +571,7 @@ func (s *DefaultSecurityAnalyzer) detectBotnetActivity(records []types.PiholeRec
 
 	// Look for multiple clients querying the same suspicious domains
 	domainClients := make(map[string][]string)
-	
+
 	for _, record := range records {
 		domain := strings.ToLower(record.Domain)
 		// Focus on suspicious domains (DGA-like or unknown TLDs)
@@ -611,7 +611,7 @@ func (s *DefaultSecurityAnalyzer) hasUnusualTLD(domain string) bool {
 	}
 
 	tld := strings.ToLower(parts[len(parts)-1])
-	
+
 	// Common legitimate TLDs
 	commonTLDs := map[string]bool{
 		"com": true, "org": true, "net": true, "edu": true, "gov": true,

@@ -103,8 +103,8 @@ type PerformanceAnalyzer interface {
 	AnalyzeJitter(records []types.PiholeRecord) (*types.JitterMetrics, error)
 
 	// Assess overall network quality
-	AssessNetworkQuality(latency *types.LatencyMetrics, bandwidth *types.BandwidthMetrics, 
-		throughput *types.ThroughputMetrics, packetLoss *types.PacketLossMetrics, 
+	AssessNetworkQuality(latency *types.LatencyMetrics, bandwidth *types.BandwidthMetrics,
+		throughput *types.ThroughputMetrics, packetLoss *types.PacketLossMetrics,
 		jitter *types.JitterMetrics, thresholds types.QualityThresholds) (*types.QualityAssessment, error)
 }
 
@@ -144,11 +144,11 @@ type AnalyzerFactory interface {
 
 // AnalysisContext provides context for network analysis operations
 type AnalysisContext struct {
-	StartTime   time.Time
-	EndTime     time.Time
-	AnalysisID  string
-	Config      types.NetworkAnalysisConfig
-	Metadata    map[string]interface{}
+	StartTime  time.Time
+	EndTime    time.Time
+	AnalysisID string
+	Config     types.NetworkAnalysisConfig
+	Metadata   map[string]interface{}
 }
 
 // AnalysisFilter provides filtering options for analysis
@@ -169,21 +169,21 @@ type TimeRange struct {
 
 // AnalysisOptions provides options for analysis behavior
 type AnalysisOptions struct {
-	EnableCaching    bool
+	EnableCaching      bool
 	ParallelProcessing bool
-	MaxConcurrency  int
-	Timeout         time.Duration
-	SamplingRate    float64
-	DetailLevel     AnalysisDetailLevel
+	MaxConcurrency     int
+	Timeout            time.Duration
+	SamplingRate       float64
+	DetailLevel        AnalysisDetailLevel
 }
 
 // AnalysisDetailLevel represents the level of detail for analysis
 type AnalysisDetailLevel string
 
 const (
-	DetailLevelBasic       AnalysisDetailLevel = "basic"
-	DetailLevelStandard    AnalysisDetailLevel = "standard"
-	DetailLevelDetailed    AnalysisDetailLevel = "detailed"
+	DetailLevelBasic         AnalysisDetailLevel = "basic"
+	DetailLevelStandard      AnalysisDetailLevel = "standard"
+	DetailLevelDetailed      AnalysisDetailLevel = "detailed"
 	DetailLevelComprehensive AnalysisDetailLevel = "comprehensive"
 )
 

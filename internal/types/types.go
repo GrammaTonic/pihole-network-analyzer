@@ -77,18 +77,18 @@ type ARPEntry struct {
 
 // Config represents the application configuration
 type Config struct {
-	OnlineOnly      bool                   `json:"online_only"`
-	NoExclude       bool                   `json:"no_exclude"`
-	TestMode        bool                   `json:"test_mode"`
-	Quiet           bool                   `json:"quiet"`
-	Pihole          PiholeConfig           `json:"pihole"`
-	Output          OutputConfig           `json:"output"`
-	Exclusions      ExclusionConfig        `json:"exclusions"`
-	Logging         LoggingConfig          `json:"logging"`
-	Web             WebConfig              `json:"web"`
-	Metrics         MetricsConfig          `json:"metrics"`
-	ML              MLConfig               `json:"ml"`
-	NetworkAnalysis NetworkAnalysisConfig  `json:"network_analysis"`
+	OnlineOnly      bool                  `json:"online_only"`
+	NoExclude       bool                  `json:"no_exclude"`
+	TestMode        bool                  `json:"test_mode"`
+	Quiet           bool                  `json:"quiet"`
+	Pihole          PiholeConfig          `json:"pihole"`
+	Output          OutputConfig          `json:"output"`
+	Exclusions      ExclusionConfig       `json:"exclusions"`
+	Logging         LoggingConfig         `json:"logging"`
+	Web             WebConfig             `json:"web"`
+	Metrics         MetricsConfig         `json:"metrics"`
+	ML              MLConfig              `json:"ml"`
+	NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -300,11 +300,11 @@ type PerformanceConfig struct {
 
 // NetworkAnalysisConfig configures enhanced network analysis features
 type NetworkAnalysisConfig struct {
-	Enabled             bool                 `json:"enabled"`
-	DeepPacketInspection DPIConfig           `json:"deep_packet_inspection"`
-	TrafficPatterns     TrafficPatternsConfig `json:"traffic_patterns"`
-	SecurityAnalysis    SecurityAnalysisConfig `json:"security_analysis"`
-	Performance         NetworkPerformanceConfig `json:"performance"`
+	Enabled              bool                     `json:"enabled"`
+	DeepPacketInspection DPIConfig                `json:"deep_packet_inspection"`
+	TrafficPatterns      TrafficPatternsConfig    `json:"traffic_patterns"`
+	SecurityAnalysis     SecurityAnalysisConfig   `json:"security_analysis"`
+	Performance          NetworkPerformanceConfig `json:"performance"`
 }
 
 // DPIConfig configures deep packet inspection
@@ -319,12 +319,12 @@ type DPIConfig struct {
 
 // TrafficPatternsConfig configures traffic pattern analysis
 type TrafficPatternsConfig struct {
-	Enabled           bool     `json:"enabled"`
-	PatternTypes      []string `json:"pattern_types"`      // bandwidth, frequency, temporal
-	AnalysisWindow    string   `json:"analysis_window"`    // duration string
-	MinDataPoints     int      `json:"min_data_points"`
-	PatternThreshold  float64  `json:"pattern_threshold"`  // 0.0-1.0
-	AnomalyDetection  bool     `json:"anomaly_detection"`
+	Enabled          bool     `json:"enabled"`
+	PatternTypes     []string `json:"pattern_types"`   // bandwidth, frequency, temporal
+	AnalysisWindow   string   `json:"analysis_window"` // duration string
+	MinDataPoints    int      `json:"min_data_points"`
+	PatternThreshold float64  `json:"pattern_threshold"` // 0.0-1.0
+	AnomalyDetection bool     `json:"anomaly_detection"`
 }
 
 // SecurityAnalysisConfig configures security analysis
@@ -340,158 +340,158 @@ type SecurityAnalysisConfig struct {
 
 // NetworkPerformanceConfig configures network performance analysis
 type NetworkPerformanceConfig struct {
-	Enabled              bool    `json:"enabled"`
-	LatencyAnalysis      bool    `json:"latency_analysis"`
-	BandwidthAnalysis    bool    `json:"bandwidth_analysis"`
-	ThroughputAnalysis   bool    `json:"throughput_analysis"`
-	PacketLossDetection  bool    `json:"packet_loss_detection"`
-	JitterAnalysis       bool    `json:"jitter_analysis"`
-	QualityThresholds    QualityThresholds `json:"quality_thresholds"`
+	Enabled             bool              `json:"enabled"`
+	LatencyAnalysis     bool              `json:"latency_analysis"`
+	BandwidthAnalysis   bool              `json:"bandwidth_analysis"`
+	ThroughputAnalysis  bool              `json:"throughput_analysis"`
+	PacketLossDetection bool              `json:"packet_loss_detection"`
+	JitterAnalysis      bool              `json:"jitter_analysis"`
+	QualityThresholds   QualityThresholds `json:"quality_thresholds"`
 }
 
 // QualityThresholds defines network quality thresholds
 type QualityThresholds struct {
-	MaxLatency       float64 `json:"max_latency_ms"`        // milliseconds
-	MinBandwidth     float64 `json:"min_bandwidth_mbps"`    // Mbps
-	MaxPacketLoss    float64 `json:"max_packet_loss_percent"` // percentage
-	MaxJitter        float64 `json:"max_jitter_ms"`         // milliseconds
+	MaxLatency    float64 `json:"max_latency_ms"`          // milliseconds
+	MinBandwidth  float64 `json:"min_bandwidth_mbps"`      // Mbps
+	MaxPacketLoss float64 `json:"max_packet_loss_percent"` // percentage
+	MaxJitter     float64 `json:"max_jitter_ms"`           // milliseconds
 }
 
 // NetworkAnalysisResult represents the result of enhanced network analysis
 type NetworkAnalysisResult struct {
-	Timestamp        string                    `json:"timestamp"`
-	AnalysisID       string                    `json:"analysis_id"`
-	Duration         string                    `json:"duration"`
-	
+	Timestamp  string `json:"timestamp"`
+	AnalysisID string `json:"analysis_id"`
+	Duration   string `json:"duration"`
+
 	// Deep Packet Inspection Results
-	PacketAnalysis   *PacketAnalysisResult     `json:"packet_analysis,omitempty"`
-	
+	PacketAnalysis *PacketAnalysisResult `json:"packet_analysis,omitempty"`
+
 	// Traffic Pattern Results
-	TrafficPatterns  *TrafficPatternsResult    `json:"traffic_patterns,omitempty"`
-	
+	TrafficPatterns *TrafficPatternsResult `json:"traffic_patterns,omitempty"`
+
 	// Security Analysis Results
-	SecurityAnalysis *SecurityAnalysisResult   `json:"security_analysis,omitempty"`
-	
+	SecurityAnalysis *SecurityAnalysisResult `json:"security_analysis,omitempty"`
+
 	// Performance Analysis Results
-	Performance      *NetworkPerformanceResult `json:"performance,omitempty"`
-	
+	Performance *NetworkPerformanceResult `json:"performance,omitempty"`
+
 	// Summary Statistics
-	Summary          *NetworkAnalysisSummary   `json:"summary"`
+	Summary *NetworkAnalysisSummary `json:"summary"`
 }
 
 // PacketAnalysisResult represents deep packet inspection results
 type PacketAnalysisResult struct {
-	TotalPackets       int64                    `json:"total_packets"`
-	AnalyzedPackets    int64                    `json:"analyzed_packets"`
-	ProtocolDistribution map[string]int64       `json:"protocol_distribution"`
-	PacketSizeDistribution map[string]int64     `json:"packet_size_distribution"`
-	TopSourceIPs       []IPTrafficStat          `json:"top_source_ips"`
-	TopDestinationIPs  []IPTrafficStat          `json:"top_destination_ips"`
-	PortUsage          map[string]int64         `json:"port_usage"`
-	Anomalies          []PacketAnomaly          `json:"anomalies"`
+	TotalPackets           int64            `json:"total_packets"`
+	AnalyzedPackets        int64            `json:"analyzed_packets"`
+	ProtocolDistribution   map[string]int64 `json:"protocol_distribution"`
+	PacketSizeDistribution map[string]int64 `json:"packet_size_distribution"`
+	TopSourceIPs           []IPTrafficStat  `json:"top_source_ips"`
+	TopDestinationIPs      []IPTrafficStat  `json:"top_destination_ips"`
+	PortUsage              map[string]int64 `json:"port_usage"`
+	Anomalies              []PacketAnomaly  `json:"anomalies"`
 }
 
 // TrafficPatternsResult represents traffic pattern analysis results
 type TrafficPatternsResult struct {
-	PatternID          string                   `json:"pattern_id"`
-	DetectedPatterns   []TrafficPattern         `json:"detected_patterns"`
-	BandwidthPatterns  []BandwidthPattern       `json:"bandwidth_patterns"`
-	TemporalPatterns   []TemporalPattern        `json:"temporal_patterns"`
-	ClientBehavior     map[string]ClientBehavior `json:"client_behavior"`
-	Anomalies          []TrafficAnomaly         `json:"anomalies"`
-	PredictedTrends    []TrafficTrend           `json:"predicted_trends"`
+	PatternID         string                    `json:"pattern_id"`
+	DetectedPatterns  []TrafficPattern          `json:"detected_patterns"`
+	BandwidthPatterns []BandwidthPattern        `json:"bandwidth_patterns"`
+	TemporalPatterns  []TemporalPattern         `json:"temporal_patterns"`
+	ClientBehavior    map[string]ClientBehavior `json:"client_behavior"`
+	Anomalies         []TrafficAnomaly          `json:"anomalies"`
+	PredictedTrends   []TrafficTrend            `json:"predicted_trends"`
 }
 
 // SecurityAnalysisResult represents security analysis results
 type SecurityAnalysisResult struct {
-	ThreatLevel        string                   `json:"threat_level"` // LOW, MEDIUM, HIGH, CRITICAL
-	DetectedThreats    []SecurityThreat         `json:"detected_threats"`
-	SuspiciousActivity []SuspiciousActivity     `json:"suspicious_activity"`
-	BlockedConnections []BlockedConnection      `json:"blocked_connections"`
-	DNSAnomalies       []DNSAnomaly            `json:"dns_anomalies"`
-	PortScans          []PortScanEvent         `json:"port_scans"`
-	TunnelingAttempts  []TunnelingAttempt      `json:"tunneling_attempts"`
+	ThreatLevel        string               `json:"threat_level"` // LOW, MEDIUM, HIGH, CRITICAL
+	DetectedThreats    []SecurityThreat     `json:"detected_threats"`
+	SuspiciousActivity []SuspiciousActivity `json:"suspicious_activity"`
+	BlockedConnections []BlockedConnection  `json:"blocked_connections"`
+	DNSAnomalies       []DNSAnomaly         `json:"dns_anomalies"`
+	PortScans          []PortScanEvent      `json:"port_scans"`
+	TunnelingAttempts  []TunnelingAttempt   `json:"tunneling_attempts"`
 }
 
 // NetworkPerformanceResult represents network performance analysis results
 type NetworkPerformanceResult struct {
-	OverallScore       float64                  `json:"overall_score"` // 0-100
-	LatencyMetrics     LatencyMetrics          `json:"latency_metrics"`
-	BandwidthMetrics   BandwidthMetrics        `json:"bandwidth_metrics"`
-	ThroughputMetrics  ThroughputMetrics       `json:"throughput_metrics"`
-	PacketLossMetrics  PacketLossMetrics       `json:"packet_loss_metrics"`
-	JitterMetrics      JitterMetrics           `json:"jitter_metrics"`
-	QualityAssessment  QualityAssessment       `json:"quality_assessment"`
+	OverallScore      float64           `json:"overall_score"` // 0-100
+	LatencyMetrics    LatencyMetrics    `json:"latency_metrics"`
+	BandwidthMetrics  BandwidthMetrics  `json:"bandwidth_metrics"`
+	ThroughputMetrics ThroughputMetrics `json:"throughput_metrics"`
+	PacketLossMetrics PacketLossMetrics `json:"packet_loss_metrics"`
+	JitterMetrics     JitterMetrics     `json:"jitter_metrics"`
+	QualityAssessment QualityAssessment `json:"quality_assessment"`
 }
 
 // Supporting types for detailed analysis
 
 // IPTrafficStat represents traffic statistics for an IP address
 type IPTrafficStat struct {
-	IP           string  `json:"ip"`
-	Hostname     string  `json:"hostname,omitempty"`
-	PacketCount  int64   `json:"packet_count"`
-	ByteCount    int64   `json:"byte_count"`
-	Percentage   float64 `json:"percentage"`
+	IP          string  `json:"ip"`
+	Hostname    string  `json:"hostname,omitempty"`
+	PacketCount int64   `json:"packet_count"`
+	ByteCount   int64   `json:"byte_count"`
+	Percentage  float64 `json:"percentage"`
 }
 
 // PacketAnomaly represents an anomalous packet or pattern
 type PacketAnomaly struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"`
-	Description string    `json:"description"`
-	Severity    string    `json:"severity"`
-	Timestamp   string    `json:"timestamp"`
-	SourceIP    string    `json:"source_ip"`
-	DestIP      string    `json:"dest_ip"`
-	Protocol    string    `json:"protocol"`
-	Confidence  float64   `json:"confidence"`
+	ID          string  `json:"id"`
+	Type        string  `json:"type"`
+	Description string  `json:"description"`
+	Severity    string  `json:"severity"`
+	Timestamp   string  `json:"timestamp"`
+	SourceIP    string  `json:"source_ip"`
+	DestIP      string  `json:"dest_ip"`
+	Protocol    string  `json:"protocol"`
+	Confidence  float64 `json:"confidence"`
 }
 
 // TrafficPattern represents a detected traffic pattern
 type TrafficPattern struct {
-	ID           string    `json:"id"`
-	Type         string    `json:"type"`
-	Description  string    `json:"description"`
-	Confidence   float64   `json:"confidence"`
-	StartTime    string    `json:"start_time"`
-	EndTime      string    `json:"end_time"`
-	Frequency    float64   `json:"frequency"`
+	ID              string                 `json:"id"`
+	Type            string                 `json:"type"`
+	Description     string                 `json:"description"`
+	Confidence      float64                `json:"confidence"`
+	StartTime       string                 `json:"start_time"`
+	EndTime         string                 `json:"end_time"`
+	Frequency       float64                `json:"frequency"`
 	Characteristics map[string]interface{} `json:"characteristics"`
 }
 
 // BandwidthPattern represents bandwidth usage patterns
 type BandwidthPattern struct {
-	TimeSlot     string  `json:"time_slot"`
-	AvgBandwidth float64 `json:"avg_bandwidth_mbps"`
+	TimeSlot      string  `json:"time_slot"`
+	AvgBandwidth  float64 `json:"avg_bandwidth_mbps"`
 	PeakBandwidth float64 `json:"peak_bandwidth_mbps"`
-	Usage        float64 `json:"usage_percentage"`
-	Trend        string  `json:"trend"` // increasing, decreasing, stable
+	Usage         float64 `json:"usage_percentage"`
+	Trend         string  `json:"trend"` // increasing, decreasing, stable
 }
 
 // TemporalPattern represents time-based patterns
 type TemporalPattern struct {
-	Pattern      string    `json:"pattern"`      // hourly, daily, weekly
-	PeakHours    []int     `json:"peak_hours"`
-	LowHours     []int     `json:"low_hours"`
-	Regularity   float64   `json:"regularity"`   // 0-1 how regular the pattern is
-	Seasonality  bool      `json:"seasonality"`
+	Pattern     string  `json:"pattern"` // hourly, daily, weekly
+	PeakHours   []int   `json:"peak_hours"`
+	LowHours    []int   `json:"low_hours"`
+	Regularity  float64 `json:"regularity"` // 0-1 how regular the pattern is
+	Seasonality bool    `json:"seasonality"`
 }
 
 // ClientBehavior represents individual client behavior patterns
 type ClientBehavior struct {
-	IP               string             `json:"ip"`
-	Hostname         string             `json:"hostname,omitempty"`
-	BehaviorType     string             `json:"behavior_type"`
-	ActivityLevel    string             `json:"activity_level"` // low, normal, high
-	TypicalUsage     []HourlyUsage      `json:"typical_usage"`
-	Anomalies        []BehaviorAnomaly  `json:"anomalies"`
-	RiskScore        float64            `json:"risk_score"`
+	IP            string            `json:"ip"`
+	Hostname      string            `json:"hostname,omitempty"`
+	BehaviorType  string            `json:"behavior_type"`
+	ActivityLevel string            `json:"activity_level"` // low, normal, high
+	TypicalUsage  []HourlyUsage     `json:"typical_usage"`
+	Anomalies     []BehaviorAnomaly `json:"anomalies"`
+	RiskScore     float64           `json:"risk_score"`
 }
 
 // HourlyUsage represents usage during specific hours
 type HourlyUsage struct {
-	Hour         int     `json:"hour"`         // 0-23
+	Hour         int     `json:"hour"` // 0-23
 	AvgQueries   float64 `json:"avg_queries"`
 	AvgBandwidth float64 `json:"avg_bandwidth_mbps"`
 }
@@ -507,14 +507,14 @@ type BehaviorAnomaly struct {
 
 // TrafficAnomaly represents traffic-level anomalies
 type TrafficAnomaly struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"`
-	Description string    `json:"description"`
-	Timestamp   string    `json:"timestamp"`
-	Duration    string    `json:"duration"`
-	Affected    []string  `json:"affected_clients"`
-	Severity    string    `json:"severity"`
-	Confidence  float64   `json:"confidence"`
+	ID          string   `json:"id"`
+	Type        string   `json:"type"`
+	Description string   `json:"description"`
+	Timestamp   string   `json:"timestamp"`
+	Duration    string   `json:"duration"`
+	Affected    []string `json:"affected_clients"`
+	Severity    string   `json:"severity"`
+	Confidence  float64  `json:"confidence"`
 }
 
 // TrafficTrend represents predicted traffic trends
@@ -545,72 +545,72 @@ type SecurityThreat struct {
 
 // SuspiciousActivity represents suspicious network activity
 type SuspiciousActivity struct {
-	ID          string  `json:"id"`
-	Type        string  `json:"type"`
-	Description string  `json:"description"`
-	SourceIP    string  `json:"source_ip"`
-	Timestamp   string  `json:"timestamp"`
+	ID          string   `json:"id"`
+	Type        string   `json:"type"`
+	Description string   `json:"description"`
+	SourceIP    string   `json:"source_ip"`
+	Timestamp   string   `json:"timestamp"`
 	Indicators  []string `json:"indicators"`
-	RiskScore   float64 `json:"risk_score"`
+	RiskScore   float64  `json:"risk_score"`
 }
 
 // BlockedConnection represents a blocked network connection
 type BlockedConnection struct {
-	SourceIP    string `json:"source_ip"`
-	DestIP      string `json:"dest_ip"`
-	Port        int    `json:"port"`
-	Protocol    string `json:"protocol"`
-	Reason      string `json:"reason"`
-	Timestamp   string `json:"timestamp"`
-	RuleID      string `json:"rule_id,omitempty"`
+	SourceIP  string `json:"source_ip"`
+	DestIP    string `json:"dest_ip"`
+	Port      int    `json:"port"`
+	Protocol  string `json:"protocol"`
+	Reason    string `json:"reason"`
+	Timestamp string `json:"timestamp"`
+	RuleID    string `json:"rule_id,omitempty"`
 }
 
 // DNSAnomaly represents DNS-specific anomalies
 type DNSAnomaly struct {
-	ID          string  `json:"id"`
-	Type        string  `json:"type"`
-	Domain      string  `json:"domain"`
-	SourceIP    string  `json:"source_ip"`
-	Timestamp   string  `json:"timestamp"`
-	Indicators  []string `json:"indicators"`
-	Confidence  float64 `json:"confidence"`
+	ID         string   `json:"id"`
+	Type       string   `json:"type"`
+	Domain     string   `json:"domain"`
+	SourceIP   string   `json:"source_ip"`
+	Timestamp  string   `json:"timestamp"`
+	Indicators []string `json:"indicators"`
+	Confidence float64  `json:"confidence"`
 }
 
 // PortScanEvent represents detected port scanning activity
 type PortScanEvent struct {
-	ID          string  `json:"id"`
-	SourceIP    string  `json:"source_ip"`
-	TargetIP    string  `json:"target_ip"`
-	Ports       []int   `json:"scanned_ports"`
-	StartTime   string  `json:"start_time"`
-	EndTime     string  `json:"end_time"`
-	ScanType    string  `json:"scan_type"`
-	Intensity   float64 `json:"intensity"`
+	ID        string  `json:"id"`
+	SourceIP  string  `json:"source_ip"`
+	TargetIP  string  `json:"target_ip"`
+	Ports     []int   `json:"scanned_ports"`
+	StartTime string  `json:"start_time"`
+	EndTime   string  `json:"end_time"`
+	ScanType  string  `json:"scan_type"`
+	Intensity float64 `json:"intensity"`
 }
 
 // TunnelingAttempt represents DNS tunneling attempts
 type TunnelingAttempt struct {
-	ID           string  `json:"id"`
-	SourceIP     string  `json:"source_ip"`
-	Domain       string  `json:"domain"`
-	Timestamp    string  `json:"timestamp"`
-	DataSize     int64   `json:"data_size_bytes"`
-	Indicators   []string `json:"indicators"`
-	Confidence   float64 `json:"confidence"`
+	ID         string   `json:"id"`
+	SourceIP   string   `json:"source_ip"`
+	Domain     string   `json:"domain"`
+	Timestamp  string   `json:"timestamp"`
+	DataSize   int64    `json:"data_size_bytes"`
+	Indicators []string `json:"indicators"`
+	Confidence float64  `json:"confidence"`
 }
 
 // Performance-related types
 
 // LatencyMetrics represents latency analysis results
 type LatencyMetrics struct {
-	AvgLatency    float64            `json:"avg_latency_ms"`
-	MinLatency    float64            `json:"min_latency_ms"`
-	MaxLatency    float64            `json:"max_latency_ms"`
-	P50Latency    float64            `json:"p50_latency_ms"`
-	P95Latency    float64            `json:"p95_latency_ms"`
-	P99Latency    float64            `json:"p99_latency_ms"`
-	PerClient     map[string]float64 `json:"per_client_latency"`
-	Distribution  []LatencyBucket    `json:"distribution"`
+	AvgLatency   float64            `json:"avg_latency_ms"`
+	MinLatency   float64            `json:"min_latency_ms"`
+	MaxLatency   float64            `json:"max_latency_ms"`
+	P50Latency   float64            `json:"p50_latency_ms"`
+	P95Latency   float64            `json:"p95_latency_ms"`
+	P99Latency   float64            `json:"p99_latency_ms"`
+	PerClient    map[string]float64 `json:"per_client_latency"`
+	Distribution []LatencyBucket    `json:"distribution"`
 }
 
 // LatencyBucket represents latency distribution buckets
@@ -623,11 +623,11 @@ type LatencyBucket struct {
 
 // BandwidthMetrics represents bandwidth analysis results
 type BandwidthMetrics struct {
-	TotalBandwidth  float64               `json:"total_bandwidth_mbps"`
-	AvgBandwidth    float64               `json:"avg_bandwidth_mbps"`
-	PeakBandwidth   float64               `json:"peak_bandwidth_mbps"`
-	PerClient       map[string]float64    `json:"per_client_bandwidth"`
-	TimeDistribution []BandwidthTimeSlot  `json:"time_distribution"`
+	TotalBandwidth   float64             `json:"total_bandwidth_mbps"`
+	AvgBandwidth     float64             `json:"avg_bandwidth_mbps"`
+	PeakBandwidth    float64             `json:"peak_bandwidth_mbps"`
+	PerClient        map[string]float64  `json:"per_client_bandwidth"`
+	TimeDistribution []BandwidthTimeSlot `json:"time_distribution"`
 }
 
 // BandwidthTimeSlot represents bandwidth usage over time
@@ -638,28 +638,28 @@ type BandwidthTimeSlot struct {
 
 // ThroughputMetrics represents throughput analysis results
 type ThroughputMetrics struct {
-	QueriesPerSecond    float64 `json:"queries_per_second"`
-	PeakQPS             float64 `json:"peak_qps"`
-	AvgQPS              float64 `json:"avg_qps"`
-	ResponseRate        float64 `json:"response_rate_percentage"`
-	ProcessingTime      float64 `json:"avg_processing_time_ms"`
+	QueriesPerSecond float64 `json:"queries_per_second"`
+	PeakQPS          float64 `json:"peak_qps"`
+	AvgQPS           float64 `json:"avg_qps"`
+	ResponseRate     float64 `json:"response_rate_percentage"`
+	ProcessingTime   float64 `json:"avg_processing_time_ms"`
 }
 
 // PacketLossMetrics represents packet loss analysis results
 type PacketLossMetrics struct {
-	LossPercentage  float64            `json:"loss_percentage"`
-	TotalLost       int64              `json:"total_lost_packets"`
-	TotalSent       int64              `json:"total_sent_packets"`
-	PerClient       map[string]float64 `json:"per_client_loss"`
-	BurstLoss       []LossBurst        `json:"burst_loss_events"`
+	LossPercentage float64            `json:"loss_percentage"`
+	TotalLost      int64              `json:"total_lost_packets"`
+	TotalSent      int64              `json:"total_sent_packets"`
+	PerClient      map[string]float64 `json:"per_client_loss"`
+	BurstLoss      []LossBurst        `json:"burst_loss_events"`
 }
 
 // LossBurst represents burst packet loss events
 type LossBurst struct {
-	StartTime    string  `json:"start_time"`
-	Duration     string  `json:"duration"`
-	LostPackets  int64   `json:"lost_packets"`
-	LossRate     float64 `json:"loss_rate_percentage"`
+	StartTime   string  `json:"start_time"`
+	Duration    string  `json:"duration"`
+	LostPackets int64   `json:"lost_packets"`
+	LossRate    float64 `json:"loss_rate_percentage"`
 }
 
 // JitterMetrics represents jitter analysis results
@@ -672,31 +672,31 @@ type JitterMetrics struct {
 
 // QualityAssessment represents overall network quality assessment
 type QualityAssessment struct {
-	OverallGrade    string             `json:"overall_grade"` // A, B, C, D, F
-	LatencyGrade    string             `json:"latency_grade"`
-	BandwidthGrade  string             `json:"bandwidth_grade"`
-	ReliabilityGrade string            `json:"reliability_grade"`
-	Recommendations []string           `json:"recommendations"`
-	Issues          []QualityIssue     `json:"issues"`
+	OverallGrade     string         `json:"overall_grade"` // A, B, C, D, F
+	LatencyGrade     string         `json:"latency_grade"`
+	BandwidthGrade   string         `json:"bandwidth_grade"`
+	ReliabilityGrade string         `json:"reliability_grade"`
+	Recommendations  []string       `json:"recommendations"`
+	Issues           []QualityIssue `json:"issues"`
 }
 
 // QualityIssue represents a network quality issue
 type QualityIssue struct {
-	Type        string  `json:"type"`
-	Severity    string  `json:"severity"`
-	Description string  `json:"description"`
-	Impact      string  `json:"impact"`
-	Resolution  string  `json:"suggested_resolution"`
+	Type        string `json:"type"`
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+	Impact      string `json:"impact"`
+	Resolution  string `json:"suggested_resolution"`
 }
 
 // NetworkAnalysisSummary provides high-level summary of analysis
 type NetworkAnalysisSummary struct {
-	TotalClients      int     `json:"total_clients"`
-	ActiveClients     int     `json:"active_clients"`
-	TotalQueries      int64   `json:"total_queries"`
-	AnomaliesDetected int     `json:"anomalies_detected"`
-	ThreatLevel       string  `json:"threat_level"`
-	OverallHealth     string  `json:"overall_health"`
-	HealthScore       float64 `json:"health_score"` // 0-100
+	TotalClients      int      `json:"total_clients"`
+	ActiveClients     int      `json:"active_clients"`
+	TotalQueries      int64    `json:"total_queries"`
+	AnomaliesDetected int      `json:"anomalies_detected"`
+	ThreatLevel       string   `json:"threat_level"`
+	OverallHealth     string   `json:"overall_health"`
+	HealthScore       float64  `json:"health_score"` // 0-100
 	KeyInsights       []string `json:"key_insights"`
 }
