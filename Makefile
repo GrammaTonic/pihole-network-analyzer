@@ -14,7 +14,7 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod docker-push-ghcr docker-login-ghcr version release-setup commit release-dry-run release-status
+.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod docker-push-ghcr docker-login-ghcr version release-setup commit release-dry-run release-status test-web test-web-clean
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -224,6 +224,21 @@ clean: ## Clean build artifacts
 
 test: ## Run tests (if any)
 	go test ./...
+
+test-web: ## Run web integration tests with screenshots
+	@echo "🌐 Running web integration tests with screenshot capture..."
+	@mkdir -p test-screenshots
+	@start_time=$$(date +%s); \
+	go test -v -timeout=5m ./tests/integration -run TestWebIntegration; \
+	end_time=$$(date +%s); \
+	duration=$$((end_time - start_time)); \
+	echo "✅ Web integration tests completed in $${duration}s"; \
+	echo "📸 Screenshots saved in test-screenshots/"
+
+test-web-clean: ## Clean web test artifacts
+	@echo "🧹 Cleaning web test artifacts..."
+	@rm -rf test-screenshots/
+	@echo "✅ Web test artifacts cleaned"
 
 fmt: ## Format Go code
 	go fmt ./...

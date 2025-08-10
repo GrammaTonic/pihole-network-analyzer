@@ -5,6 +5,7 @@ pihole-analyzer
 
 # Test output and artifacts
 test_output.txt
+test-screenshots/
 *.exe~
 *.dll
 *.so
