@@ -24,16 +24,19 @@ type Server struct {
 	dataSource DataSourceProvider
 	server     *http.Server
 	templates  *template.Template
+	wsManager  *WebSocketManager
 }
 
 // Config holds web server configuration
 type Config struct {
-	Port         int
-	Host         string
-	EnableWeb    bool
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout  time.Duration
+	Port            int
+	Host            string
+	EnableWeb       bool
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	IdleTimeout     time.Duration
+	EnableWebSocket bool
+	WebSocketConfig *WebSocketConfig
 }
 
 // DataSourceProvider interface for getting analysis data
@@ -45,12 +48,14 @@ type DataSourceProvider interface {
 // DefaultConfig returns default web server configuration
 func DefaultConfig() *Config {
 	return &Config{
-		Port:         8080,
-		Host:         "localhost",
-		EnableWeb:    false,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Port:            8080,
+		Host:            "localhost",
+		EnableWeb:       false,
+		ReadTimeout:     10 * time.Second,
+		WriteTimeout:    10 * time.Second,
+		IdleTimeout:     60 * time.Second,
+		EnableWebSocket: true,
+		WebSocketConfig: DefaultWebSocketConfig(),
 	}
 }
 
@@ -74,6 +79,11 @@ func NewServer(config *Config, dataSource DataSourceProvider, logger *logger.Log
 		config:     config,
 		dataSource: dataSource,
 		templates:  templates,
+	}
+
+	// Initialize WebSocket manager if enabled
+	if config.EnableWebSocket {
+		server.wsManager = NewWebSocketManager(webLogger, config.WebSocketConfig)
 	}
 
 	// Setup HTTP server
@@ -125,6 +135,12 @@ func (s *Server) Stop() error {
 	defer cancel()
 
 	s.logger.Info("Stopping web server...")
+
+	// Shutdown WebSocket manager first
+	if s.wsManager != nil {
+		s.wsManager.Shutdown()
+	}
+
 	if err := s.server.Shutdown(ctx); err != nil {
 		s.logger.Error("Error stopping web server: %v", err)
 		return err
@@ -138,6 +154,11 @@ func (s *Server) Stop() error {
 func (s *Server) setupRoutes(mux *http.ServeMux) {
 	// Main dashboard
 	mux.HandleFunc("/", s.handleDashboard)
+
+	// WebSocket endpoint
+	if s.wsManager != nil {
+		mux.HandleFunc("/ws", s.HandleWebSocket)
+	}
 
 	// API endpoints
 	mux.HandleFunc("/api/status", s.handleAPIStatus)

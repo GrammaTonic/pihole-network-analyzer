@@ -14,7 +14,7 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod version release-setup commit release-dry-run release-status
+.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod docker-push-ghcr docker-login-ghcr version release-setup commit release-dry-run release-status
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -368,7 +368,88 @@ docker-shell: ## Access development container shell
 docker-push: ## Push images to registry (requires authentication)
 	@echo "📤 Pushing images to registry..."
 	docker tag pihole-analyzer:latest ghcr.io/grammatonic/pihole-analyzer:latest
+	docker tag pihole-analyzer:$(VERSION) ghcr.io/grammatonic/pihole-analyzer:$(VERSION)
 	docker push ghcr.io/grammatonic/pihole-analyzer:latest
+	docker push ghcr.io/grammatonic/pihole-analyzer:$(VERSION)
+	@echo "✅ Images pushed successfully"
+
+docker-push-ghcr: ## Push multi-architecture images to GitHub Container Registry
+	@echo "📤 Building and pushing multi-architecture images to GHCR..."
+	@if ! docker buildx ls | grep -q "multiarch"; then \
+		echo "🔧 Creating buildx instance for multi-architecture builds..."; \
+		docker buildx create --name multiarch --use --bootstrap; \
+	fi
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--target production \
+		-t ghcr.io/grammatonic/pihole-analyzer:latest \
+		-t ghcr.io/grammatonic/pihole-analyzer:$(VERSION) \
+		-t ghcr.io/grammatonic/pihole-analyzer:v$$(echo $(VERSION) | cut -d. -f1) \
+		--push .
+	@echo "✅ Multi-architecture images pushed to GHCR successfully"
+
+docker-push-dev: ## Push development variant to GHCR
+	@echo "📤 Building and pushing development image to GHCR..."
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg BUILD_TIME=$(BUILD_TIME) \
+		--target development \
+		-t ghcr.io/grammatonic/pihole-analyzer:dev \
+		-t ghcr.io/grammatonic/pihole-analyzer:dev-$(VERSION) \
+		--push .
+	@echo "✅ Development image pushed to GHCR successfully"
+
+docker-login-ghcr: ## Login to GitHub Container Registry
+	@echo "🔑 Logging into GitHub Container Registry..."
+	@if [ -z "$$GITHUB_TOKEN" ]; then \
+		echo "❌ GITHUB_TOKEN environment variable is required"; \
+		echo "💡 Create a personal access token with 'packages:write' scope"; \
+		echo "💡 Then run: export GITHUB_TOKEN=your_token"; \
+		exit 1; \
+	fi
+	@echo "$$GITHUB_TOKEN" | docker login ghcr.io -u "$$GITHUB_ACTOR" --password-stdin
+	@echo "✅ Successfully logged into GHCR"
+
+docker-manifest: ## Create and push multi-architecture manifest
+	@echo "📦 Creating multi-architecture manifest..."
+	docker manifest create ghcr.io/grammatonic/pihole-analyzer:$(VERSION) \
+		ghcr.io/grammatonic/pihole-analyzer:$(VERSION)-amd64 \
+		ghcr.io/grammatonic/pihole-analyzer:$(VERSION)-arm64 \
+		ghcr.io/grammatonic/pihole-analyzer:$(VERSION)-armv7
+	docker manifest push ghcr.io/grammatonic/pihole-analyzer:$(VERSION)
+	@echo "✅ Multi-architecture manifest created and pushed"
+
+docker-list-tags: ## List all container tags in GHCR
+	@echo "📋 Listing container tags in GHCR..."
+	@if command -v gh >/dev/null 2>&1; then \
+		gh api /user/packages/container/pihole-analyzer/versions \
+			--jq '.[] | select(.metadata.container.tags | length > 0) | {id: .id, tags: .metadata.container.tags, created: .created_at}' 2>/dev/null \
+			|| echo "❌ Failed to list tags. Make sure you're authenticated with GitHub CLI"; \
+	else \
+		echo "❌ GitHub CLI not found. Install with: brew install gh"; \
+	fi
+
+container-push-prod: ## Build and push production containers using advanced script
+	@echo "🚀 Building and pushing production containers..."
+	@./scripts/container-push.sh production
+
+container-push-dev: ## Build and push development containers using advanced script
+	@echo "🧪 Building and pushing development containers..."
+	@./scripts/container-push.sh development
+
+container-push-all: ## Build and push all container variants
+	@echo "📦 Building and pushing all container variants..."
+	@./scripts/container-push.sh all
+
+container-list: ## List published container images
+	@./scripts/container-push.sh list
+
+container-info: ## Show container build information
+	@./scripts/container-push.sh info
+
+container-login: ## Login to GitHub Container Registry with guided setup
+	@./scripts/container-push.sh login
 
 # Performance benchmarking
 benchmark: ## Run performance benchmarks
@@ -390,4 +471,4 @@ analyze-size: build ## Analyze binary size and dependencies
 	@echo "Dependencies:"
 	@go list -m all | head -10
 
-.PHONY: docker-build docker-build-dev docker-build-prod docker-build-multi docker-test docker-test-quick docker-dev docker-prod docker-clean docker-logs docker-shell docker-push benchmark analyze-size watch cache-info cache-warm cache-clean fast-build dev-setup
+.PHONY: docker-build docker-build-dev docker-build-prod docker-build-multi docker-test docker-test-quick docker-dev docker-prod docker-clean docker-logs docker-shell docker-push docker-push-ghcr docker-push-dev docker-login-ghcr docker-manifest docker-list-tags container-push-prod container-push-dev container-push-all container-list container-info container-login benchmark analyze-size watch cache-info cache-warm cache-clean fast-build dev-setup

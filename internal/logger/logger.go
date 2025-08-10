@@ -150,6 +150,11 @@ func (l *Logger) ErrorFields(msg string, fields map[string]any) {
 	l.WithFields(fields).slogger.Error(msg)
 }
 
+// WarnFields logs a warning message with structured fields
+func (l *Logger) WarnFields(msg string, fields map[string]any) {
+	l.WithFields(fields).slogger.Warn(msg)
+}
+
 // GetSlogger returns the underlying slog.Logger
 func (l *Logger) GetSlogger() *slog.Logger {
 	return l.slogger
