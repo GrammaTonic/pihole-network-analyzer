@@ -258,9 +258,9 @@ func LoadConfig(configPath string) (*types.Config, error) {
 // Environment variables override config file values but are overridden by CLI flags
 func LoadEnvironmentVariables(config *types.Config) {
 	log := logger.Component("config-env")
-	
+
 	envCount := 0
-	
+
 	// Pi-hole configuration
 	if host := os.Getenv("PIHOLE_HOST"); host != "" {
 		config.Pihole.Host = host
@@ -296,7 +296,7 @@ func LoadEnvironmentVariables(config *types.Config) {
 		config.Pihole.UseHTTPS = strings.ToLower(verifySSL) == "true"
 		envCount++
 	}
-	
+
 	// Logging configuration
 	if level := os.Getenv("LOG_LEVEL"); level != "" {
 		config.Logging.Level = strings.ToUpper(level)
@@ -310,13 +310,13 @@ func LoadEnvironmentVariables(config *types.Config) {
 		config.Logging.EnableEmojis = strings.ToLower(emojis) == "true"
 		envCount++
 	}
-	
+
 	// Analysis configuration
 	if onlineOnly := os.Getenv("ANALYSIS_ONLINE_ONLY"); onlineOnly != "" {
 		config.OnlineOnly = strings.ToLower(onlineOnly) == "true"
 		envCount++
 	}
-	
+
 	// Web configuration
 	if webEnabled := os.Getenv("WEB_ENABLED"); webEnabled != "" {
 		config.Web.Enabled = strings.ToLower(webEnabled) == "true"
@@ -336,7 +336,7 @@ func LoadEnvironmentVariables(config *types.Config) {
 		config.Web.DaemonMode = strings.ToLower(daemon) == "true"
 		envCount++
 	}
-	
+
 	// Metrics configuration
 	if metricsEnabled := os.Getenv("METRICS_ENABLED"); metricsEnabled != "" {
 		config.Metrics.Enabled = strings.ToLower(metricsEnabled) == "true"
@@ -350,7 +350,7 @@ func LoadEnvironmentVariables(config *types.Config) {
 		config.Metrics.Port = metricsPort
 		envCount++
 	}
-	
+
 	// Container optimization environment variables (Go runtime)
 	if memLimit := os.Getenv("GOMEMLIMIT"); memLimit != "" {
 		log.InfoFields("Go memory limit set", map[string]any{"limit": memLimit})
@@ -358,7 +358,7 @@ func LoadEnvironmentVariables(config *types.Config) {
 	if maxProcs := os.Getenv("GOMAXPROCS"); maxProcs != "" {
 		log.InfoFields("Go max processors set", map[string]any{"procs": maxProcs})
 	}
-	
+
 	if envCount > 0 {
 		log.InfoFields("Environment variables loaded", map[string]any{
 			"variables_applied": envCount,
