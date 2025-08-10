@@ -109,6 +109,11 @@ func (m *MockWebDataSource) GetConnectionStatus() *types.ConnectionStatus {
 
 // setupWebTestSuite initializes the test suite
 func setupWebTestSuite(t *testing.T) *WebIntegrationTestSuite {
+	// Check if Chrome tests should be skipped in CI environments
+	if os.Getenv("SKIP_CHROME_TESTS") == "true" {
+		t.Skip("Chrome tests skipped via SKIP_CHROME_TESTS environment variable")
+	}
+	
 	// Create screenshot directory
 	screenshotDir := filepath.Join("test-screenshots")
 	if err := os.MkdirAll(screenshotDir, 0755); err != nil {
@@ -217,7 +222,7 @@ func (suite *WebIntegrationTestSuite) takeScreenshot(ctx context.Context, filena
 
 // createBrowserContext creates a Chrome context with CI-friendly options
 func (suite *WebIntegrationTestSuite) createBrowserContext() (context.Context, context.CancelFunc) {
-	// Create browser context with CI-friendly options
+	// Create browser context with CI-friendly options and complete network isolation
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("no-sandbox", true),
@@ -227,6 +232,54 @@ func (suite *WebIntegrationTestSuite) createBrowserContext() (context.Context, c
 		chromedp.Flag("disable-default-apps", true),
 		chromedp.Flag("disable-extensions", true),
 		chromedp.Flag("disable-web-security", true),
+		// Network isolation flags to prevent external requests
+		chromedp.Flag("disable-background-networking", true),
+		chromedp.Flag("disable-background-timer-throttling", true),
+		chromedp.Flag("disable-backgrounding-occluded-windows", true),
+		chromedp.Flag("disable-breakpad", true),
+		chromedp.Flag("disable-client-side-phishing-detection", true),
+		chromedp.Flag("disable-features", "VizDisplayCompositor,TranslateUI,BlinkGenPropertyTrees"),
+		chromedp.Flag("disable-hang-monitor", true),
+		chromedp.Flag("disable-ipc-flooding-protection", true),
+		chromedp.Flag("disable-renderer-backgrounding", true),
+		chromedp.Flag("disable-sync", true),
+		chromedp.Flag("force-color-profile", "srgb"),
+		chromedp.Flag("metrics-recording-only", true),
+		chromedp.Flag("no-default-browser-check", true),
+		chromedp.Flag("no-pings", true),
+		chromedp.Flag("password-store", "basic"),
+		chromedp.Flag("use-mock-keychain", true),
+		// Completely disable network access
+		chromedp.Flag("disable-background-mode", true),
+		chromedp.Flag("disable-component-extensions-with-background-pages", true),
+		chromedp.Flag("disable-domain-reliability", true),
+		chromedp.Flag("disable-features", "MediaRouter"),
+		chromedp.Flag("disable-file-system", true),
+		chromedp.Flag("disable-plugins", true),
+		chromedp.Flag("disable-prompt-on-repost", true),
+		chromedp.Flag("enable-automation", true),
+		chromedp.Flag("hide-scrollbars", true),
+		chromedp.Flag("mute-audio", true),
+		chromedp.Flag("safebrowsing-disable-auto-update", true),
+		chromedp.Flag("use-angle", "swiftshader-webgl"),
+		// Network policy to block all external connections
+		chromedp.Flag("host-rules", "MAP * 127.0.0.1"),
+		chromedp.Flag("disable-default-apps", true),
+		chromedp.Flag("disable-popup-blocking", true),
+		// Additional offline flags
+		chromedp.Flag("aggressive-cache-discard", true),
+		chromedp.Flag("disable-background-timer-throttling", true),
+		chromedp.Flag("disable-component-cloud-policy", true),
+		chromedp.Flag("disable-component-update", true),
+		chromedp.Flag("disable-default-component-extensions", true),
+		chromedp.Flag("disable-domain-blocking-for-3d-apis", true),
+		chromedp.Flag("disable-external-intent-requests", true),
+		chromedp.Flag("disable-field-trial-config", true),
+		chromedp.Flag("disable-search-geolocation-disclosure", true),
+		chromedp.Flag("disable-sync-preferences", true),
+		chromedp.Flag("no-proxy-server", true),
+		chromedp.Flag("proxy-server", "direct://"),
+		chromedp.Flag("disable-features", "AutofillServerCommunication,CertificateTransparencyComponentUpdater,ReportingServiceCrashReporter"),
 	)
 
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
@@ -246,8 +299,11 @@ func TestWebIntegration_Dashboard(t *testing.T) {
 	ctx, cancel := suite.createBrowserContext()
 	defer cancel()
 
-	// Set browser viewport
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1200, 800)); err != nil {
+	// Set browser viewport with timeout
+	ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 30*time.Second)
+	defer timeoutCancel()
+
+	if err := chromedp.Run(ctxWithTimeout, chromedp.EmulateViewport(1200, 800)); err != nil {
 		t.Skipf("Failed to set viewport (Chrome not available): %v", err)
 		return
 	}
@@ -255,8 +311,8 @@ func TestWebIntegration_Dashboard(t *testing.T) {
 	var title string
 	var bodyText string
 
-	// Navigate to dashboard and capture content
-	err := chromedp.Run(ctx,
+	// Navigate to dashboard and capture content with timeout
+	err := chromedp.Run(ctxWithTimeout,
 		chromedp.Navigate(suite.baseURL+"/"),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
 		chromedp.Title(&title),
@@ -269,7 +325,7 @@ func TestWebIntegration_Dashboard(t *testing.T) {
 	}
 
 	// Take screenshot first
-	if err := suite.takeScreenshot(ctx, "dashboard_main.png"); err != nil {
+	if err := suite.takeScreenshot(ctxWithTimeout, "dashboard_main.png"); err != nil {
 		t.Logf("Failed to take dashboard screenshot: %v", err)
 	}
 
@@ -318,12 +374,16 @@ func TestWebIntegration_EnhancedDashboard(t *testing.T) {
 
 	suite.startServer(t)
 
-	// Create browser context
+	// Create browser context with shorter timeout for enhanced dashboard
 	ctx, cancel := suite.createBrowserContext()
 	defer cancel()
+	
+	// Use shorter timeout for enhanced dashboard to avoid long waits for CDN resources
+	ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 20*time.Second)
+	defer timeoutCancel()
 
 	// Set browser viewport
-	if err := chromedp.Run(ctx, chromedp.EmulateViewport(1200, 800)); err != nil {
+	if err := chromedp.Run(ctxWithTimeout, chromedp.EmulateViewport(1200, 800)); err != nil {
 		t.Skipf("Failed to set viewport (Chrome not available): %v", err)
 		return
 	}
@@ -332,7 +392,7 @@ func TestWebIntegration_EnhancedDashboard(t *testing.T) {
 	var bodyText string
 
 	// Navigate to enhanced dashboard
-	err := chromedp.Run(ctx,
+	err := chromedp.Run(ctxWithTimeout,
 		chromedp.Navigate(suite.baseURL+"/enhanced"),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
 		chromedp.Title(&title),
@@ -345,7 +405,7 @@ func TestWebIntegration_EnhancedDashboard(t *testing.T) {
 	}
 
 	// Take screenshot
-	if err := suite.takeScreenshot(ctx, "dashboard_enhanced.png"); err != nil {
+	if err := suite.takeScreenshot(ctxWithTimeout, "dashboard_enhanced.png"); err != nil {
 		t.Logf("Failed to take enhanced dashboard screenshot: %v", err)
 	}
 
@@ -424,15 +484,19 @@ func TestWebIntegration_Responsive(t *testing.T) {
 			// Create browser context
 			ctx, cancel := suite.createBrowserContext()
 			defer cancel()
+			
+			// Add timeout for responsive tests
+			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 15*time.Second)
+			defer timeoutCancel()
 
 			// Set specific viewport size
-			if err := chromedp.Run(ctx, chromedp.EmulateViewport(size.width, size.height)); err != nil {
+			if err := chromedp.Run(ctxWithTimeout, chromedp.EmulateViewport(size.width, size.height)); err != nil {
 				t.Skipf("Failed to set viewport %s (Chrome not available): %v", size.name, err)
 				return
 			}
 
 			// Navigate to dashboard
-			err := chromedp.Run(ctx,
+			err := chromedp.Run(ctxWithTimeout,
 				chromedp.Navigate(suite.baseURL+"/"),
 				chromedp.WaitVisible("body", chromedp.ByQuery),
 			)
@@ -444,7 +508,7 @@ func TestWebIntegration_Responsive(t *testing.T) {
 
 			// Take screenshot for this screen size
 			screenshotName := fmt.Sprintf("responsive_%s.png", size.name)
-			if err := suite.takeScreenshot(ctx, screenshotName); err != nil {
+			if err := suite.takeScreenshot(ctxWithTimeout, screenshotName); err != nil {
 				t.Logf("Failed to take responsive screenshot %s: %v", size.name, err)
 			}
 		})
@@ -463,9 +527,13 @@ func TestWebIntegration_WebSocketConnection(t *testing.T) {
 	// Create browser context
 	ctx, cancel := suite.createBrowserContext()
 	defer cancel()
+	
+	// Add timeout for WebSocket tests
+	ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 15*time.Second)
+	defer timeoutCancel()
 
 	// Navigate to dashboard first
-	err := chromedp.Run(ctx,
+	err := chromedp.Run(ctxWithTimeout,
 		chromedp.Navigate(suite.baseURL+"/"),
 		chromedp.WaitVisible("body", chromedp.ByQuery),
 	)
@@ -477,7 +545,7 @@ func TestWebIntegration_WebSocketConnection(t *testing.T) {
 
 	// Check if WebSocket connection is available (basic test)
 	var wsResult bool
-	err = chromedp.Run(ctx,
+	err = chromedp.Run(ctxWithTimeout,
 		chromedp.Evaluate(`typeof WebSocket !== 'undefined'`, &wsResult),
 	)
 
@@ -491,7 +559,7 @@ func TestWebIntegration_WebSocketConnection(t *testing.T) {
 	}
 
 	// Take screenshot showing the page is ready for WebSocket
-	if err := suite.takeScreenshot(ctx, "websocket_ready.png"); err != nil {
+	if err := suite.takeScreenshot(ctxWithTimeout, "websocket_ready.png"); err != nil {
 		t.Logf("Failed to take WebSocket screenshot: %v", err)
 	}
 
