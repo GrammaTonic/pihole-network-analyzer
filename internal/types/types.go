@@ -87,6 +87,7 @@ type Config struct {
 	Web        WebConfig       `json:"web"`
 	Metrics    MetricsConfig   `json:"metrics"`
 	ML         MLConfig        `json:"ml"`
+	Alerts     AlertConfig     `json:"alerts"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -292,4 +293,96 @@ type PerformanceConfig struct {
 	CacheEnabled    bool   `json:"cache_enabled"`
 	CacheDuration   string `json:"cache_duration"` // duration string
 	BatchSize       int    `json:"batch_size"`
+}
+
+// AlertConfig represents configuration for the alert system
+type AlertConfig struct {
+	Enabled       bool                   `json:"enabled"`
+	Rules         []AlertRule            `json:"rules"`
+	Notifications NotificationConfig     `json:"notifications"`
+	Storage       StorageConfig          `json:"storage"`
+	Performance   AlertPerformanceConfig `json:"performance"`
+
+	// Default settings
+	DefaultSeverity string `json:"default_severity"`
+	DefaultCooldown string `json:"default_cooldown"`
+	MaxActiveAlerts int    `json:"max_active_alerts"`
+	AlertRetention  string `json:"alert_retention"`
+}
+
+// AlertRule defines criteria for triggering alerts
+type AlertRule struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Enabled     bool   `json:"enabled"`
+	Type        string `json:"type"`
+	Severity    string `json:"severity"`
+
+	// Rule conditions
+	Conditions []AlertCondition `json:"conditions"`
+
+	// Suppression settings
+	CooldownPeriod string `json:"cooldown_period"`
+	MaxAlerts      int    `json:"max_alerts"`
+
+	// Notification settings
+	Channels   []string `json:"channels"`
+	Recipients []string `json:"recipients"`
+
+	// Tags for organization
+	Tags []string `json:"tags"`
+}
+
+// AlertCondition defines a condition that must be met to trigger an alert
+type AlertCondition struct {
+	Field      string      `json:"field"`                 // e.g., "query_count", "anomaly_score", "response_time"
+	Operator   string      `json:"operator"`              // e.g., "gt", "lt", "eq", "contains"
+	Value      interface{} `json:"value"`                 // Threshold value
+	TimeWindow string      `json:"time_window,omitempty"` // Duration string
+}
+
+// NotificationConfig configures notification channels
+type NotificationConfig struct {
+	Slack SlackNotificationConfig `json:"slack"`
+	Email EmailNotificationConfig `json:"email"`
+}
+
+// SlackNotificationConfig configures Slack notifications
+type SlackNotificationConfig struct {
+	Enabled    bool   `json:"enabled"`
+	WebhookURL string `json:"webhook_url"`
+	Channel    string `json:"channel"`
+	Username   string `json:"username"`
+	IconEmoji  string `json:"icon_emoji"`
+	Timeout    string `json:"timeout"`
+}
+
+// EmailNotificationConfig configures email notifications
+type EmailNotificationConfig struct {
+	Enabled    bool     `json:"enabled"`
+	SMTPHost   string   `json:"smtp_host"`
+	SMTPPort   int      `json:"smtp_port"`
+	Username   string   `json:"username"`
+	Password   string   `json:"password"`
+	From       string   `json:"from"`
+	Recipients []string `json:"recipients"`
+	UseTLS     bool     `json:"use_tls"`
+	Timeout    string   `json:"timeout"`
+}
+
+// StorageConfig configures alert storage
+type StorageConfig struct {
+	Type      string `json:"type"` // "memory", "file", "database"
+	Path      string `json:"path,omitempty"`
+	MaxSize   int    `json:"max_size"` // Maximum number of alerts to store
+	Retention string `json:"retention"`
+}
+
+// AlertPerformanceConfig configures performance settings
+type AlertPerformanceConfig struct {
+	MaxConcurrentNotifications int    `json:"max_concurrent_notifications"`
+	NotificationTimeout        string `json:"notification_timeout"`
+	BatchSize                  int    `json:"batch_size"`
+	EvaluationInterval         string `json:"evaluation_interval"`
 }
