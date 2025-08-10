@@ -480,7 +480,7 @@ go test -v ./internal/alerts/ -run TestManager
 
 ### Long Term (2026+)
 - **Enhanced ML Models**: Advanced machine learning with custom model training
-- **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors. Logging to Loki
+- **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors and logging to Loki
 - **Mobile App**: Companion mobile application for network monitoring
 
 This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, and **beautiful terminal output**.
