@@ -9,7 +9,8 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 **Structured Logging**: Complete migration from `fmt.Printf` to `log/slog` with colors/emojis  
 **Container-First**: Multi-architecture Docker builds (AMD64, ARM64, ARMv7) with optimized caching  
 **Web UI**: Built-in HTTP dashboard for real-time monitoring and daemon mode  
-**Metrics**: Prometheus endpoints for monitoring and observability
+**Metrics**: Prometheus endpoints for monitoring and observability  
+**Factory Pattern**: `interfaces.DataSourceFactory` abstracts Pi-hole vs mock data sources
 
 ## Key Components
 
@@ -51,6 +52,14 @@ All Pi-hole data access goes through `interfaces.DataSource`:
 // Testing: uses mock implementation
 client := pihole.NewClient(config, logger)
 records, err := client.GetQueries(ctx, params)
+```
+
+### Configuration Merging Pattern
+Flags override config file values via `config.MergeFlags()`:
+```go
+// Load config file first, then apply CLI flags
+cfg, err := config.LoadConfig(configPath)
+config.MergeFlags(cfg, *flags.OnlineOnly, *flags.NoExclude, testMode, *flags.Pihole)
 ```
 
 ### Configuration Structure
@@ -146,6 +155,13 @@ make docker-multi      # Multi-architecture builds
 **Versioning**: Automatic VERSION and BUILD_TIME injection into binaries  
 **Testing**: Separate test infrastructure with mock Pi-hole data in `testing/fixtures/`
 
+### Fast Build Commands (Incremental)
+```bash
+make build-cached     # Only rebuilds if Go sources changed
+make cache-warm       # Pre-populate build caches for CI
+make fast-build       # Optimized build with aggressive caching
+```
+
 ## Critical Rules
 
 1. **Single Pi-hole Instance Only**: Current architecture supports one Pi-hole connection per execution
@@ -169,6 +185,22 @@ make docker-multi      # Multi-architecture builds
 **Metrics Addition**: Extend `internal/metrics` for new Prometheus endpoints  
 **Configuration Updates**: Add validation in `internal/validation` with proper error handling  
 **ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`
+
+## Testing Infrastructure Patterns
+
+### Mock Data Architecture
+```go
+// Use testing/testutils for test mode
+testutils.RunTestMode(cfg)  // Generates mock client stats
+// Mock data in testing/fixtures/ directory
+```
+
+### Dual Binary Testing Strategy
+```bash
+# Always test both production and mock binaries
+./pihole-analyzer --pihole real-config.json    # Production
+./pihole-analyzer-test --test                  # Mock data
+```
 
 ## Web UI Development Patterns
 
@@ -258,7 +290,6 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 - **Machine Learning**: AI-powered anomaly detection and trend analysis ✅
 
 ### Near Term (Q2 2025)
-- **Multi-Pi-hole Support**: Connect and analyze multiple Pi-hole instances
 - **REST API**: HTTP API for programmatic access to analysis data
 - **Advanced Filtering**: Complex query filters and time-based analysis
 - **WebSocket Updates**: Real-time dashboard updates without page refresh
@@ -272,7 +303,7 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 ### Long Term (2026+)
 - **Enhanced ML Models**: Advanced machine learning with custom model training
 - **Multi-format Export**: JSON, XML, CSV export capabilities
-- **Integration Ecosystem**: Grafana, InfluxDB, and monitoring platform connectors
+- **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors Logging to Loki
 - **Mobile App**: Companion mobile application for network monitoring
 
 This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, and **beautiful terminal output**.
