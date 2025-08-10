@@ -965,39 +965,39 @@ type DNSConfig struct {
 	Port       int    `json:"port"`
 	TCPEnabled bool   `json:"tcp_enabled"`
 	UDPEnabled bool   `json:"udp_enabled"`
-	
+
 	// Timeouts (in seconds)
 	ReadTimeout  int `json:"read_timeout"`
 	WriteTimeout int `json:"write_timeout"`
 	IdleTimeout  int `json:"idle_timeout"`
-	
+
 	// Cache configuration
 	Cache DNSCacheConfig `json:"cache"`
-	
+
 	// Forwarder configuration
 	Forwarder DNSForwarderConfig `json:"forwarder"`
-	
+
 	// Logging
 	LogQueries bool `json:"log_queries"`
 	LogLevel   int  `json:"log_level"`
-	
+
 	// Performance
 	MaxConcurrentQueries int `json:"max_concurrent_queries"`
-	BufferSize          int `json:"buffer_size"`
+	BufferSize           int `json:"buffer_size"`
 }
 
 // DNSCacheConfig represents DNS cache configuration
 type DNSCacheConfig struct {
-	Enabled        bool `json:"enabled"`
-	MaxSize        int  `json:"max_size"`
-	DefaultTTL     int  `json:"default_ttl"`     // seconds
-	MaxTTL         int  `json:"max_ttl"`         // seconds
-	MinTTL         int  `json:"min_ttl"`         // seconds
+	Enabled         bool `json:"enabled"`
+	MaxSize         int  `json:"max_size"`
+	DefaultTTL      int  `json:"default_ttl"`      // seconds
+	MaxTTL          int  `json:"max_ttl"`          // seconds
+	MinTTL          int  `json:"min_ttl"`          // seconds
 	CleanupInterval int  `json:"cleanup_interval"` // seconds
-	
+
 	// Cache strategy: "lru", "lfu", "ttl"
 	EvictionPolicy string `json:"eviction_policy"`
-	
+
 	// Memory limits
 	MaxMemoryMB int `json:"max_memory_mb"`
 }
@@ -1006,14 +1006,14 @@ type DNSCacheConfig struct {
 type DNSForwarderConfig struct {
 	Enabled        bool     `json:"enabled"`
 	Upstreams      []string `json:"upstreams"`
-	Timeout        int      `json:"timeout"`         // seconds
+	Timeout        int      `json:"timeout"` // seconds
 	Retries        int      `json:"retries"`
 	HealthCheck    bool     `json:"health_check"`
 	HealthInterval int      `json:"health_interval"` // seconds
-	
+
 	// Load balancing: "round_robin", "random", "fastest"
 	LoadBalancing string `json:"load_balancing"`
-	
+
 	// EDNS0 support
 	EDNS0Enabled bool `json:"edns0_enabled"`
 	UDPSize      int  `json:"udp_size"`

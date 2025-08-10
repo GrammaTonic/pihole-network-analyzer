@@ -34,11 +34,11 @@ type Flags struct {
 	EnablePerformanceAnalysis *bool
 	NetworkAnalysisConfig     *string
 	// DNS Server flags
-	EnableDNS       *bool
-	DNSPort         *int
-	DNSHost         *string
-	DNSConfig       *string
-	EnableDNSCache  *bool
+	EnableDNS      *bool
+	DNSPort        *int
+	DNSHost        *string
+	DNSConfig      *string
+	EnableDNSCache *bool
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -128,7 +128,7 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 	// Apply network analysis flags
 	ApplyNetworkAnalysisFlags(flags, cfg)
-	
+
 	// Apply DNS server flags
 	ApplyDNSFlags(flags, cfg)
 }

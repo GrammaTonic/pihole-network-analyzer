@@ -18,16 +18,16 @@ type Server struct {
 	cache     DNSCache
 	forwarder DNSForwarder
 	parser    DNSParser
-	
+
 	// Server state
-	running   atomic.Bool
-	udpConn   *net.UDPConn
+	running     atomic.Bool
+	udpConn     *net.UDPConn
 	tcpListener *net.TCPListener
-	
+
 	// Statistics
-	stats ServerStats
+	stats   ServerStats
 	statsMu sync.RWMutex
-	
+
 	// Shutdown
 	shutdownCh chan struct{}
 	wg         sync.WaitGroup
@@ -53,20 +53,20 @@ func (s *Server) Start(ctx context.Context) error {
 	if s.running.Load() {
 		return ErrServerAlreadyRunning
 	}
-	
+
 	s.logger.InfoFields("Starting DNS server", map[string]any{
-		"host":        s.config.Host,
-		"port":        s.config.Port,
-		"udp_enabled": s.config.UDPEnabled,
-		"tcp_enabled": s.config.TCPEnabled,
+		"host":          s.config.Host,
+		"port":          s.config.Port,
+		"udp_enabled":   s.config.UDPEnabled,
+		"tcp_enabled":   s.config.TCPEnabled,
 		"cache_enabled": s.config.Cache.Enabled,
 	})
-	
+
 	// Validate configuration
 	if err := s.config.Validate(); err != nil {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
-	
+
 	// Start UDP server if enabled
 	if s.config.UDPEnabled {
 		if err := s.startUDPServer(); err != nil {
@@ -74,7 +74,7 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 		s.logger.Success("UDP DNS server started on %s:%d", s.config.Host, s.config.Port)
 	}
-	
+
 	// Start TCP server if enabled
 	if s.config.TCPEnabled {
 		if err := s.startTCPServer(); err != nil {
@@ -83,20 +83,20 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 		s.logger.Success("TCP DNS server started on %s:%d", s.config.Host, s.config.Port)
 	}
-	
+
 	s.running.Store(true)
-	
+
 	// Start cache cleanup routine
 	if s.config.Cache.Enabled {
 		s.wg.Add(1)
 		go s.cacheCleanupRoutine()
 	}
-	
+
 	s.logger.Success("🚀 DNS server started successfully")
-	
+
 	// Wait for shutdown signal
 	<-s.shutdownCh
-	
+
 	return nil
 }
 
@@ -105,19 +105,19 @@ func (s *Server) Stop(ctx context.Context) error {
 	if !s.running.Load() {
 		return ErrServerNotStarted
 	}
-	
+
 	s.logger.Info("Stopping DNS server...")
-	
+
 	s.running.Store(false)
 	close(s.shutdownCh)
-	
+
 	// Stop servers
 	s.stopUDPServer()
 	s.stopTCPServer()
-	
+
 	// Wait for all goroutines to finish
 	s.wg.Wait()
-	
+
 	s.logger.Success("✅ DNS server stopped gracefully")
 	return nil
 }
@@ -126,7 +126,7 @@ func (s *Server) Stop(ctx context.Context) error {
 func (s *Server) GetStats() *ServerStats {
 	s.statsMu.RLock()
 	defer s.statsMu.RUnlock()
-	
+
 	stats := s.stats
 	return &stats
 }
@@ -134,7 +134,7 @@ func (s *Server) GetStats() *ServerStats {
 // HandleQuery processes a DNS query
 func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse, error) {
 	start := time.Now()
-	
+
 	// Update statistics
 	s.updateStats(func(stats *ServerStats) {
 		stats.QueriesReceived++
@@ -144,7 +144,7 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			stats.TCPQueries++
 		}
 	})
-	
+
 	if s.config.LogQueries {
 		s.logger.InfoFields("DNS query received", map[string]any{
 			"id":       query.ID,
@@ -154,7 +154,7 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			"client":   query.Client.String(),
 		})
 	}
-	
+
 	// Check cache first
 	if s.config.Cache.Enabled {
 		if entry, found := s.cache.Get(query.Question); found {
@@ -162,39 +162,39 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 				stats.CacheHits++
 				stats.QueriesAnswered++
 			})
-			
+
 			response := entry.Response
 			response.ID = query.ID // Use the query ID
 			response.Cached = true
 			response.ResponseTime = time.Since(start)
-			
+
 			if s.config.LogQueries {
 				s.logger.InfoFields("Cache hit", map[string]any{
 					"domain":        query.Question.Name,
 					"response_time": response.ResponseTime,
 				})
 			}
-			
+
 			return response, nil
 		}
-		
+
 		s.updateStats(func(stats *ServerStats) {
 			stats.CacheMisses++
 		})
 	}
-	
+
 	// Forward to upstream
 	response, err := s.forwarder.Forward(ctx, query)
 	if err != nil {
 		s.updateStats(func(stats *ServerStats) {
 			stats.Errors++
 		})
-		
+
 		s.logger.ErrorFields("Failed to forward query", map[string]any{
 			"domain": query.Question.Name,
 			"error":  err.Error(),
 		})
-		
+
 		// Return SERVFAIL response
 		return &DNSResponse{
 			ID:           query.ID,
@@ -203,11 +203,11 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			ResponseTime: time.Since(start),
 		}, nil
 	}
-	
+
 	// Update response
 	response.ID = query.ID
 	response.ResponseTime = time.Since(start)
-	
+
 	// Cache the response if caching is enabled
 	if s.config.Cache.Enabled && response.ResponseCode == RCodeNoError {
 		// Calculate TTL from the response records
@@ -216,11 +216,11 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			s.cache.Set(query.Question, response, ttl)
 		}
 	}
-	
+
 	s.updateStats(func(stats *ServerStats) {
 		stats.QueriesForwarded++
 		stats.QueriesAnswered++
-		
+
 		// Update average latency
 		total := stats.QueriesAnswered
 		if total > 1 {
@@ -231,7 +231,7 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			stats.AverageLatency = response.ResponseTime
 		}
 	})
-	
+
 	if s.config.LogQueries {
 		s.logger.InfoFields("Query forwarded", map[string]any{
 			"domain":        query.Question.Name,
@@ -240,7 +240,7 @@ func (s *Server) HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse
 			"answers":       len(response.Answers),
 		})
 	}
-	
+
 	return response, nil
 }
 
@@ -250,17 +250,17 @@ func (s *Server) startUDPServer() error {
 	if err != nil {
 		return err
 	}
-	
+
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		return err
 	}
-	
+
 	s.udpConn = conn
-	
+
 	s.wg.Add(1)
 	go s.handleUDPQueries()
-	
+
 	return nil
 }
 
@@ -271,12 +271,12 @@ func (s *Server) startTCPServer() error {
 	if err != nil {
 		return err
 	}
-	
+
 	s.tcpListener = listener.(*net.TCPListener)
-	
+
 	s.wg.Add(1)
 	go s.handleTCPConnections()
-	
+
 	return nil
 }
 
@@ -299,12 +299,12 @@ func (s *Server) stopTCPServer() {
 // handleUDPQueries handles incoming UDP DNS queries
 func (s *Server) handleUDPQueries() {
 	defer s.wg.Done()
-	
+
 	buffer := make([]byte, s.config.BufferSize)
-	
+
 	for s.running.Load() {
 		s.udpConn.SetReadDeadline(time.Now().Add(1 * time.Second))
-		
+
 		n, clientAddr, err := s.udpConn.ReadFromUDP(buffer)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
@@ -317,7 +317,7 @@ func (s *Server) handleUDPQueries() {
 			}
 			continue
 		}
-		
+
 		// Handle query in goroutine
 		go s.handleUDPQuery(buffer[:n], clientAddr)
 	}
@@ -327,7 +327,7 @@ func (s *Server) handleUDPQueries() {
 func (s *Server) handleUDPQuery(data []byte, clientAddr *net.UDPAddr) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.config.ReadTimeout)
 	defer cancel()
-	
+
 	// Parse query
 	query, err := s.parser.ParseQuery(data)
 	if err != nil {
@@ -337,10 +337,10 @@ func (s *Server) handleUDPQuery(data []byte, clientAddr *net.UDPAddr) {
 		})
 		return
 	}
-	
+
 	query.Client = clientAddr
 	query.Protocol = "udp"
-	
+
 	// Process query
 	response, err := s.HandleQuery(ctx, query)
 	if err != nil {
@@ -350,7 +350,7 @@ func (s *Server) handleUDPQuery(data []byte, clientAddr *net.UDPAddr) {
 		})
 		return
 	}
-	
+
 	// Serialize response
 	responseData, err := s.parser.SerializeResponse(response)
 	if err != nil {
@@ -360,7 +360,7 @@ func (s *Server) handleUDPQuery(data []byte, clientAddr *net.UDPAddr) {
 		})
 		return
 	}
-	
+
 	// Send response
 	s.udpConn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout))
 	_, err = s.udpConn.WriteToUDP(responseData, clientAddr)
@@ -375,10 +375,10 @@ func (s *Server) handleUDPQuery(data []byte, clientAddr *net.UDPAddr) {
 // handleTCPConnections handles incoming TCP connections
 func (s *Server) handleTCPConnections() {
 	defer s.wg.Done()
-	
+
 	for s.running.Load() {
 		s.tcpListener.SetDeadline(time.Now().Add(1 * time.Second))
-		
+
 		conn, err := s.tcpListener.Accept()
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
@@ -391,7 +391,7 @@ func (s *Server) handleTCPConnections() {
 			}
 			continue
 		}
-		
+
 		// Handle connection in goroutine
 		go s.handleTCPConnection(conn)
 	}
@@ -400,9 +400,9 @@ func (s *Server) handleTCPConnections() {
 // handleTCPConnection handles a single TCP connection
 func (s *Server) handleTCPConnection(conn net.Conn) {
 	defer conn.Close()
-	
+
 	conn.SetReadDeadline(time.Now().Add(s.config.ReadTimeout))
-	
+
 	// Read message length (TCP DNS uses 2-byte length prefix)
 	lengthBuf := make([]byte, 2)
 	_, err := conn.Read(lengthBuf)
@@ -413,7 +413,7 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	messageLength := int(lengthBuf[0])<<8 | int(lengthBuf[1])
 	if messageLength > s.config.BufferSize {
 		s.logger.ErrorFields("TCP message too large", map[string]any{
@@ -423,7 +423,7 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	// Read message
 	messageBuf := make([]byte, messageLength)
 	_, err = conn.Read(messageBuf)
@@ -434,10 +434,10 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), s.config.ReadTimeout)
 	defer cancel()
-	
+
 	// Parse query
 	query, err := s.parser.ParseQuery(messageBuf)
 	if err != nil {
@@ -447,10 +447,10 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	query.Client = conn.RemoteAddr()
 	query.Protocol = "tcp"
-	
+
 	// Process query
 	response, err := s.HandleQuery(ctx, query)
 	if err != nil {
@@ -460,7 +460,7 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	// Serialize response
 	responseData, err := s.parser.SerializeResponse(response)
 	if err != nil {
@@ -470,10 +470,10 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 		})
 		return
 	}
-	
+
 	// Send response with length prefix
 	conn.SetWriteDeadline(time.Now().Add(s.config.WriteTimeout))
-	
+
 	lengthPrefix := []byte{byte(len(responseData) >> 8), byte(len(responseData) & 0xFF)}
 	_, err = conn.Write(append(lengthPrefix, responseData...))
 	if err != nil {
@@ -487,10 +487,10 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 // cacheCleanupRoutine periodically cleans up expired cache entries
 func (s *Server) cacheCleanupRoutine() {
 	defer s.wg.Done()
-	
+
 	ticker := time.NewTicker(s.config.Cache.CleanupInterval)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ticker.C:
@@ -506,7 +506,7 @@ func (s *Server) calculateTTL(response *DNSResponse) time.Duration {
 	if len(response.Answers) == 0 {
 		return s.config.Cache.DefaultTTL
 	}
-	
+
 	// Use the minimum TTL from all answer records
 	minTTL := response.Answers[0].TTL
 	for _, record := range response.Answers {
@@ -514,9 +514,9 @@ func (s *Server) calculateTTL(response *DNSResponse) time.Duration {
 			minTTL = record.TTL
 		}
 	}
-	
+
 	ttl := time.Duration(minTTL) * time.Second
-	
+
 	// Apply TTL limits
 	if ttl < s.config.Cache.MinTTL {
 		ttl = s.config.Cache.MinTTL
@@ -524,7 +524,7 @@ func (s *Server) calculateTTL(response *DNSResponse) time.Duration {
 	if ttl > s.config.Cache.MaxTTL {
 		ttl = s.config.Cache.MaxTTL
 	}
-	
+
 	return ttl
 }
 

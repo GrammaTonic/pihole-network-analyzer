@@ -184,7 +184,7 @@ func DefaultConfig() *types.Config {
 			},
 			Generic: []types.GenericIntegrationConfig{},
 		},
-		
+
 		DNS: dns.GetDefaultTypesConfig(),
 	}
 }

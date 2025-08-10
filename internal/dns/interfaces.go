@@ -54,13 +54,13 @@ type CacheEntry struct {
 type DNSServer interface {
 	// Start starts the DNS server
 	Start(ctx context.Context) error
-	
+
 	// Stop stops the DNS server gracefully
 	Stop(ctx context.Context) error
-	
+
 	// GetStats returns server statistics
 	GetStats() *ServerStats
-	
+
 	// HandleQuery processes a DNS query
 	HandleQuery(ctx context.Context, query *DNSQuery) (*DNSResponse, error)
 }
@@ -69,19 +69,19 @@ type DNSServer interface {
 type DNSCache interface {
 	// Get retrieves a cached response
 	Get(question DNSQuestion) (*CacheEntry, bool)
-	
+
 	// Set stores a response in cache
 	Set(question DNSQuestion, response *DNSResponse, ttl time.Duration)
-	
+
 	// Delete removes an entry from cache
 	Delete(question DNSQuestion)
-	
+
 	// Clear removes all entries from cache
 	Clear()
-	
+
 	// GetStats returns cache statistics
 	GetStats() *CacheStats
-	
+
 	// Cleanup removes expired entries
 	Cleanup()
 }
@@ -90,10 +90,10 @@ type DNSCache interface {
 type DNSForwarder interface {
 	// Forward sends a query to upstream DNS servers
 	Forward(ctx context.Context, query *DNSQuery) (*DNSResponse, error)
-	
+
 	// GetUpstreams returns the list of upstream servers
 	GetUpstreams() []string
-	
+
 	// SetUpstreams sets the upstream DNS servers
 	SetUpstreams(upstreams []string)
 }
@@ -102,13 +102,13 @@ type DNSForwarder interface {
 type DNSParser interface {
 	// ParseQuery parses a DNS query from raw bytes
 	ParseQuery(data []byte) (*DNSQuery, error)
-	
+
 	// SerializeResponse serializes a DNS response to raw bytes
 	SerializeResponse(response *DNSResponse) ([]byte, error)
-	
+
 	// ParseResponse parses a DNS response from raw bytes
 	ParseResponse(data []byte) (*DNSResponse, error)
-	
+
 	// SerializeQuery serializes a DNS query to raw bytes
 	SerializeQuery(query *DNSQuery) ([]byte, error)
 }
@@ -142,13 +142,13 @@ type CacheStats struct {
 type DNSServerFactory interface {
 	// CreateServer creates a DNS server instance
 	CreateServer(config *Config) (DNSServer, error)
-	
+
 	// CreateCache creates a DNS cache instance
 	CreateCache(config *CacheConfig) (DNSCache, error)
-	
+
 	// CreateForwarder creates a DNS forwarder instance
 	CreateForwarder(config *ForwarderConfig) (DNSForwarder, error)
-	
+
 	// CreateParser creates a DNS parser instance
 	CreateParser() DNSParser
 }

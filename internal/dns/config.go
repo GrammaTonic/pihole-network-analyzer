@@ -12,39 +12,39 @@ type Config struct {
 	Port       int    `json:"port"`
 	TCPEnabled bool   `json:"tcp_enabled"`
 	UDPEnabled bool   `json:"udp_enabled"`
-	
+
 	// Timeouts
 	ReadTimeout  time.Duration `json:"read_timeout"`
 	WriteTimeout time.Duration `json:"write_timeout"`
 	IdleTimeout  time.Duration `json:"idle_timeout"`
-	
+
 	// Cache configuration
 	Cache CacheConfig `json:"cache"`
-	
+
 	// Forwarder configuration
 	Forwarder ForwarderConfig `json:"forwarder"`
-	
+
 	// Logging
 	LogQueries bool `json:"log_queries"`
 	LogLevel   int  `json:"log_level"`
-	
+
 	// Performance
 	MaxConcurrentQueries int `json:"max_concurrent_queries"`
-	BufferSize          int `json:"buffer_size"`
+	BufferSize           int `json:"buffer_size"`
 }
 
 // CacheConfig represents DNS cache configuration
 type CacheConfig struct {
-	Enabled        bool          `json:"enabled"`
-	MaxSize        int           `json:"max_size"`
-	DefaultTTL     time.Duration `json:"default_ttl"`
-	MaxTTL         time.Duration `json:"max_ttl"`
-	MinTTL         time.Duration `json:"min_ttl"`
+	Enabled         bool          `json:"enabled"`
+	MaxSize         int           `json:"max_size"`
+	DefaultTTL      time.Duration `json:"default_ttl"`
+	MaxTTL          time.Duration `json:"max_ttl"`
+	MinTTL          time.Duration `json:"min_ttl"`
 	CleanupInterval time.Duration `json:"cleanup_interval"`
-	
+
 	// Cache strategy: "lru", "lfu", "ttl"
 	EvictionPolicy string `json:"eviction_policy"`
-	
+
 	// Memory limits
 	MaxMemoryMB int `json:"max_memory_mb"`
 }
@@ -57,10 +57,10 @@ type ForwarderConfig struct {
 	Retries        int           `json:"retries"`
 	HealthCheck    bool          `json:"health_check"`
 	HealthInterval time.Duration `json:"health_interval"`
-	
+
 	// Load balancing: "round_robin", "random", "fastest"
 	LoadBalancing string `json:"load_balancing"`
-	
+
 	// EDNS0 support
 	EDNS0Enabled bool `json:"edns0_enabled"`
 	UDPSize      int  `json:"udp_size"`
@@ -74,11 +74,11 @@ func DefaultConfig() *Config {
 		Port:       5353, // Alternative DNS port to avoid conflicts
 		TCPEnabled: true,
 		UDPEnabled: true,
-		
+
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
-		
+
 		Cache: CacheConfig{
 			Enabled:         true,
 			MaxSize:         10000,
@@ -89,14 +89,14 @@ func DefaultConfig() *Config {
 			EvictionPolicy:  "lru",
 			MaxMemoryMB:     100,
 		},
-		
+
 		Forwarder: ForwarderConfig{
 			Enabled: true,
 			Upstreams: []string{
-				"8.8.8.8:53",    // Google DNS
-				"8.8.4.4:53",    // Google DNS
-				"1.1.1.1:53",    // Cloudflare DNS
-				"1.0.0.1:53",    // Cloudflare DNS
+				"8.8.8.8:53", // Google DNS
+				"8.8.4.4:53", // Google DNS
+				"1.1.1.1:53", // Cloudflare DNS
+				"1.0.0.1:53", // Cloudflare DNS
 			},
 			Timeout:        5 * time.Second,
 			Retries:        2,
@@ -106,7 +106,7 @@ func DefaultConfig() *Config {
 			EDNS0Enabled:   true,
 			UDPSize:        4096,
 		},
-		
+
 		LogQueries:           true,
 		LogLevel:             1, // Info level
 		MaxConcurrentQueries: 1000,
@@ -156,18 +156,18 @@ func (c *Config) Validate() error {
 	if c.Port < 1 || c.Port > 65535 {
 		return ErrInvalidPort
 	}
-	
+
 	if !c.UDPEnabled && !c.TCPEnabled {
 		return ErrNoProtocolEnabled
 	}
-	
+
 	if c.Cache.MaxSize < 0 {
 		return ErrInvalidCacheSize
 	}
-	
+
 	if c.MaxConcurrentQueries < 1 {
 		return ErrInvalidConcurrency
 	}
-	
+
 	return nil
 }

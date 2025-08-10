@@ -373,10 +373,10 @@ func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 
 	// Convert configuration
 	dnsConfig := dns.ConvertConfig(cfg.DNS)
-	
+
 	// Create DNS server factory
 	factory := dns.NewFactory(dnsLogger)
-	
+
 	// Create DNS server
 	server, err := factory.CreateServer(dnsConfig)
 	if err != nil {
@@ -388,10 +388,10 @@ func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	go func() {
 		dnsLogger.Success("🚀 DNS server starting on %s:%d", cfg.DNS.Host, cfg.DNS.Port)
 		dnsLogger.InfoFields("DNS server configuration", map[string]any{
-			"cache_max_size":       cfg.DNS.Cache.MaxSize,
-			"cache_default_ttl":    cfg.DNS.Cache.DefaultTTL,
-			"upstream_servers":     len(cfg.DNS.Forwarder.Upstreams),
-			"max_concurrent":       cfg.DNS.MaxConcurrentQueries,
+			"cache_max_size":    cfg.DNS.Cache.MaxSize,
+			"cache_default_ttl": cfg.DNS.Cache.DefaultTTL,
+			"upstream_servers":  len(cfg.DNS.Forwarder.Upstreams),
+			"max_concurrent":    cfg.DNS.MaxConcurrentQueries,
 		})
 
 		if len(cfg.DNS.Forwarder.Upstreams) > 0 {
@@ -435,10 +435,10 @@ func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 		time.Sleep(2 * time.Second)
 		stats := server.GetStats()
 		dnsLogger.InfoFields("DNS server status", map[string]any{
-			"uptime":         time.Since(stats.StartTime),
-			"queries_total":  stats.QueriesReceived,
-			"cache_hits":     stats.CacheHits,
-			"cache_misses":   stats.CacheMisses,
+			"uptime":        time.Since(stats.StartTime),
+			"queries_total": stats.QueriesReceived,
+			"cache_hits":    stats.CacheHits,
+			"cache_misses":  stats.CacheMisses,
 		})
 	}()
 

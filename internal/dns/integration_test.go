@@ -46,21 +46,21 @@ func TestDNSServer_Integration(t *testing.T) {
 		},
 
 		Forwarder: ForwarderConfig{
-			Enabled:         true,
-			Upstreams:       []string{"8.8.8.8:53"}, // Single upstream for testing
-			Timeout:         5 * time.Second,
-			Retries:         1,
-			HealthCheck:     false, // Disable health check for testing
-			HealthInterval:  30 * time.Second,
-			LoadBalancing:   "round_robin",
-			EDNS0Enabled:    false,
-			UDPSize:         512,
+			Enabled:        true,
+			Upstreams:      []string{"8.8.8.8:53"}, // Single upstream for testing
+			Timeout:        5 * time.Second,
+			Retries:        1,
+			HealthCheck:    false, // Disable health check for testing
+			HealthInterval: 30 * time.Second,
+			LoadBalancing:  "round_robin",
+			EDNS0Enabled:   false,
+			UDPSize:        512,
 		},
 
 		LogQueries:           false, // Reduce noise
 		LogLevel:             0,
 		MaxConcurrentQueries: 10,
-		BufferSize:          512,
+		BufferSize:           512,
 	}
 
 	// Create server
@@ -261,14 +261,14 @@ func TestDNSForwarder_Integration(t *testing.T) {
 	}
 
 	config := ForwarderConfig{
-		Enabled:         true,
-		Upstreams:       []string{"8.8.8.8:53"},
-		Timeout:         5 * time.Second,
-		Retries:         1,
-		HealthCheck:     false,
-		LoadBalancing:   "round_robin",
-		EDNS0Enabled:    false,
-		UDPSize:         512,
+		Enabled:       true,
+		Upstreams:     []string{"8.8.8.8:53"},
+		Timeout:       5 * time.Second,
+		Retries:       1,
+		HealthCheck:   false,
+		LoadBalancing: "round_robin",
+		EDNS0Enabled:  false,
+		UDPSize:       512,
 	}
 
 	forwarder := NewForwarder(config)

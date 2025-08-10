@@ -20,10 +20,10 @@ type Cache struct {
 
 // cacheNode represents a node in the LRU cache
 type cacheNode struct {
-	key      string
-	entry    *CacheEntry
-	prev     *cacheNode
-	next     *cacheNode
+	key   string
+	entry *CacheEntry
+	prev  *cacheNode
+	next  *cacheNode
 }
 
 // NewCache creates a new DNS cache
@@ -36,13 +36,13 @@ func NewCache(config CacheConfig) DNSCache {
 			MaxSize: config.MaxSize,
 		},
 	}
-	
+
 	// Initialize doubly linked list with sentinel nodes
 	cache.head = &cacheNode{}
 	cache.tail = &cacheNode{}
 	cache.head.next = cache.tail
 	cache.tail.prev = cache.head
-	
+
 	return cache
 }
 
@@ -51,18 +51,18 @@ func (c *Cache) Get(question DNSQuestion) (*CacheEntry, bool) {
 	if !c.config.Enabled {
 		return nil, false
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.makeKey(question)
 	node, exists := c.entries[key]
-	
+
 	if !exists {
 		c.stats.Misses++
 		return nil, false
 	}
-	
+
 	// Check if entry is expired
 	if time.Now().After(node.entry.ExpiresAt) {
 		c.removeNode(node)
@@ -71,17 +71,17 @@ func (c *Cache) Get(question DNSQuestion) (*CacheEntry, bool) {
 		c.stats.Misses++
 		return nil, false
 	}
-	
+
 	// Move to front (most recently used)
 	c.moveToFront(node)
-	
+
 	// Update access statistics
 	node.entry.AccessTime = time.Now()
 	node.entry.HitCount++
-	
+
 	c.stats.Hits++
 	c.updateHitRate()
-	
+
 	return node.entry, true
 }
 
@@ -90,12 +90,12 @@ func (c *Cache) Set(question DNSQuestion, response *DNSResponse, ttl time.Durati
 	if !c.config.Enabled {
 		return
 	}
-	
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.makeKey(question)
-	
+
 	// Check if entry already exists
 	if node, exists := c.entries[key]; exists {
 		// Update existing entry
@@ -105,12 +105,12 @@ func (c *Cache) Set(question DNSQuestion, response *DNSResponse, ttl time.Durati
 		c.moveToFront(node)
 		return
 	}
-	
+
 	// Evict if cache is full
 	if c.currentSize >= c.maxSize {
 		c.evictLRU()
 	}
-	
+
 	// Create new entry
 	entry := &CacheEntry{
 		Response:   response,
@@ -118,17 +118,17 @@ func (c *Cache) Set(question DNSQuestion, response *DNSResponse, ttl time.Durati
 		AccessTime: time.Now(),
 		HitCount:   0,
 	}
-	
+
 	// Create new node and add to front
 	node := &cacheNode{
 		key:   key,
 		entry: entry,
 	}
-	
+
 	c.addToFront(node)
 	c.entries[key] = node
 	c.currentSize++
-	
+
 	c.stats.Size = c.currentSize
 }
 
@@ -136,7 +136,7 @@ func (c *Cache) Set(question DNSQuestion, response *DNSResponse, ttl time.Durati
 func (c *Cache) Delete(question DNSQuestion) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	key := c.makeKey(question)
 	if node, exists := c.entries[key]; exists {
 		c.removeNode(node)
@@ -150,12 +150,12 @@ func (c *Cache) Delete(question DNSQuestion) {
 func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.entries = make(map[string]*cacheNode)
 	c.head.next = c.tail
 	c.tail.prev = c.head
 	c.currentSize = 0
-	
+
 	c.stats.Size = 0
 	c.stats.Hits = 0
 	c.stats.Misses = 0
@@ -167,7 +167,7 @@ func (c *Cache) Clear() {
 func (c *Cache) GetStats() *CacheStats {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	stats := c.stats
 	stats.Size = c.currentSize
 	return &stats
@@ -177,17 +177,17 @@ func (c *Cache) GetStats() *CacheStats {
 func (c *Cache) Cleanup() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	now := time.Now()
 	var toRemove []string
-	
+
 	// Find expired entries
 	for key, node := range c.entries {
 		if now.After(node.entry.ExpiresAt) {
 			toRemove = append(toRemove, key)
 		}
 	}
-	
+
 	// Remove expired entries
 	for _, key := range toRemove {
 		if node, exists := c.entries[key]; exists {
@@ -196,7 +196,7 @@ func (c *Cache) Cleanup() {
 			c.currentSize--
 		}
 	}
-	
+
 	c.stats.Size = c.currentSize
 	c.stats.LastCleanup = now
 }
