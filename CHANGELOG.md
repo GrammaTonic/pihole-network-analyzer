@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.0.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v1.0.0...v2.0.0) (2025-08-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Enhanced dashboard introduces new API endpoints and WebSocket integration
+* **web:** Web server now includes WebSocket endpoints and requires
+gorilla/websocket dependency
+
+* Enhanced Dashboard with Chart.js Integration and Real-time WebSocket Updates (#18) ([daca396](https://github.com/GrammaTonic/pihole-network-analyzer/commit/daca396eb232de8de1d39212408bb3a60f363c51)), closes [#18](https://github.com/GrammaTonic/pihole-network-analyzer/issues/18)
+
+
+### 🚀 Features
+
+* **web:** implement comprehensive WebSocket real-time updates system ([#16](https://github.com/GrammaTonic/pihole-network-analyzer/issues/16)) ([61d8745](https://github.com/GrammaTonic/pihole-network-analyzer/commit/61d8745bbfd4a2a2825a8b6132249d0e3bf60980))
+
 ## 1.0.0 (2025-08-10)
 
 
