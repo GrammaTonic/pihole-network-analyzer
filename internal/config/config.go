@@ -70,6 +70,49 @@ func DefaultConfig() *types.Config {
 			CollectMetrics:        true,
 			EnableDetailedMetrics: true,
 		},
+
+		NetworkAnalysis: types.NetworkAnalysisConfig{
+			Enabled: false,
+			DeepPacketInspection: types.DPIConfig{
+				Enabled:          false,
+				AnalyzeProtocols: []string{"DNS_UDP", "DNS_TCP"},
+				PacketSampling:   1.0,
+				MaxPacketSize:    1500,
+				BufferSize:       10000,
+				TimeWindow:       "1h",
+			},
+			TrafficPatterns: types.TrafficPatternsConfig{
+				Enabled:           false,
+				PatternTypes:      []string{"bandwidth", "temporal", "client"},
+				AnalysisWindow:    "2h",
+				MinDataPoints:     10,
+				PatternThreshold:  0.6,
+				AnomalyDetection:  true,
+			},
+			SecurityAnalysis: types.SecurityAnalysisConfig{
+				Enabled:               false,
+				ThreatDetection:       true,
+				SuspiciousPatterns:    []string{"malware", "phishing", "botnet"},
+				BlacklistDomains:      []string{},
+				UnusualTrafficThresh:  0.75,
+				PortScanDetection:     true,
+				DNSTunnelingDetection: true,
+			},
+			Performance: types.NetworkPerformanceConfig{
+				Enabled:             false,
+				LatencyAnalysis:     true,
+				BandwidthAnalysis:   true,
+				ThroughputAnalysis:  true,
+				PacketLossDetection: true,
+				JitterAnalysis:      true,
+				QualityThresholds: types.QualityThresholds{
+					MaxLatency:    150.0,
+					MinBandwidth:  5.0,
+					MaxPacketLoss: 2.0,
+					MaxJitter:     100.0,
+				},
+			},
+		},
 	}
 }
 
