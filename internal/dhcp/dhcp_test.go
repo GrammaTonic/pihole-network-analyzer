@@ -327,39 +327,84 @@ func TestLeaseManager(t *testing.T) {
 	t.Run("RenewLease", func(t *testing.T) {
 		clientMAC := "00:11:22:33:44:AA"
 		
+		// Use a different storage instance to avoid IP conflicts
+		renewStorage := &memoryStorage{
+			config: &config.Storage,
+			logger: loggerInstance.GetSlogger(),
+		}
+		renewStorage.Initialize(ctx)
+		defer renewStorage.Close()
+		
+		renewLM := &leaseManager{
+			config:  config,
+			storage: renewStorage,
+			logger:  loggerInstance.GetSlogger(),
+		}
+		
 		// Allocate IP first
-		ip, err := lm.AllocateIP(ctx, clientMAC, "", "")
+		ip, err := renewLM.AllocateIP(ctx, clientMAC, "", "")
 		if err != nil {
 			t.Fatalf("Failed to allocate IP: %v", err)
 		}
 		
 		// Get original lease
-		originalLease, err := storage.LoadLeaseByMAC(ctx, clientMAC) // Use MAC instead of IP to get the right lease
+		originalLease, err := renewStorage.LoadLeaseByMAC(ctx, clientMAC)
 		if err != nil {
 			t.Fatalf("Failed to load original lease: %v", err)
 		}
 		
 		// Wait a bit to ensure time difference
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond) // Increase sleep time
+		
+		// Record current time for comparison
+		renewTime := time.Now()
 		
 		// Renew lease
 		duration := 48 * time.Hour
-		if err := lm.RenewLease(ctx, ip, clientMAC, duration); err != nil {
+		if err := renewLM.RenewLease(ctx, ip, clientMAC, duration); err != nil {
 			t.Fatalf("Failed to renew lease: %v", err)
 		}
 		
 		// Verify lease was renewed
-		renewedLease, err := storage.LoadLeaseByMAC(ctx, clientMAC) // Use MAC instead of IP
+		renewedLease, err := renewStorage.LoadLeaseByMAC(ctx, clientMAC)
 		if err != nil {
 			t.Fatalf("Failed to load renewed lease: %v", err)
 		}
 		
-		if renewedLease.LastRenewal == originalLease.LastRenewal {
-			t.Error("Last renewal time should have been updated")
+		// Parse and compare times
+		originalTime, err := time.Parse(time.RFC3339, originalLease.LastRenewal)
+		if err != nil {
+			t.Fatalf("Failed to parse original renewal time: %v", err)
 		}
 		
-		if renewedLease.EndTime == originalLease.EndTime {
-			t.Error("End time should have been updated")
+		renewedTime, err := time.Parse(time.RFC3339, renewedLease.LastRenewal)
+		if err != nil {
+			t.Fatalf("Failed to parse renewed renewal time: %v", err)
+		}
+		
+		if !renewedTime.After(originalTime) {
+			t.Errorf("Last renewal time should have been updated: original=%s, renewed=%s", 
+				originalLease.LastRenewal, renewedLease.LastRenewal)
+		}
+		
+		if renewedTime.Before(renewTime.Add(-1*time.Second)) {
+			t.Error("Renewed time should be close to when renewal was called")
+		}
+		
+		// Check end time was updated
+		originalEndTime, err := time.Parse(time.RFC3339, originalLease.EndTime)
+		if err != nil {
+			t.Fatalf("Failed to parse original end time: %v", err)
+		}
+		
+		renewedEndTime, err := time.Parse(time.RFC3339, renewedLease.EndTime)
+		if err != nil {
+			t.Fatalf("Failed to parse renewed end time: %v", err)
+		}
+		
+		if !renewedEndTime.After(originalEndTime) {
+			t.Errorf("End time should have been updated: original=%s, renewed=%s",
+				originalLease.EndTime, renewedLease.EndTime)
 		}
 	})
 	
