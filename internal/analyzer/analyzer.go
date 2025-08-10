@@ -55,10 +55,10 @@ func (a *EnhancedAnalyzer) Initialize(ctx context.Context) error {
 	// Initialize ML engine if enabled
 	if a.config.ML.AnomalyDetection.Enabled || a.config.ML.TrendAnalysis.Enabled {
 		a.logger.Info("🧠 Initializing ML engine")
-		
+
 		// Convert config types
 		mlConfig := a.convertToMLConfig(a.config.ML)
-		
+
 		a.mlEngine = ml.NewEngine(mlConfig, a.logger.GetSlogger())
 		if err := a.mlEngine.Initialize(ctx, mlConfig); err != nil {
 			a.logger.Warn("Failed to initialize ML engine: %v", err)
@@ -71,10 +71,10 @@ func (a *EnhancedAnalyzer) Initialize(ctx context.Context) error {
 	// Initialize alert manager if enabled
 	if a.config.Alerts.Enabled {
 		a.logger.Info("🚨 Initializing alert manager")
-		
+
 		// Convert config types
 		alertConfig := a.convertToAlertConfig(a.config.Alerts)
-		
+
 		a.alertManager = alerts.NewManager(alertConfig, a.logger)
 		if err := a.alertManager.Initialize(ctx, alertConfig); err != nil {
 			a.logger.Warn("Failed to initialize alert manager: %v", err)
@@ -199,7 +199,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 	if a.mlEngine != nil {
 		a.logger.Info("🧠 Running ML analysis")
 		mlStart := time.Now()
-		
+
 		var err error
 		mlResults, err = a.mlEngine.ProcessData(ctx, queries)
 		if err != nil {
@@ -211,7 +211,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 			mlDuration := time.Since(mlStart)
 			a.logger.Info("✅ ML analysis complete: %d anomalies detected in %s",
 				len(mlResults.Anomalies), mlDuration)
-			
+
 			if a.metricsCollector != nil {
 				a.metricsCollector.RecordAnalysisProcessTime(mlDuration)
 				// Record ML metrics
@@ -226,7 +226,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 	if a.alertManager != nil {
 		a.logger.Info("🚨 Evaluating alert rules")
 		alertStart := time.Now()
-		
+
 		if err := a.alertManager.ProcessData(ctx, result, mlResults); err != nil {
 			a.logger.Warn("Alert processing failed: %v", err)
 			if a.metricsCollector != nil {
@@ -234,12 +234,12 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 			}
 		} else {
 			alertDuration := time.Since(alertStart)
-			
+
 			// Get alert status
 			alertStatus := a.alertManager.GetStatus()
 			a.logger.Info("✅ Alert evaluation complete: %d active alerts in %s",
 				alertStatus.ActiveAlerts, alertDuration)
-			
+
 			if a.metricsCollector != nil {
 				a.metricsCollector.RecordAnalysisProcessTime(alertDuration)
 			}
@@ -261,7 +261,7 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 // Close releases resources used by the analyzer
 func (a *EnhancedAnalyzer) Close() error {
 	var err error
-	
+
 	// Close alert manager
 	if a.alertManager != nil {
 		if closeErr := a.alertManager.Close(); closeErr != nil {
@@ -269,7 +269,7 @@ func (a *EnhancedAnalyzer) Close() error {
 			err = closeErr
 		}
 	}
-	
+
 	// Close data source
 	if a.dataSource != nil {
 		if closeErr := a.dataSource.Close(); closeErr != nil {
@@ -277,7 +277,7 @@ func (a *EnhancedAnalyzer) Close() error {
 			err = closeErr
 		}
 	}
-	
+
 	return err
 }
 

@@ -338,8 +338,8 @@ func (e *Engine) GetAnalyzerInfo() AnalyzerInfo {
 		Algorithms: []string{"exponential_smoothing", "pattern_detection"},
 		Parameters: map[string]interface{}{
 			"smoothing_factor": e.config.TrendAnalysis.SmoothingFactor,
-			"min_data_points": e.config.TrendAnalysis.MinDataPoints,
-			"analysis_window": e.config.TrendAnalysis.AnalysisWindow.String(),
+			"min_data_points":  e.config.TrendAnalysis.MinDataPoints,
+			"analysis_window":  e.config.TrendAnalysis.AnalysisWindow.String(),
 		},
 		LastRun: e.lastAnalysis,
 	}
