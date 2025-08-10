@@ -20,28 +20,28 @@ import (
 
 // Client implements enhanced Prometheus integration with push gateway and remote write
 type Client struct {
-	config      *types.PrometheusExtConfig
-	logger      *slog.Logger
-	httpClient  *http.Client
-	registry    *prometheus.Registry
-	pusher      *push.Pusher
-	enabled     bool
-	status      interfaces.IntegrationStatus
-	mu          sync.RWMutex
-	metrics     map[string]prometheus.Collector
+	config     *types.PrometheusExtConfig
+	logger     *slog.Logger
+	httpClient *http.Client
+	registry   *prometheus.Registry
+	pusher     *push.Pusher
+	enabled    bool
+	status     interfaces.IntegrationStatus
+	mu         sync.RWMutex
+	metrics    map[string]prometheus.Collector
 }
 
 // NewClient creates a new enhanced Prometheus integration client
 func NewClient(config *types.PrometheusExtConfig, logger *slog.Logger) *Client {
 	registry := prometheus.NewRegistry()
-	
+
 	client := &Client{
-		config:      config,
-		logger:      logger,
-		httpClient:  &http.Client{Timeout: 30 * time.Second},
-		registry:    registry,
-		enabled:     config.Enabled,
-		metrics:     make(map[string]prometheus.Collector),
+		config:     config,
+		logger:     logger,
+		httpClient: &http.Client{Timeout: 30 * time.Second},
+		registry:   registry,
+		enabled:    config.Enabled,
+		metrics:    make(map[string]prometheus.Collector),
 		status: interfaces.IntegrationStatus{
 			Name:    "prometheus",
 			Enabled: config.Enabled,
@@ -77,7 +77,7 @@ func (c *Client) Initialize(ctx context.Context, config interface{}) error {
 	// Setup push gateway if enabled
 	if c.config.PushGateway.Enabled {
 		c.setupPushGateway()
-		
+
 		// Test push gateway connection
 		if err := c.TestConnection(ctx); err != nil {
 			c.status.LastError = err.Error()
@@ -191,6 +191,12 @@ func (c *Client) RegisterMetric(name, help string, metricType interfaces.MetricT
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	return c.registerMetricNoLock(name, help, metricType, labels)
+}
+
+// registerMetricNoLock registers a metric without acquiring the mutex lock
+// This is used internally when the lock is already held
+func (c *Client) registerMetricNoLock(name, help string, metricType interfaces.MetricType, labels []string) error {
 	if _, exists := c.metrics[name]; exists {
 		return fmt.Errorf("metric %s already registered", name)
 	}
@@ -322,7 +328,7 @@ func (c *Client) TestConnection(ctx context.Context) error {
 
 	// Test push gateway with empty metric set
 	url := fmt.Sprintf("%s/metrics/job/%s", c.config.PushGateway.URL, c.config.PushGateway.Job)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -364,7 +370,7 @@ func (c *Client) Close() error {
 	if c.config.PushGateway.Enabled && c.pusher != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		
+
 		if err := c.pushToGateway(ctx); err != nil {
 			c.logger.Error("❌ Failed to perform final push",
 				slog.String("component", "prometheus"),
@@ -417,7 +423,7 @@ func (c *Client) registerDefaultMetrics() error {
 	}
 
 	for _, metric := range defaultMetrics {
-		if err := c.RegisterMetric(metric.name, metric.help, metric.metricType, metric.labels); err != nil {
+		if err := c.registerMetricNoLock(metric.name, metric.help, metric.metricType, metric.labels); err != nil {
 			return fmt.Errorf("failed to register metric %s: %w", metric.name, err)
 		}
 	}
@@ -429,14 +435,14 @@ func (c *Client) registerDefaultMetrics() error {
 func (c *Client) updateMetricsFromAnalysis(data *types.AnalysisResult) error {
 	// Update total queries
 	if err := c.SetMetric("pihole_analyzer_ext_total_queries", float64(data.TotalQueries), nil); err != nil {
-		c.logger.Error("❌ Failed to update total queries metric", 
+		c.logger.Error("❌ Failed to update total queries metric",
 			slog.String("component", "prometheus"),
 			slog.String("error", err.Error()))
 	}
 
 	// Update unique clients
 	if err := c.SetMetric("pihole_analyzer_ext_unique_clients", float64(data.UniqueClients), nil); err != nil {
-		c.logger.Error("❌ Failed to update unique clients metric", 
+		c.logger.Error("❌ Failed to update unique clients metric",
 			slog.String("component", "prometheus"),
 			slog.String("error", err.Error()))
 	}
@@ -447,9 +453,9 @@ func (c *Client) updateMetricsFromAnalysis(data *types.AnalysisResult) error {
 			"client":   clientIP,
 			"hostname": stats.Hostname,
 		}
-		
+
 		if err := c.SetMetric("pihole_analyzer_ext_client_queries", float64(stats.QueryCount), labels); err != nil {
-			c.logger.Debug("⚠️ Failed to update client queries metric", 
+			c.logger.Debug("⚠️ Failed to update client queries metric",
 				slog.String("component", "prometheus"),
 				slog.String("client", clientIP),
 				slog.String("error", err.Error()))
@@ -466,7 +472,7 @@ func (c *Client) pushToGateway(ctx context.Context) error {
 	}
 
 	start := time.Now()
-	
+
 	if err := c.pusher.Push(); err != nil {
 		return fmt.Errorf("failed to push metrics: %w", err)
 	}
@@ -491,7 +497,7 @@ func (c *Client) sendToRemoteWrite(ctx context.Context) error {
 	// This is a simplified implementation
 	// In production, you'd use the Prometheus remote write protocol
 	// with protobuf and snappy compression
-	
+
 	// For now, we'll just log that this feature needs implementation
 	c.logger.Info("🔧 Remote write feature needs full implementation",
 		slog.String("component", "prometheus"))
@@ -502,7 +508,7 @@ func (c *Client) sendToRemoteWrite(ctx context.Context) error {
 // setCustomMetric sets a custom metric value
 func (c *Client) setCustomMetric(name string, value interface{}) error {
 	floatValue := 0.0
-	
+
 	switch v := value.(type) {
 	case float64:
 		floatValue = v
@@ -524,7 +530,7 @@ func (c *Client) setCustomMetric(name string, value interface{}) error {
 
 	// Try to find existing metric or create a gauge
 	metricName := "pihole_analyzer_ext_custom_" + strings.ReplaceAll(name, ".", "_")
-	
+
 	if _, exists := c.metrics[metricName]; !exists {
 		if err := c.RegisterMetric(metricName, "Custom metric: "+name, interfaces.MetricTypeGauge, nil); err != nil {
 			return err

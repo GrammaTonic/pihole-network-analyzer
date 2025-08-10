@@ -39,7 +39,7 @@ func (m *Manager) Initialize(ctx context.Context, config *types.IntegrationsConf
 	defer m.mu.Unlock()
 
 	m.config = config
-	
+
 	if !config.Enabled {
 		m.logger.Info("🔌 Integrations disabled in configuration",
 			slog.String("component", "integrations"))
@@ -79,7 +79,7 @@ func (m *Manager) Initialize(ctx context.Context, config *types.IntegrationsConf
 	}
 
 	m.initialized = true
-	
+
 	// Count enabled integrations manually to avoid deadlock
 	enabledCount := 0
 	for _, integration := range m.integrations {
@@ -87,7 +87,7 @@ func (m *Manager) Initialize(ctx context.Context, config *types.IntegrationsConf
 			enabledCount++
 		}
 	}
-	
+
 	m.logger.Info("✅ Monitoring integrations initialized successfully",
 		slog.String("component", "integrations"),
 		slog.Int("enabled_count", enabledCount))
@@ -100,13 +100,19 @@ func (m *Manager) RegisterIntegration(integration interfaces.MonitoringIntegrati
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	return m.registerIntegrationNoLock(integration)
+}
+
+// registerIntegrationNoLock registers an integration without acquiring the mutex lock
+// This is used internally when the lock is already held
+func (m *Manager) registerIntegrationNoLock(integration interfaces.MonitoringIntegration) error {
 	name := integration.GetName()
 	if _, exists := m.integrations[name]; exists {
 		return fmt.Errorf("integration %s already registered", name)
 	}
 
 	m.integrations[name] = integration
-	
+
 	m.logger.Info("📋 Registered monitoring integration",
 		slog.String("component", "integrations"),
 		slog.String("integration", name))
@@ -205,7 +211,7 @@ func (m *Manager) SendToAll(ctx context.Context, data *types.AnalysisResult) err
 // TestAll tests all enabled integrations
 func (m *Manager) TestAll(ctx context.Context) map[string]error {
 	results := make(map[string]error)
-	
+
 	if !m.initialized || !m.config.Enabled {
 		return results
 	}
@@ -282,12 +288,12 @@ func (m *Manager) initializeGrafana(ctx context.Context) error {
 
 	// Import and create Grafana client
 	grafanaClient := grafana.NewClient(&m.config.Grafana, m.logger)
-	
+
 	if err := grafanaClient.Initialize(ctx, &m.config.Grafana); err != nil {
 		return fmt.Errorf("failed to initialize Grafana client: %w", err)
 	}
 
-	return m.RegisterIntegration(grafanaClient)
+	return m.registerIntegrationNoLock(grafanaClient)
 }
 
 // initializeLoki initializes the Loki integration if enabled
@@ -300,12 +306,12 @@ func (m *Manager) initializeLoki(ctx context.Context) error {
 
 	// Import and create Loki client
 	lokiClient := loki.NewClient(&m.config.Loki, m.logger)
-	
+
 	if err := lokiClient.Initialize(ctx, &m.config.Loki); err != nil {
 		return fmt.Errorf("failed to initialize Loki client: %w", err)
 	}
 
-	return m.RegisterIntegration(lokiClient)
+	return m.registerIntegrationNoLock(lokiClient)
 }
 
 // initializePrometheus initializes the Prometheus integration if enabled
@@ -318,12 +324,12 @@ func (m *Manager) initializePrometheus(ctx context.Context) error {
 
 	// Import and create Prometheus client
 	prometheusClient := prometheus.NewClient(&m.config.Prometheus, m.logger)
-	
+
 	if err := prometheusClient.Initialize(ctx, &m.config.Prometheus); err != nil {
 		return fmt.Errorf("failed to initialize Prometheus client: %w", err)
 	}
 
-	return m.RegisterIntegration(prometheusClient)
+	return m.registerIntegrationNoLock(prometheusClient)
 }
 
 // initializeGeneric initializes generic integrations
@@ -337,7 +343,7 @@ func (m *Manager) initializeGeneric(ctx context.Context) error {
 	m.logger.Info("🔧 Generic integrations will be implemented",
 		slog.String("component", "integrations"),
 		slog.Int("count", len(m.config.Generic)))
-	
+
 	return nil
 }
 
