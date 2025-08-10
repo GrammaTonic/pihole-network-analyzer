@@ -255,14 +255,14 @@ func TestFormatLabels(t *testing.T) {
 			labels: map[string]string{
 				"service": "pihole-analyzer",
 			},
-			expected: `{service="pihole-analyzer"}`,
+			expected: `{"service":"pihole-analyzer"}`,
 		},
 		{
 			labels: map[string]string{
 				"service": "pihole-analyzer",
 				"level":   "info",
 			},
-			expected: `{level="info",service="pihole-analyzer"}`, // Sorted alphabetically
+			expected: `{"level":"info","service":"pihole-analyzer"}`, // Sorted alphabetically
 		},
 	}
 
