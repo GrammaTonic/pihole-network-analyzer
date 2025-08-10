@@ -33,6 +33,12 @@ type Flags struct {
 	EnableSecurityAnalysis    *bool
 	EnablePerformanceAnalysis *bool
 	NetworkAnalysisConfig     *string
+	// DHCP Server flags
+	EnableDHCP     *bool
+	DHCPInterface  *string
+	DHCPPoolStart  *string
+	DHCPPoolEnd    *string
+	DHCPConfig     *string
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -60,6 +66,12 @@ func ParseFlags() *Flags {
 		EnableSecurityAnalysis:    flag.Bool("enable-security-analysis", false, "Enable security threat analysis"),
 		EnablePerformanceAnalysis: flag.Bool("enable-performance-analysis", false, "Enable network performance analysis"),
 		NetworkAnalysisConfig:     flag.String("network-config", "", "Path to network analysis configuration file"),
+		// DHCP Server flags
+		EnableDHCP:    flag.Bool("dhcp", false, "Enable DHCP server"),
+		DHCPInterface: flag.String("dhcp-interface", "", "Network interface for DHCP server (e.g., eth0, wlan0)"),
+		DHCPPoolStart: flag.String("dhcp-pool-start", "", "DHCP pool start IP address"),
+		DHCPPoolEnd:   flag.String("dhcp-pool-end", "", "DHCP pool end IP address"),
+		DHCPConfig:    flag.String("dhcp-config", "", "Path to DHCP server configuration file"),
 	}
 
 	flag.Parse()
@@ -116,6 +128,9 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 	// Apply network analysis flags
 	ApplyNetworkAnalysisFlags(flags, cfg)
+	
+	// Apply DHCP flags
+	ApplyDHCPFlags(flags, cfg)
 }
 
 // ApplyNetworkAnalysisFlags applies network analysis related flags to configuration
@@ -141,6 +156,25 @@ func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
 
 	if *flags.EnablePerformanceAnalysis {
 		cfg.NetworkAnalysis.Performance.Enabled = true
+	}
+}
+
+// ApplyDHCPFlags applies DHCP related flags to configuration
+func ApplyDHCPFlags(flags *Flags, cfg *types.Config) {
+	if *flags.EnableDHCP {
+		cfg.DHCP.Enabled = true
+	}
+	
+	if *flags.DHCPInterface != "" {
+		cfg.DHCP.Interface = *flags.DHCPInterface
+	}
+	
+	if *flags.DHCPPoolStart != "" {
+		cfg.DHCP.Pool.StartIP = *flags.DHCPPoolStart
+	}
+	
+	if *flags.DHCPPoolEnd != "" {
+		cfg.DHCP.Pool.EndIP = *flags.DHCPPoolEnd
 	}
 }
 
@@ -182,6 +216,22 @@ func GetNetworkAnalysisConfig(flags *Flags) map[string]any {
 	}
 }
 
+// IsDHCPEnabled returns true if DHCP server is requested
+func IsDHCPEnabled(flags *Flags) bool {
+	return *flags.EnableDHCP
+}
+
+// GetDHCPConfig extracts DHCP configuration from flags
+func GetDHCPConfig(flags *Flags) map[string]any {
+	return map[string]any{
+		"enabled":    IsDHCPEnabled(flags),
+		"interface":  *flags.DHCPInterface,
+		"pool_start": *flags.DHCPPoolStart,
+		"pool_end":   *flags.DHCPPoolEnd,
+		"config_file": *flags.DHCPConfig,
+	}
+}
+
 // ValidateInput validates command-line input
 func ValidateInput(flags *Flags) error {
 	// No specific validation needed for API-only version
@@ -214,6 +264,15 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 			}
 			if *flags.EnablePerformanceAnalysis {
 				fmt.Println("  • Network Performance Analysis")
+			}
+		}
+		if IsDHCPEnabled(flags) {
+			fmt.Println("🌐 DHCP Server enabled")
+			if *flags.DHCPInterface != "" {
+				fmt.Printf("  • Interface: %s\n", *flags.DHCPInterface)
+			}
+			if *flags.DHCPPoolStart != "" && *flags.DHCPPoolEnd != "" {
+				fmt.Printf("  • IP Pool: %s - %s\n", *flags.DHCPPoolStart, *flags.DHCPPoolEnd)
 			}
 		}
 	}
