@@ -152,8 +152,11 @@ func (s *Server) Stop() error {
 
 // setupRoutes configures HTTP routes
 func (s *Server) setupRoutes(mux *http.ServeMux) {
-	// Main dashboard
+	// Main dashboard (original)
 	mux.HandleFunc("/", s.handleDashboard)
+
+	// Enhanced dashboard
+	mux.HandleFunc("/enhanced", s.handleEnhancedDashboard)
 
 	// WebSocket endpoint
 	if s.wsManager != nil {
@@ -164,6 +167,14 @@ func (s *Server) setupRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/status", s.handleAPIStatus)
 	mux.HandleFunc("/api/analysis", s.handleAPIAnalysis)
 	mux.HandleFunc("/api/clients", s.handleAPIClients)
+
+	// Chart API endpoints
+	chartHandler := NewChartAPIHandler(s.dataSource, s.logger)
+	mux.HandleFunc("/api/charts/timeline", chartHandler.HandleTimelineChart)
+	mux.HandleFunc("/api/charts/clients", chartHandler.HandleClientChart)
+	mux.HandleFunc("/api/charts/domains", chartHandler.HandleDomainChart)
+	mux.HandleFunc("/api/charts/topology", chartHandler.HandleTopologyChart)
+	mux.HandleFunc("/api/charts/performance", chartHandler.HandlePerformanceChart)
 
 	// Health check
 	mux.HandleFunc("/health", s.handleHealth)
@@ -378,4 +389,50 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+}
+
+// handleEnhancedDashboard serves the enhanced dashboard page with interactive charts
+func (s *Server) handleEnhancedDashboard(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx := r.Context()
+
+	// Get analysis data
+	analysisResult, err := s.dataSource.GetAnalysisResult(ctx)
+	if err != nil {
+		s.logger.Error("Failed to get analysis result: %v", err)
+		http.Error(w, "Failed to load analysis data", http.StatusInternalServerError)
+		return
+	}
+
+	// Get connection status
+	connectionStatus := s.dataSource.GetConnectionStatus()
+
+	// Template data
+	data := struct {
+		Title            string
+		AnalysisResult   *types.AnalysisResult
+		ConnectionStatus *types.ConnectionStatus
+		ServerInfo       map[string]string
+	}{
+		Title:            "Pi-hole Network Analyzer - Enhanced Dashboard",
+		AnalysisResult:   analysisResult,
+		ConnectionStatus: connectionStatus,
+		ServerInfo: map[string]string{
+			"Version":   "1.0.0",
+			"BuildTime": time.Now().Format("2006-01-02 15:04:05"),
+		},
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := s.templates.ExecuteTemplate(w, "dashboard_enhanced.html", data); err != nil {
+		s.logger.Error("Failed to execute enhanced dashboard template: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	s.logger.Debug("Enhanced dashboard served successfully")
 }

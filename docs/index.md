@@ -19,6 +19,10 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 | Document | Description | Audience |
 |----------|-------------|----------|
 | **[Usage Guide](usage.md)** | Command-line options and workflows | Daily users |
+| **[Web UI Guide](web-ui.md)** | Web dashboard and interface | Dashboard users |
+| **[Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md)** | Advanced dashboard features | Power users |
+| **[Enhanced Dashboard API](ENHANCED_DASHBOARD_API.md)** | REST API endpoints and WebSocket | Developers |
+| **[Enhanced Dashboard Deployment](ENHANCED_DASHBOARD_DEPLOYMENT.md)** | Production deployment guide | DevOps engineers |
 | **[Troubleshooting Guide](troubleshooting.md)** | Common issues and solutions | Support and users |
 
 ### 🛠️ Development and Contribution
@@ -75,6 +79,18 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 - [Configuration Guide](configuration.md) - Customizing behavior
 - [Troubleshooting Guide](troubleshooting.md) - Solving problems
 
+#### **Dashboard Users**
+- [Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md) - Complete dashboard features
+- [Enhanced Dashboard API](ENHANCED_DASHBOARD_API.md) - REST API and WebSocket integration
+- [Web UI Guide](web-ui.md) - Basic web interface
+- [Troubleshooting Guide](troubleshooting.md) - Solving problems
+
+#### **DevOps Engineers**
+- [Enhanced Dashboard Deployment](ENHANCED_DASHBOARD_DEPLOYMENT.md) - Production deployment
+- [Container Usage Guide](container-usage.md) - Docker operations
+- [Container Registry Guide](container-registry.md) - Registry management
+- [Fast Builds Guide](fast-builds.md) - Build optimization
+
 #### **Development and Customization**
 - [Development Guide](development.md) - Building and extending
 - [API Reference](api.md) - Internal APIs and data structures
@@ -91,6 +107,7 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 
 | Topic | Primary Document | Related Documents |
 |-------|------------------|-------------------|
+| Enhanced Dashboard | [Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md) | [Enhanced Dashboard API](ENHANCED_DASHBOARD_API.md), [Enhanced Dashboard Deployment](ENHANCED_DASHBOARD_DEPLOYMENT.md) |
 | JSON configuration | [Configuration Guide](configuration.md) | [Installation](installation.md), [API Reference](api.md) |
 | Pi-hole API setup | [API Reference](api.md) | [Configuration](configuration.md), [Troubleshooting](troubleshooting.md) |
 | Network exclusions | [Configuration Guide](configuration.md) | [Usage](usage.md) |
@@ -100,6 +117,8 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 
 | Topic | Primary Document | Related Documents |
 |-------|------------------|-------------------|
+| Dashboard Deployment | [Enhanced Dashboard Deployment](ENHANCED_DASHBOARD_DEPLOYMENT.md) | [Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md), [Container Usage](container-usage.md) |
+| WebSocket Integration | [Enhanced Dashboard API](ENHANCED_DASHBOARD_API.md) | [Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md), [Web UI](web-ui.md) |
 | Command-line usage | [Usage Guide](usage.md) | [Configuration](configuration.md) |
 | Build system | [Development Guide](development.md) | [Fast Builds](fast-builds.md) |
 | Container deployment | [Container Usage Guide](container-usage.md) | [Container Registry](container-registry.md) |
@@ -109,6 +128,7 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 
 | Topic | Primary Document | Related Documents |
 |-------|------------------|-------------------|
+| Chart API Endpoints | [Enhanced Dashboard API](ENHANCED_DASHBOARD_API.md) | [Enhanced Dashboard User Guide](ENHANCED_DASHBOARD_USER_GUIDE.md), [API Reference](api.md) |
 | Pi-hole API client | [API Reference](api.md) | [Development](development.md) |
 | Authentication | [API Reference](api.md) | [Configuration](configuration.md) |
 | Network analysis | [API Reference](api.md) | [Usage](usage.md) |
