@@ -558,3 +558,340 @@ func GetStatusCodeFromString(status string) int {
 		return 0
 	}
 }
+
+// convertToMLConfig converts types.MLConfig to ml.MLConfig
+func (a *EnhancedAnalyzer) convertToMLConfig(config types.MLConfig) ml.MLConfig {
+	// Parse duration strings
+	var windowSize time.Duration
+	if config.AnomalyDetection.WindowSize != "" {
+		if d, err := time.ParseDuration(config.AnomalyDetection.WindowSize); err == nil {
+			windowSize = d
+		} else {
+			windowSize = 24 * time.Hour // default
+		}
+	} else {
+		windowSize = 24 * time.Hour // default
+	}
+
+	var analysisWindow, forecastWindow, retrainInterval, timeoutDuration, cacheDuration time.Duration
+
+	if config.TrendAnalysis.AnalysisWindow != "" {
+		if d, err := time.ParseDuration(config.TrendAnalysis.AnalysisWindow); err == nil {
+			analysisWindow = d
+		} else {
+			analysisWindow = 1 * time.Hour // default
+		}
+	} else {
+		analysisWindow = 1 * time.Hour // default
+	}
+
+	if config.TrendAnalysis.ForecastWindow != "" {
+		if d, err := time.ParseDuration(config.TrendAnalysis.ForecastWindow); err == nil {
+			forecastWindow = d
+		} else {
+			forecastWindow = 30 * time.Minute // default
+		}
+	} else {
+		forecastWindow = 30 * time.Minute // default
+	}
+
+	if config.Training.RetrainInterval != "" {
+		if d, err := time.ParseDuration(config.Training.RetrainInterval); err == nil {
+			retrainInterval = d
+		} else {
+			retrainInterval = 24 * time.Hour // default
+		}
+	} else {
+		retrainInterval = 24 * time.Hour // default
+	}
+
+	if config.Performance.TimeoutDuration != "" {
+		if d, err := time.ParseDuration(config.Performance.TimeoutDuration); err == nil {
+			timeoutDuration = d
+		} else {
+			timeoutDuration = 30 * time.Second // default
+		}
+	} else {
+		timeoutDuration = 30 * time.Second // default
+	}
+
+	if config.Performance.CacheDuration != "" {
+		if d, err := time.ParseDuration(config.Performance.CacheDuration); err == nil {
+			cacheDuration = d
+		} else {
+			cacheDuration = 5 * time.Minute // default
+		}
+	} else {
+		cacheDuration = 5 * time.Minute // default
+	}
+
+	// Convert anomaly types
+	var anomalyTypes []ml.AnomalyType
+	for _, typeStr := range config.AnomalyDetection.AnomalyTypes {
+		switch typeStr {
+		case "volume_spike":
+			anomalyTypes = append(anomalyTypes, ml.AnomalyTypeVolumeSpike)
+		case "unusual_domain":
+			anomalyTypes = append(anomalyTypes, ml.AnomalyTypeUnusualDomain)
+		case "unusual_client":
+			anomalyTypes = append(anomalyTypes, ml.AnomalyTypeUnusualClient)
+		case "time_pattern":
+			anomalyTypes = append(anomalyTypes, ml.AnomalyTypeTimePattern)
+		}
+	}
+
+	return ml.MLConfig{
+		AnomalyDetection: ml.AnomalyDetectionConfig{
+			Enabled:       config.AnomalyDetection.Enabled,
+			Sensitivity:   config.AnomalyDetection.Sensitivity,
+			MinConfidence: config.AnomalyDetection.MinConfidence,
+			WindowSize:    windowSize,
+			AnomalyTypes:  anomalyTypes,
+			Thresholds:    config.AnomalyDetection.Thresholds,
+		},
+		TrendAnalysis: ml.TrendAnalysisConfig{
+			Enabled:         config.TrendAnalysis.Enabled,
+			AnalysisWindow:  analysisWindow,
+			ForecastWindow:  forecastWindow,
+			MinDataPoints:   config.TrendAnalysis.MinDataPoints,
+			SmoothingFactor: config.TrendAnalysis.SmoothingFactor,
+		},
+		Training: ml.TrainingConfig{
+			AutoRetrain:     config.Training.AutoRetrain,
+			RetrainInterval: retrainInterval,
+			MinTrainingSize: config.Training.MinTrainingSize,
+			MaxTrainingSize: config.Training.MaxTrainingSize,
+			ValidationSplit: config.Training.ValidationSplit,
+		},
+		Performance: ml.PerformanceConfig{
+			MaxConcurrency:  config.Performance.MaxConcurrency,
+			TimeoutDuration: timeoutDuration,
+			CacheEnabled:    config.Performance.CacheEnabled,
+			CacheDuration:   cacheDuration,
+			BatchSize:       config.Performance.BatchSize,
+		},
+	}
+}
+
+// convertToAlertConfig converts types.AlertConfig to alerts.AlertConfig
+func (a *EnhancedAnalyzer) convertToAlertConfig(config types.AlertConfig) alerts.AlertConfig {
+	// Parse duration strings
+	var defaultCooldown, alertRetention time.Duration
+
+	if config.DefaultCooldown != "" {
+		if d, err := time.ParseDuration(config.DefaultCooldown); err == nil {
+			defaultCooldown = d
+		} else {
+			defaultCooldown = 5 * time.Minute // default
+		}
+	} else {
+		defaultCooldown = 5 * time.Minute // default
+	}
+
+	if config.AlertRetention != "" {
+		if d, err := time.ParseDuration(config.AlertRetention); err == nil {
+			alertRetention = d
+		} else {
+			alertRetention = 7 * 24 * time.Hour // default
+		}
+	} else {
+		alertRetention = 7 * 24 * time.Hour // default
+	}
+
+	// Convert severity
+	var defaultSeverity alerts.AlertSeverity
+	switch config.DefaultSeverity {
+	case "info":
+		defaultSeverity = alerts.SeverityInfo
+	case "warning":
+		defaultSeverity = alerts.SeverityWarning
+	case "error":
+		defaultSeverity = alerts.SeverityError
+	case "critical":
+		defaultSeverity = alerts.SeverityCritical
+	default:
+		defaultSeverity = alerts.SeverityWarning
+	}
+
+	// Convert notification config
+	var slackTimeout, emailTimeout, notificationTimeout, evaluationInterval time.Duration
+	var storageRetention time.Duration
+
+	if config.Notifications.Slack.Timeout != "" {
+		if d, err := time.ParseDuration(config.Notifications.Slack.Timeout); err == nil {
+			slackTimeout = d
+		} else {
+			slackTimeout = 30 * time.Second
+		}
+	} else {
+		slackTimeout = 30 * time.Second
+	}
+
+	if config.Notifications.Email.Timeout != "" {
+		if d, err := time.ParseDuration(config.Notifications.Email.Timeout); err == nil {
+			emailTimeout = d
+		} else {
+			emailTimeout = 30 * time.Second
+		}
+	} else {
+		emailTimeout = 30 * time.Second
+	}
+
+	if config.Performance.NotificationTimeout != "" {
+		if d, err := time.ParseDuration(config.Performance.NotificationTimeout); err == nil {
+			notificationTimeout = d
+		} else {
+			notificationTimeout = 30 * time.Second
+		}
+	} else {
+		notificationTimeout = 30 * time.Second
+	}
+
+	if config.Performance.EvaluationInterval != "" {
+		if d, err := time.ParseDuration(config.Performance.EvaluationInterval); err == nil {
+			evaluationInterval = d
+		} else {
+			evaluationInterval = 30 * time.Second
+		}
+	} else {
+		evaluationInterval = 30 * time.Second
+	}
+
+	if config.Storage.Retention != "" {
+		if d, err := time.ParseDuration(config.Storage.Retention); err == nil {
+			storageRetention = d
+		} else {
+			storageRetention = 24 * time.Hour
+		}
+	} else {
+		storageRetention = 24 * time.Hour
+	}
+
+	// Convert rules
+	var rules []alerts.AlertRule
+	for _, rule := range config.Rules {
+		var cooldown time.Duration
+		if rule.CooldownPeriod != "" {
+			if d, err := time.ParseDuration(rule.CooldownPeriod); err == nil {
+				cooldown = d
+			} else {
+				cooldown = 5 * time.Minute
+			}
+		} else {
+			cooldown = 5 * time.Minute
+		}
+
+		var severity alerts.AlertSeverity
+		switch rule.Severity {
+		case "info":
+			severity = alerts.SeverityInfo
+		case "warning":
+			severity = alerts.SeverityWarning
+		case "error":
+			severity = alerts.SeverityError
+		case "critical":
+			severity = alerts.SeverityCritical
+		default:
+			severity = alerts.SeverityWarning
+		}
+
+		// Convert conditions
+		var conditions []alerts.AlertCondition
+		for _, condition := range rule.Conditions {
+			conditions = append(conditions, alerts.AlertCondition{
+				Field:      condition.Field,
+				Operator:   condition.Operator,
+				Value:      condition.Value,
+				TimeWindow: condition.TimeWindow,
+			})
+		}
+
+		// Convert alert type
+		var alertType alerts.AlertType
+		switch rule.Type {
+		case "anomaly":
+			alertType = alerts.AlertTypeAnomaly
+		case "threshold":
+			alertType = alerts.AlertTypeThreshold
+		case "connectivity":
+			alertType = alerts.AlertTypeConnectivity
+		case "performance":
+			alertType = alerts.AlertTypePerformance
+		case "security":
+			alertType = alerts.AlertTypeSecurity
+		case "configuration":
+			alertType = alerts.AlertTypeConfiguration
+		default:
+			alertType = alerts.AlertTypeThreshold
+		}
+
+		// Convert channels
+		var channels []alerts.NotificationChannel
+		for _, channel := range rule.Channels {
+			switch channel {
+			case "log":
+				channels = append(channels, alerts.ChannelLog)
+			case "slack":
+				channels = append(channels, alerts.ChannelSlack)
+			case "email":
+				channels = append(channels, alerts.ChannelEmail)
+			}
+		}
+
+		rules = append(rules, alerts.AlertRule{
+			ID:             rule.ID,
+			Name:           rule.Name,
+			Description:    rule.Description,
+			Enabled:        rule.Enabled,
+			Type:           alertType,
+			Severity:       severity,
+			Conditions:     conditions,
+			CooldownPeriod: cooldown,
+			MaxAlerts:      rule.MaxAlerts,
+			Channels:       channels,
+			Tags:           rule.Tags,
+		})
+	}
+
+	return alerts.AlertConfig{
+		Enabled:         config.Enabled,
+		Rules:           rules,
+		DefaultSeverity: defaultSeverity,
+		DefaultCooldown: defaultCooldown,
+		MaxActiveAlerts: config.MaxActiveAlerts,
+		AlertRetention:  alertRetention,
+		Notifications: alerts.NotificationConfig{
+			Slack: alerts.SlackConfig{
+				Enabled:    config.Notifications.Slack.Enabled,
+				WebhookURL: config.Notifications.Slack.WebhookURL,
+				Channel:    config.Notifications.Slack.Channel,
+				Username:   config.Notifications.Slack.Username,
+				IconEmoji:  config.Notifications.Slack.IconEmoji,
+				Timeout:    slackTimeout,
+			},
+			Email: alerts.EmailConfig{
+				Enabled:    config.Notifications.Email.Enabled,
+				SMTPHost:   config.Notifications.Email.SMTPHost,
+				SMTPPort:   config.Notifications.Email.SMTPPort,
+				Username:   config.Notifications.Email.Username,
+				Password:   config.Notifications.Email.Password,
+				From:       config.Notifications.Email.From,
+				Recipients: config.Notifications.Email.Recipients,
+				UseTLS:     config.Notifications.Email.UseTLS,
+				Timeout:    emailTimeout,
+			},
+		},
+		Storage: alerts.StorageConfig{
+			Type:      config.Storage.Type,
+			Path:      config.Storage.Path,
+			MaxSize:   config.Storage.MaxSize,
+			Retention: storageRetention,
+		},
+		Performance: alerts.AlertPerformanceConfig{
+			MaxConcurrentNotifications: config.Performance.MaxConcurrentNotifications,
+			NotificationTimeout:        notificationTimeout,
+			BatchSize:                  config.Performance.BatchSize,
+			EvaluationInterval:         evaluationInterval,
+		},
+	}
+}
