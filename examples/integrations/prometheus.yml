@@ -1,0 +1,48 @@
+# Prometheus configuration for Pi-hole Network Analyzer
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Scrape configuration
+scrape_configs:
+  # Scrape Push Gateway for Pi-hole metrics
+  - job_name: 'pihole-pushgateway'
+    static_configs:
+      - targets: ['pushgateway:9091']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    
+  # Scrape Grafana metrics
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: /metrics
+    
+  # Scrape Loki metrics
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    metrics_path: /metrics
+
+# Rule files for alerting
+rule_files:
+  - "pihole_alerts.yml"
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # Add your Alertmanager instances here
+          # - alertmanager:9093
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 15d
+    retention.size: 10GB
