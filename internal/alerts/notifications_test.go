@@ -184,7 +184,7 @@ func TestEmailHandler(t *testing.T) {
 	logger := logger.New(logger.DefaultConfig())
 	config := EmailConfig{
 		Enabled:    true,
-		SMTPHost:   "smtp.example.com",
+		SMTPHost:   "localhost",
 		SMTPPort:   587,
 		Username:   "test@example.com",
 		Password:   "password",
