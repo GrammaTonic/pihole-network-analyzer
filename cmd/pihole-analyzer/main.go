@@ -268,7 +268,7 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	} else {
 		// Use mock data source for testing
 		webLogger.Info("Using mock data source for web interface demonstration")
-		dataSource = web.NewMockWebDataSource()
+		dataSource = web.NewMockDataSourceForProduction()
 	}
 
 	// Create data source adapter for web interface

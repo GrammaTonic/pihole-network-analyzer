@@ -1,6 +1,6 @@
 # Pi-hole Network Analyzer - AI Assistant Guide
 
-A Go-based DNS analysis tool that connects to Pi-hole via API to generate colorized terminal reports with network insights, featuring web UI, metrics collection, and daemon mode.
+A Go-based DNS analysis tool that connects to Pi-hole via API to generate colorized terminal reports with network insights, featuring web UI with real-time WebSocket updates, metrics collection, and daemon mode.
 
 ## Architecture Overview
 
@@ -8,7 +8,8 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 **API-Only**: Direct Pi-hole REST API integration - no SSH or database access  
 **Structured Logging**: Complete migration from `fmt.Printf` to `log/slog` with colors/emojis  
 **Container-First**: Multi-architecture Docker builds (AMD64, ARM64, ARMv7) with optimized caching  
-**Web UI**: Built-in HTTP dashboard for real-time monitoring and daemon mode  
+**Real-time Web UI**: HTTP dashboard with WebSocket live updates and embedded templates  
+**WebSocket Infrastructure**: gorilla/websocket for real-time dashboard updates with auto-reconnection  
 **Metrics**: Prometheus endpoints for monitoring and observability  
 **Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅  
 **Alert System**: Configurable alerts for network anomalies with ML integration, Slack/Email notifications ✅  
@@ -29,7 +30,7 @@ internal/
 ├── analyzer/                # Pi-hole data processing engine with ML and alert integration
 ├── reporting/               # Colorized terminal output
 ├── cli/                     # Centralized flag management
-├── web/                     # Web UI server and dashboard templates
+├── web/                     # Web UI server and dashboard templates with WebSocket support
 ├── metrics/                 # Prometheus metrics collection and server
 ├── ml/                      # Machine learning (anomaly detection, trend analysis)
 ├── network/                 # Enhanced network analysis (DPI, traffic patterns, security, performance) ✅
@@ -72,7 +73,7 @@ Multi-service config in `types.Config`:
 ```go
 type Config struct {
     Pihole          PiholeConfig          `json:"pihole"`           // Pi-hole API settings
-    Web             WebConfig             `json:"web"`              // Web UI configuration  
+    Web             WebConfig             `json:"web"`              // Web UI configuration with WebSocket
     Metrics         MetricsConfig         `json:"metrics"`          // Prometheus metrics
     ML              MLConfig              `json:"ml"`               // Machine learning features
     NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"` // Enhanced network analysis ✅
@@ -82,6 +83,12 @@ type Config struct {
     // No SSH fields - API only
 }
 ```
+
+### External Dependencies
+The project uses minimal external dependencies:
+- **gorilla/websocket v1.5.3**: WebSocket server implementation for real-time updates
+- **Go standard library**: Core functionality (net/http, log/slog, etc.)
+- **Node.js (dev only)**: Release automation, NOT runtime dependency
 
 ### ML System Architecture
 Complete ML interfaces in `internal/ml/interfaces.go`:
@@ -96,6 +103,30 @@ type MLEngine interface {
 // Engine creation with configuration
 engine := ml.NewEngine(config.ML, logger)
 results, err := engine.ProcessData(ctx, piholeRecords)
+```
+
+### WebSocket Real-Time Updates Architecture
+Complete WebSocket system in `internal/web/`:
+```go
+// WebSocket manager with connection pooling
+type WebSocketManager struct {
+    connections map[string]*WebSocketConnection
+    updateChan  chan *UpdateMessage
+    // Connection lifecycle, broadcasting, cleanup
+}
+
+// Real-time update broadcasting
+func (s *Server) BroadcastClientUpdate(clientData interface{})
+func (s *Server) BroadcastQueryUpdate(queryData interface{})  
+func (s *Server) BroadcastMetricsUpdate(metricsData interface{})
+
+// WebSocket connection with auto-reconnection
+class WebSocketClient {
+    connect()           // Establish connection
+    handleMessage()     // Process updates
+    reconnect()         // Auto-reconnection with backoff
+    updateDOM()         // Live DOM updates
+}
 ```
 
 ### Enhanced Network Analysis Architecture
@@ -185,15 +216,15 @@ go test -v ./internal/ml/ -run TestEngine
 go run debug_ml.go  # Uses internal/ml test fixtures
 ```
 
-### Web UI and Daemon Mode
+### Web UI and WebSocket Development
 ```bash
-# Start web UI server (default: localhost:8080)
+# Start web UI server with WebSocket support (default: localhost:8080)
 ./pihole-analyzer --web --config config.json
 
-# Run in daemon mode with web UI
+# Run in daemon mode with web UI and real-time updates
 ./pihole-analyzer --daemon --web --config config.json
 
-# Custom web configuration
+# Custom web configuration with WebSocket
 ./pihole-analyzer --web --web-host 0.0.0.0 --web-port 3000 --config config.json
 ```
 
@@ -244,13 +275,15 @@ go run debug_ml.go  # Uses internal/ml test fixtures
 make docker-dev        # Development container with persistent caches
 make docker-build      # Production container build
 make docker-multi      # Multi-architecture builds
+make docker-push-ghcr  # Push to GitHub Container Registry
 ```
 
 ## Build System (40+ Makefile Targets)
 
 **Performance**: Build cache reduces build times by 60-80%  
 **Versioning**: Automatic VERSION and BUILD_TIME injection into binaries  
-**Testing**: Separate test infrastructure with mock Pi-hole data in `testing/fixtures/`
+**Testing**: Separate test infrastructure with mock Pi-hole data in `testing/fixtures/`  
+**Embedded Assets**: Web templates embedded using `//go:embed` for single binary distribution
 
 ### Fast Build Commands (Incremental)
 ```bash
@@ -267,7 +300,7 @@ make fast-build       # Optimized build with aggressive caching
 4. **Container Compatibility**: All features must work in containerized environments
 5. **Build Cache Awareness**: Check `make cache-info` after changes
 6. **API-Only Architecture**: No SSH, database, or legacy connectivity code
-7. **Web UI Foundation**: Use `internal/web` for dashboard features, ensure localhost:8080 default
+7. **Web UI Foundation**: Use `internal/web` for dashboard features, WebSocket real-time updates, ensure localhost:8080 default
 8. **Metrics Integration**: Prometheus endpoints at localhost:9090, use `internal/metrics`
 9. **Configuration Validation**: Use `internal/validation` with structured logging for all config checks
 10. **ML Algorithm Calibration**: Always test threshold values - confidence (0.75), score normalization (≤1.0), sensitivity (0.01-0.1)
@@ -275,9 +308,10 @@ make fast-build       # Optimized build with aggressive caching
 12. **Alert System Integration**: Use `internal/alerts` for alert management, supports ML integration, multi-channel notifications (Slack/Email/Log), and configurable rules
 13. **Node.js Scope Limitation**: Node.js is STRICTLY for release automation and development tooling ONLY - the Go application has zero Node.js runtime dependencies
 14. **Pure Go Runtime**: All production binaries, Docker containers, and deployed applications run on Go only - no Node.js required in production environments
-13. **Conventional Commits**: Use conventional commit format for all commits - enables automated versioning and changelog generation
-14. **GitLab Flow**: Follow GitLab Flow with release branches - main for development, release/vX.Y for stable releases, feature branches for development
-15. **Semantic Versioning**: Automated SemVer based on commit messages - feat: (minor), fix: (patch), BREAKING CHANGE: (major)
+15. **Conventional Commits**: Use conventional commit format for all commits - enables automated versioning and changelog generation
+16. **GitLab Flow**: Follow GitLab Flow with release branches - main for development, release/vX.Y for stable releases, feature branches for development
+17. **Semantic Versioning**: Automated SemVer based on commit messages - feat: (minor), fix: (patch), BREAKING CHANGE: (major)
+18. **Embedded Assets**: All web templates and static files must use `//go:embed` for single binary distribution
 
 ## Common Tasks
 
@@ -285,7 +319,7 @@ make fast-build       # Optimized build with aggressive caching
 **CLI Changes**: Modify `internal/cli/flags.go` for centralized flag management  
 **Data Structures**: Update `internal/types/types.go` for Pi-hole record structures  
 **Output Formatting**: Use `internal/reporting` with color support (`--no-color` flag)  
-**Web UI Development**: Use `internal/web` templates and server, ensure daemon mode compatibility  
+**Web UI Development**: Use `internal/web` templates and server, WebSocket manager for real-time updates, ensure daemon mode compatibility  
 **Metrics Addition**: Extend `internal/metrics` for new Prometheus endpoints  
 **Configuration Updates**: Add validation in `internal/validation` with proper error handling  
 **ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`  
@@ -309,7 +343,31 @@ testutils.RunTestMode(cfg)  // Generates mock client stats
 ./pihole-analyzer-test --test                  # Mock data
 ```
 
+### WebSocket Testing Patterns
+```go
+// Test WebSocket manager and connections
+go test -v ./internal/web/ -run TestWebSocketManager
+go test -v ./internal/web/ -run TestWebSocketConnection
+
+// Test real-time broadcasting
+manager.BroadcastUpdate("test", map[string]string{"key": "value"})
+// Verify message received in connection's Send channel
+```
+
 ## Web UI Development Patterns
+
+### WebSocket Real-Time Updates
+```go
+// Initialize WebSocket manager in server
+logger := logger.New(&logger.Config{Component: "web-server"})
+wsManager := NewWebSocketManager(logger, DefaultWebSocketConfig())
+server := &Server{wsManager: wsManager, ...}
+
+// Broadcast real-time updates
+server.BroadcastQueryUpdate(queryData)
+server.BroadcastClientUpdate(clientData)
+server.BroadcastMetricsUpdate(metricsData)
+```
 
 ### Server Lifecycle
 ```go
@@ -323,8 +381,13 @@ if err := server.Start(ctx); err != nil {
 
 ### Dashboard Integration
 ```go
-// Use templates in internal/web/templates/
-template := template.Must(template.ParseFiles("internal/web/templates/dashboard.html"))
+// Use embedded templates with WebSocket support
+//go:embed templates/*
+var templatesFS embed.FS
+template := template.Must(template.ParseFS(templatesFS, "templates/dashboard.html"))
+
+// WebSocket endpoint for real-time updates
+http.HandleFunc("/ws", server.HandleWebSocket)
 ```
 
 ### Daemon Mode Patterns
@@ -504,7 +567,7 @@ go test -v ./internal/alerts/ -run TestManager
 ### Near Term (Q2 2025)
 - **REST API**: HTTP API for programmatic access to analysis data
 - **Advanced Filtering**: Complex query filters and time-based analysis
-- **WebSocket Updates**: Real-time dashboard updates without page refresh
+- **WebSocket Updates**: Real-time dashboard updates without page refresh ✅
 
 ### Medium Term (Q3-Q4 2025)
 - **Enhanced Dashboard**: Advanced web UI with interactive charts and graphs
@@ -515,6 +578,6 @@ go test -v ./internal/alerts/ -run TestManager
 - **Enhanced ML Models**: Advanced machine learning with custom model training
 - **Mobile App**: Companion mobile application for network monitoring
 
-This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, **integration ecosystem**, **automated semantic versioning**, and **beautiful terminal output**.
+This project prioritizes **API-only Pi-hole integration**, **structured logging**, **real-time web UI with WebSocket updates**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, **integration ecosystem**, **automated semantic versioning**, and **beautiful terminal output**.
 
 **Architecture Note**: This is a **pure Go application** with zero runtime dependencies. Node.js is used exclusively for release automation and development workflow tools - it is never required in production environments or for running the actual Pi-hole analyzer.
