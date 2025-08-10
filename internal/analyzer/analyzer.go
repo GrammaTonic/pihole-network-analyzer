@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"pihole-analyzer/internal/alerts"
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/metrics"
+	"pihole-analyzer/internal/ml"
 	"pihole-analyzer/internal/types"
 )
 
@@ -17,6 +19,8 @@ type EnhancedAnalyzer struct {
 	config           *types.Config
 	logger           *logger.Logger
 	metricsCollector *metrics.Collector
+	mlEngine         ml.MLEngine
+	alertManager     alerts.AlertManager
 }
 
 // NewEnhancedAnalyzer creates a new analyzer with API data source
@@ -47,6 +51,39 @@ func (a *EnhancedAnalyzer) Initialize(ctx context.Context) error {
 	}
 
 	a.dataSource = dataSource
+
+	// Initialize ML engine if enabled
+	if a.config.ML.AnomalyDetection.Enabled || a.config.ML.TrendAnalysis.Enabled {
+		a.logger.Info("🧠 Initializing ML engine")
+		
+		// Convert config types
+		mlConfig := a.convertToMLConfig(a.config.ML)
+		
+		a.mlEngine = ml.NewEngine(mlConfig, a.logger.GetSlogger())
+		if err := a.mlEngine.Initialize(ctx, mlConfig); err != nil {
+			a.logger.Warn("Failed to initialize ML engine: %v", err)
+			// Continue without ML - not critical
+		} else {
+			a.logger.Info("✅ ML engine initialized successfully")
+		}
+	}
+
+	// Initialize alert manager if enabled
+	if a.config.Alerts.Enabled {
+		a.logger.Info("🚨 Initializing alert manager")
+		
+		// Convert config types
+		alertConfig := a.convertToAlertConfig(a.config.Alerts)
+		
+		a.alertManager = alerts.NewManager(alertConfig, a.logger)
+		if err := a.alertManager.Initialize(ctx, alertConfig); err != nil {
+			a.logger.Warn("Failed to initialize alert manager: %v", err)
+			// Continue without alerts - not critical
+		} else {
+			a.logger.Info("✅ Alert manager initialized successfully")
+		}
+	}
+
 	a.logger.Info("✅ Enhanced analyzer initialized successfully")
 	return nil
 }
@@ -157,6 +194,58 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 		Timestamp:      time.Now().Format(time.RFC3339),
 	}
 
+	// Process ML analysis if enabled
+	var mlResults *ml.MLResults
+	if a.mlEngine != nil {
+		a.logger.Info("🧠 Running ML analysis")
+		mlStart := time.Now()
+		
+		var err error
+		mlResults, err = a.mlEngine.ProcessData(ctx, queries)
+		if err != nil {
+			a.logger.Warn("ML analysis failed: %v", err)
+			if a.metricsCollector != nil {
+				a.metricsCollector.RecordError("ml_analysis_failed")
+			}
+		} else {
+			mlDuration := time.Since(mlStart)
+			a.logger.Info("✅ ML analysis complete: %d anomalies detected in %s",
+				len(mlResults.Anomalies), mlDuration)
+			
+			if a.metricsCollector != nil {
+				a.metricsCollector.RecordAnalysisProcessTime(mlDuration)
+				// Record ML metrics
+				for _, anomaly := range mlResults.Anomalies {
+					a.metricsCollector.RecordError("anomaly_detected_" + string(anomaly.Type))
+				}
+			}
+		}
+	}
+
+	// Process alerts if enabled
+	if a.alertManager != nil {
+		a.logger.Info("🚨 Evaluating alert rules")
+		alertStart := time.Now()
+		
+		if err := a.alertManager.ProcessData(ctx, result, mlResults); err != nil {
+			a.logger.Warn("Alert processing failed: %v", err)
+			if a.metricsCollector != nil {
+				a.metricsCollector.RecordError("alert_processing_failed")
+			}
+		} else {
+			alertDuration := time.Since(alertStart)
+			
+			// Get alert status
+			alertStatus := a.alertManager.GetStatus()
+			a.logger.Info("✅ Alert evaluation complete: %d active alerts in %s",
+				alertStatus.ActiveAlerts, alertDuration)
+			
+			if a.metricsCollector != nil {
+				a.metricsCollector.RecordAnalysisProcessTime(alertDuration)
+			}
+		}
+	}
+
 	// Record final analysis duration
 	totalDuration := time.Since(analysisStart)
 	if a.metricsCollector != nil {
@@ -171,10 +260,25 @@ func (a *EnhancedAnalyzer) AnalyzeData(ctx context.Context) (*types.AnalysisResu
 
 // Close releases resources used by the analyzer
 func (a *EnhancedAnalyzer) Close() error {
-	if a.dataSource != nil {
-		return a.dataSource.Close()
+	var err error
+	
+	// Close alert manager
+	if a.alertManager != nil {
+		if closeErr := a.alertManager.Close(); closeErr != nil {
+			a.logger.Warn("Failed to close alert manager: %v", closeErr)
+			err = closeErr
+		}
 	}
-	return nil
+	
+	// Close data source
+	if a.dataSource != nil {
+		if closeErr := a.dataSource.Close(); closeErr != nil {
+			a.logger.Warn("Failed to close data source: %v", closeErr)
+			err = closeErr
+		}
+	}
+	
+	return err
 }
 
 // enhanceWithNetworkAnalysis enhances client statistics with network device information
