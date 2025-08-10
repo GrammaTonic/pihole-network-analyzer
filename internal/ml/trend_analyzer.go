@@ -144,17 +144,29 @@ func (t *TrendAnalyzerImpl) analyzeQueryTrend(data []types.PiholeRecord, timeWin
 	// Calculate linear trend using least squares
 	slope := t.calculateLinearTrend(timeSeries)
 	variance := t.calculateVariance(timeSeries)
+	mean := t.calculateMean(timeSeries)
 
 	// Determine trend direction based on slope and variance
-	slopeThreshold := 0.1 * t.calculateMean(timeSeries)
-	varianceThreshold := 0.5 * t.calculateMean(timeSeries)
+	slopeThreshold := 0.01 * mean   // Reduced from 0.1 to 0.01 for more sensitivity
+	varianceThreshold := 1.0 * mean // Reduced from 2.0 to 1.0 for better volatility detection
 
+	// Check for clear trend first (prioritize slope over variance for trending data)
+	if math.Abs(slope) > slopeThreshold {
+		// Even with a trend, check if it's too volatile
+		if variance > varianceThreshold*1.5 { // Higher threshold for trending data
+			return TrendVolatile
+		}
+
+		if slope > slopeThreshold {
+			return TrendIncreasing
+		} else if slope < -slopeThreshold {
+			return TrendDecreasing
+		}
+	}
+
+	// No clear trend - classify as volatile if high variance, stable otherwise
 	if variance > varianceThreshold {
 		return TrendVolatile
-	} else if slope > slopeThreshold {
-		return TrendIncreasing
-	} else if slope < -slopeThreshold {
-		return TrendDecreasing
 	}
 
 	return TrendStable
