@@ -11,6 +11,7 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 **Web UI**: Built-in HTTP dashboard for real-time monitoring and daemon mode  
 **Metrics**: Prometheus endpoints for monitoring and observability  
 **Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅  
+**Alert System**: Configurable alerts for network anomalies with ML integration, Slack/Email notifications ✅  
 **Factory Pattern**: `interfaces.DataSourceFactory` abstracts Pi-hole vs mock data sources
 
 ## Key Components
@@ -24,14 +25,15 @@ internal/
 ├── interfaces/              # DataSource abstraction (API vs mock)
 ├── pihole/                  # Pi-hole API client with session management
 ├── logger/                  # Structured logging (slog) - USE THIS, NOT fmt.Printf
-├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig, NetworkAnalysisConfig)
-├── analyzer/                # Pi-hole data processing engine
+├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig, NetworkAnalysisConfig, AlertConfig)
+├── analyzer/                # Pi-hole data processing engine with ML and Alert integration
 ├── reporting/               # Colorized terminal output
 ├── cli/                     # Centralized flag management
 ├── web/                     # Web UI server and dashboard templates
 ├── metrics/                 # Prometheus metrics collection and server
 ├── ml/                      # Machine learning (anomaly detection, trend analysis)
 ├── network/                 # Enhanced network analysis (DPI, traffic patterns, security, performance) ✅
+├── alerts/                  # Alert system (rules, notifications, storage) ✅
 └── validation/              # Configuration validation with structured logging
 ```
 
@@ -73,6 +75,7 @@ type Config struct {
     Metrics         MetricsConfig         `json:"metrics"`          // Prometheus metrics
     ML              MLConfig              `json:"ml"`               // Machine learning features
     NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"` // Enhanced network analysis ✅
+    Alerts          AlertConfig           `json:"alerts"`           // Alert system configuration ✅
     Logging         LoggingConfig         `json:"logging"`          // Structured logging
     // No SSH fields - API only
 }
@@ -108,6 +111,22 @@ type NetworkAnalyzer interface {
 factory := network.NewAnalyzerFactory(logger)
 analyzer, err := factory.CreateNetworkAnalyzer(config.NetworkAnalysis)
 result, err := analyzer.AnalyzeTraffic(ctx, records, clientStats)
+```
+
+### Alert System Architecture
+Complete alert system in `internal/alerts/`:
+```go
+// Three-tier alert system
+type AlertManager interface {
+    AlertEvaluator    // Rule evaluation and condition checking
+    NotificationSender // Multi-channel notifications (Slack, Email, Log)
+    AlertStorage      // Alert persistence and retrieval
+}
+
+// Factory pattern for alert manager creation
+alertConfig := alerts.AlertConfig{...}
+manager := alerts.NewManager(alertConfig, logger)
+err := manager.ProcessData(ctx, analysisResult, mlResults)
 ```
 
 ## Essential Commands
@@ -177,6 +196,24 @@ go run debug_ml.go  # Uses internal/ml test fixtures
 ./pihole-analyzer-test --network-analysis --test
 ```
 
+### Alert System Commands
+```bash
+# Enable alert system with default rules
+./pihole-analyzer --alerts --config config.json
+
+# Enable alerts with specific configuration file
+./pihole-analyzer --alerts --config config-with-alerts.json
+
+# Combined alerts with ML anomaly detection
+./pihole-analyzer --alerts --ml --config config.json
+
+# Test alert system with mock data and ML
+./pihole-analyzer-test --alerts --ml --test
+
+# View alert status in daemon mode
+./pihole-analyzer --alerts --daemon --web --config config.json
+```
+
 ### Container Development
 ```bash
 make docker-dev        # Development container with persistent caches
@@ -210,6 +247,7 @@ make fast-build       # Optimized build with aggressive caching
 9. **Configuration Validation**: Use `internal/validation` with structured logging for all config checks
 10. **ML Algorithm Calibration**: Always test threshold values - confidence (0.75), score normalization (≤1.0), sensitivity (0.01-0.1)
 11. **Enhanced Network Analysis**: Use `internal/network` for DPI, traffic patterns, security, and performance analysis - all components integrate via factory pattern
+12. **Alert System Integration**: Use `internal/alerts` for alert management, supports ML integration, multi-channel notifications (Slack/Email/Log), and configurable rules
 
 ## Common Tasks
 
@@ -221,7 +259,8 @@ make fast-build       # Optimized build with aggressive caching
 **Metrics Addition**: Extend `internal/metrics` for new Prometheus endpoints  
 **Configuration Updates**: Add validation in `internal/validation` with proper error handling  
 **ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`  
-**Enhanced Network Analysis**: Extend `network.NetworkAnalyzer` interfaces, implement in `internal/network`, integrate via factory pattern
+**Enhanced Network Analysis**: Extend `network.NetworkAnalyzer` interfaces, implement in `internal/network`, integrate via factory pattern  
+**Alert System Development**: Extend `alerts.AlertManager` interfaces, implement new notification channels, configure alert rules
 
 ## Testing Infrastructure Patterns
 
@@ -374,6 +413,50 @@ go test -v ./internal/network/ -run TestSecurityAnalyzer
 go test -v ./internal/network/ -run TestPerformanceAnalyzer
 ```
 
+## Alert System Development Patterns
+
+### Alert Manager Usage
+```go
+// Initialize alert manager with configuration
+logger := logger.New(&logger.Config{Component: "alert-manager"})
+alertConfig := alerts.AlertConfig{...}
+manager := alerts.NewManager(alertConfig, logger)
+if err := manager.Initialize(ctx, alertConfig); err != nil {
+    logger.Error("Failed to initialize alert manager", slog.String("error", err.Error()))
+}
+
+// Process data for alert evaluation
+err := manager.ProcessData(ctx, analysisResult, mlResults)
+```
+
+### Component-Specific Alert Development
+```go
+// Rule evaluation
+evaluator := alerts.NewEvaluator(config, logger)
+triggeredRules, err := evaluator.EvaluateRules(ctx, data, rules)
+
+// Notification handling
+notifier := alerts.NewNotificationSender(config.Notifications, logger)
+err := notifier.SendAlert(ctx, alert, []alerts.NotificationChannel{alerts.ChannelSlack, alerts.ChannelEmail})
+
+// Alert storage
+storage := alerts.NewStorage(config.Storage, logger)
+err := storage.StoreAlert(ctx, alert)
+```
+
+### Alert System Testing Patterns
+```go
+// Test complete alert system workflow
+go test -v ./internal/alerts/ -run TestIntegrationAlertSystemWorkflow
+go test -v ./tests/integration/ -run TestAlerts_Integration
+
+// Test individual components
+go test -v ./internal/alerts/ -run TestEvaluator
+go test -v ./internal/alerts/ -run TestNotifications
+go test -v ./internal/alerts/ -run TestStorage
+go test -v ./internal/alerts/ -run TestManager
+```
+
 ## Roadmap
 
 ### Current Focus (Q1 2025)
@@ -383,6 +466,7 @@ go test -v ./internal/network/ -run TestPerformanceAnalyzer
 - **Daemon Mode**: Background service for continuous Pi-hole monitoring ✅
 - **Machine Learning**: AI-powered anomaly detection and trend analysis ✅
 - **Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅
+- **Alert System**: Configurable alerts for network anomalies with ML integration, Slack/Email notifications ✅
 
 ### Near Term (Q2 2025)
 - **REST API**: HTTP API for programmatic access to analysis data
@@ -391,13 +475,12 @@ go test -v ./internal/network/ -run TestPerformanceAnalyzer
 
 ### Medium Term (Q3-Q4 2025)
 - **Enhanced Dashboard**: Advanced web UI with interactive charts and graphs
-- **Alert System**: Configurable alerts for network anomalies
 - **Plugin Architecture**: Extensible analysis modules and custom reporters
+- **Multi-format Export**: JSON, XML, CSV export capabilities
 
 ### Long Term (2026+)
 - **Enhanced ML Models**: Advanced machine learning with custom model training
-- **Multi-format Export**: JSON, XML, CSV export capabilities
 - **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors Logging to Loki
 - **Mobile App**: Companion mobile application for network monitoring
 
-This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, and **beautiful terminal output**.
+This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, and **beautiful terminal output**.
