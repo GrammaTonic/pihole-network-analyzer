@@ -133,7 +133,7 @@ func DefaultConfig() *types.Config {
 					OverwriteExisting: true,
 					Tags:              []string{"pihole", "network", "dns"},
 				},
-				Alerts: types.AlertConfig{
+				AlertIntegration: types.GrafanaAlertConfig{
 					Enabled:         false,
 					DefaultSeverity: "warning",
 				},

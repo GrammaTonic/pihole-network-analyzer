@@ -1,0 +1,253 @@
+{
+  "online_only": false,
+  "no_exclude": false,
+  "test_mode": false,
+  "quiet": false,
+  "pihole": {
+    "host": "192.168.1.100",
+    "port": 80,
+    "api_enabled": true,
+    "api_password": "your-pihole-api-password",
+    "use_https": false,
+    "api_timeout": 30
+  },
+  "output": {
+    "colors": true,
+    "emojis": true,
+    "verbose": false,
+    "format": "table",
+    "max_clients": 50,
+    "max_domains_display": 20,
+    "save_reports": true,
+    "report_dir": "./reports"
+  },
+  "exclusions": {
+    "networks": [],
+    "ips": ["127.0.0.1", "::1"],
+    "domains": ["localhost", "local"],
+    "enable_docker": false,
+    "exclude_networks": ["169.254.0.0/16"],
+    "exclude_ips": [],
+    "exclude_hosts": []
+  },
+  "logging": {
+    "level": "INFO",
+    "enable_colors": true,
+    "enable_emojis": true,
+    "output_file": "./logs/pihole-analyzer.log",
+    "show_timestamp": true,
+    "show_caller": false
+  },
+  "web": {
+    "enabled": true,
+    "port": 8080,
+    "host": "localhost",
+    "daemon_mode": false,
+    "read_timeout_seconds": 30,
+    "write_timeout_seconds": 30,
+    "idle_timeout_seconds": 120
+  },
+  "metrics": {
+    "enabled": true,
+    "port": "9090",
+    "host": "localhost",
+    "enable_endpoint": true,
+    "collect_metrics": true,
+    "enable_detailed_metrics": true
+  },
+  "ml": {
+    "anomaly_detection": {
+      "enabled": true,
+      "sensitivity": 0.5,
+      "min_confidence": 0.75,
+      "window_size": "24h",
+      "anomaly_types": [
+        "volume_spike",
+        "unusual_domain",
+        "unusual_client",
+        "time_pattern"
+      ],
+      "thresholds": {
+        "volume_spike_multiplier": 2.0,
+        "unusual_domain_threshold": 0.01,
+        "client_activity_multiplier": 2.5,
+        "response_time_threshold": 500.0
+      }
+    },
+    "trend_analysis": {
+      "enabled": true,
+      "analysis_window": "24h",
+      "forecast_window": "6h",
+      "min_data_points": 20,
+      "smoothing_factor": 0.3
+    },
+    "training": {
+      "auto_retrain": true,
+      "retrain_interval": "24h",
+      "min_training_size": 100,
+      "max_training_size": 10000,
+      "validation_split": 0.2
+    },
+    "performance": {
+      "max_concurrency": 4,
+      "timeout_duration": "5m",
+      "cache_enabled": true,
+      "cache_duration": "1h",
+      "batch_size": 100
+    }
+  },
+  "alerts": {
+    "enabled": true,
+    "default_severity": "warning",
+    "default_cooldown": "5m",
+    "max_active_alerts": 100,
+    "alert_retention": "7d",
+    "rules": [
+      {
+        "id": "high-anomaly-score",
+        "name": "High Anomaly Score Detected",
+        "description": "Alert when ML anomaly score exceeds threshold",
+        "enabled": true,
+        "type": "anomaly",
+        "severity": "warning",
+        "conditions": [
+          {
+            "field": "anomaly_score",
+            "operator": "gt",
+            "value": 0.8
+          }
+        ],
+        "cooldown_period": "5m",
+        "channels": ["log"],
+        "tags": ["ml", "anomaly"]
+      },
+      {
+        "id": "critical-anomaly",
+        "name": "Critical Anomaly Detected",
+        "description": "Alert when critical ML anomaly is detected",
+        "enabled": true,
+        "type": "anomaly",
+        "severity": "critical",
+        "conditions": [
+          {
+            "field": "anomaly_severity",
+            "operator": "eq",
+            "value": "critical"
+          }
+        ],
+        "cooldown_period": "2m",
+        "channels": ["log", "slack", "email"],
+        "tags": ["ml", "critical"]
+      },
+      {
+        "id": "volume-spike",
+        "name": "DNS Query Volume Spike",
+        "description": "Alert when DNS query volume spikes unexpectedly",
+        "enabled": true,
+        "type": "threshold",
+        "severity": "warning",
+        "conditions": [
+          {
+            "field": "total_queries",
+            "operator": "gt",
+            "value": 1000,
+            "time_window": "5m"
+          }
+        ],
+        "cooldown_period": "10m",
+        "channels": ["log"],
+        "tags": ["volume", "threshold"]
+      },
+      {
+        "id": "unusual-domain",
+        "name": "Unusual Domain Activity",
+        "description": "Alert when unusual domain patterns are detected",
+        "enabled": true,
+        "type": "security",
+        "severity": "warning",
+        "conditions": [
+          {
+            "field": "anomaly_type",
+            "operator": "eq",
+            "value": "unusual_domain"
+          }
+        ],
+        "cooldown_period": "15m",
+        "channels": ["log", "slack"],
+        "tags": ["security", "domain"]
+      },
+      {
+        "id": "pihole-connectivity",
+        "name": "Pi-hole Connection Issues",
+        "description": "Alert when connection to Pi-hole API fails",
+        "enabled": true,
+        "type": "connectivity",
+        "severity": "error",
+        "conditions": [
+          {
+            "field": "connection_status",
+            "operator": "eq",
+            "value": "disconnected"
+          }
+        ],
+        "cooldown_period": "1m",
+        "channels": ["log", "email"],
+        "tags": ["connectivity", "pihole"]
+      },
+      {
+        "id": "high-client-volume",
+        "name": "High Client Activity",
+        "description": "Alert when individual client exceeds query threshold",
+        "enabled": true,
+        "type": "threshold",
+        "severity": "info",
+        "conditions": [
+          {
+            "field": "client_query_count",
+            "operator": "gt",
+            "value": 500,
+            "time_window": "1h"
+          }
+        ],
+        "cooldown_period": "30m",
+        "channels": ["log"],
+        "tags": ["client", "volume"]
+      }
+    ],
+    "notifications": {
+      "slack": {
+        "enabled": false,
+        "webhook_url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+        "channel": "#alerts",
+        "username": "PiHole-Analyzer",
+        "icon_emoji": ":warning:",
+        "timeout": "30s"
+      },
+      "email": {
+        "enabled": false,
+        "smtp_host": "smtp.gmail.com",
+        "smtp_port": 587,
+        "username": "your-email@gmail.com",
+        "password": "your-app-password",
+        "from": "pihole-alerts@yourdomain.com",
+        "recipients": [
+          "admin@yourdomain.com",
+          "ops@yourdomain.com"
+        ],
+        "use_tls": true,
+        "timeout": "30s"
+      }
+    },
+    "storage": {
+      "type": "memory",
+      "max_size": 1000,
+      "retention": "24h"
+    },
+    "performance": {
+      "max_concurrent_notifications": 5,
+      "notification_timeout": "30s",
+      "batch_size": 10,
+      "evaluation_interval": "30s"
+    }
+  }
+}
