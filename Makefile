@@ -111,6 +111,13 @@ release-status: ## Check semantic-release setup status
 		echo "⚠️  Git hooks: Not configured"; \
 	fi
 
+protect-release-branch: ## Protect a release branch (usage: make protect-release-branch VERSION=v1.1)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "❌ VERSION is required. Usage: make protect-release-branch VERSION=v1.1"; \
+		exit 1; \
+	fi
+	@./scripts/protect-release-branch.sh $(VERSION)
+
 # Container Build Commands
 
 # Enhanced Build Commands
