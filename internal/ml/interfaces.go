@@ -277,7 +277,7 @@ func DefaultMLConfig() MLConfig {
 	return MLConfig{
 		AnomalyDetection: AnomalyDetectionConfig{
 			Enabled:       true,
-			Sensitivity:   2.0,
+			Sensitivity:   0.5,
 			MinConfidence: 0.7,
 			WindowSize:    24 * time.Hour,
 			AnomalyTypes: []AnomalyType{
@@ -287,9 +287,10 @@ func DefaultMLConfig() MLConfig {
 				AnomalyTypeTimePattern,
 			},
 			Thresholds: map[string]float64{
-				"zscore":    2.5,
-				"volume":    100,
-				"frequency": 10,
+				"volume_spike_multiplier":    2.0,
+				"unusual_domain_threshold":   0.01,
+				"client_activity_multiplier": 2.5,
+				"response_time_threshold":    500.0,
 			},
 		},
 		TrendAnalysis: TrendAnalysisConfig{

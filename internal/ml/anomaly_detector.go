@@ -728,11 +728,20 @@ func (d *StatisticalAnomalyDetector) createClientProfile(records []types.PiholeR
 func (d *StatisticalAnomalyDetector) calculateSeverity(value, mean, stddev float64) SeverityLevel {
 	zScore := (value - mean) / stddev
 
-	if zScore > 4.0 {
+	// Convert sensitivity (0-1) to threshold adjustments
+	// sensitivity 0.0 = very sensitive (lower thresholds), 1.0 = less sensitive (higher thresholds)
+	// Use inverse relationship: lower sensitivity = lower thresholds
+	adjustmentFactor := 1.0 - d.config.Sensitivity*0.5 // 0.5 to 1.0 range
+
+	criticalThreshold := 4.0 * adjustmentFactor
+	highThreshold := 3.0 * adjustmentFactor
+	mediumThreshold := 2.0 * adjustmentFactor
+
+	if zScore >= criticalThreshold {
 		return SeverityCritical
-	} else if zScore > 3.0 {
+	} else if zScore >= highThreshold {
 		return SeverityHigh
-	} else if zScore > 2.0 {
+	} else if zScore >= mediumThreshold {
 		return SeverityMedium
 	}
 	return SeverityLow
