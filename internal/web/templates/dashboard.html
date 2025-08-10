@@ -344,19 +344,283 @@
     </div>
 
     <script>
-        // Auto-refresh every 30 seconds
-        setInterval(function() {
-            // Only refresh if the page is visible
-            if (!document.hidden) {
-                console.log('Auto-refreshing dashboard...');
+        // WebSocket connection for real-time updates
+        let ws;
+        let reconnectInterval = 1000;
+        let maxReconnectInterval = 30000;
+        let reconnectAttempts = 0;
+        let connectionStatus = false;
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            console.log('Connecting to WebSocket:', wsUrl);
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function(event) {
+                console.log('WebSocket connected');
+                connectionStatus = true;
+                reconnectAttempts = 0;
+                reconnectInterval = 1000;
+                updateConnectionIndicator(true);
+                
+                // Subscribe to all updates
+                ws.send(JSON.stringify({
+                    type: 'subscribe',
+                    channel: 'dashboard'
+                }));
+            };
+            
+            ws.onmessage = function(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+            
+            ws.onclose = function(event) {
+                console.log('WebSocket disconnected');
+                connectionStatus = false;
+                updateConnectionIndicator(false);
+                
+                // Attempt to reconnect
+                setTimeout(function() {
+                    reconnectAttempts++;
+                    reconnectInterval = Math.min(reconnectInterval * 1.5, maxReconnectInterval);
+                    console.log(`Reconnecting... Attempt ${reconnectAttempts}`);
+                    initWebSocket();
+                }, reconnectInterval);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Handle incoming WebSocket messages
+        function handleWebSocketMessage(message) {
+            console.log('Received WebSocket message:', message.type);
+            
+            switch (message.type) {
+                case 'dashboard_init':
+                case 'dashboard_update':
+                    updateDashboard(message.data);
+                    break;
+                case 'client_update':
+                    updateClient(message.data);
+                    break;
+                case 'query_update':
+                    handleQueryUpdate(message.data);
+                    break;
+                case 'metrics_update':
+                    updateMetrics(message.data);
+                    break;
+                case 'pong':
+                    console.log('Received pong from server');
+                    break;
+                default:
+                    console.log('Unknown message type:', message.type);
+            }
+        }
+
+        // Update the entire dashboard with new data
+        function updateDashboard(data) {
+            console.log('Updating dashboard with new data');
+            
+            // Update connection status
+            if (data.connection_status) {
+                updateConnectionStatus(data.connection_status);
+            }
+            
+            // Update summary statistics
+            if (data.summary) {
+                updateSummaryStats(data.summary);
+            }
+            
+            // Update client table
+            if (data.client_stats) {
+                updateClientTable(data.client_stats);
+            }
+            
+            // Update last update time
+            updateLastUpdateTime();
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(status) {
+            const indicator = document.querySelector('.status-icon');
+            const statusText = document.querySelector('.status-item span');
+            
+            if (status.connected) {
+                indicator.className = 'status-icon status-online';
+                statusText.textContent = 'Pi-hole Connection: Connected';
+            } else {
+                indicator.className = 'status-icon status-offline';
+                statusText.textContent = 'Pi-hole Connection: Disconnected';
+            }
+        }
+
+        // Update summary statistics
+        function updateSummaryStats(summary) {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            if (statNumbers.length >= 4) {
+                statNumbers[0].textContent = summary.total_queries || 0;
+                statNumbers[1].textContent = summary.total_clients || 0;
+                statNumbers[2].textContent = summary.online_clients || 0;
+                // Network devices count would need additional data
+            }
+        }
+
+        // Update client table
+        function updateClientTable(clientStats) {
+            const tbody = document.querySelector('.clients-table tbody');
+            if (!tbody) return;
+            
+            // Clear existing rows
+            tbody.innerHTML = '';
+            
+            // Add updated rows
+            Object.values(clientStats).forEach(client => {
+                if (!client) return;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${client.ip || 'Unknown'}</td>
+                    <td>${client.hostname || 'Unknown'}</td>
+                    <td>
+                        <span class="client-status ${client.is_online ? 'client-online' : 'client-offline'}">
+                            ${client.is_online ? '✅ Online' : '❌ Offline'}
+                        </span>
+                    </td>
+                    <td>${client.query_count || 0}</td>
+                    <td>${client.domain_count || 0}</td>
+                    <td>${client.mac_address || 'N/A'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update a specific client
+        function updateClient(data) {
+            console.log('Client update:', data.action, data.client.ip);
+            // For now, trigger a full table update
+            // In a more sophisticated implementation, we'd update just the specific row
+        }
+
+        // Handle query updates
+        function handleQueryUpdate(data) {
+            console.log('New query:', data.query.domain, 'from', data.client);
+            // Add visual indication of new activity
+            flashNewActivity();
+        }
+
+        // Update metrics display
+        function updateMetrics(data) {
+            console.log('Metrics update:', data);
+            // Update any metrics displays if they exist
+        }
+
+        // Update last update time
+        function updateLastUpdateTime() {
+            const lastUpdateElement = document.querySelector('.status-item:nth-child(2) span');
+            if (lastUpdateElement) {
+                const now = new Date();
+                lastUpdateElement.textContent = `Last Update: ${now.toLocaleString()}`;
+            }
+        }
+
+        // Update WebSocket connection indicator
+        function updateConnectionIndicator(connected) {
+            // You could add a WebSocket status indicator to the UI
+            const statusBar = document.querySelector('.status-bar');
+            let wsIndicator = document.querySelector('.ws-status');
+            
+            if (!wsIndicator) {
+                wsIndicator = document.createElement('div');
+                wsIndicator.className = 'status-item ws-status';
+                statusBar.appendChild(wsIndicator);
+            }
+            
+            wsIndicator.innerHTML = `
+                <div class="status-icon ${connected ? 'status-online' : 'status-offline'}"></div>
+                <span>Real-time: ${connected ? 'Connected' : 'Connecting...'}</span>
+            `;
+        }
+
+        // Flash animation for new activity
+        function flashNewActivity() {
+            const container = document.querySelector('.container');
+            container.style.transition = 'box-shadow 0.3s ease';
+            container.style.boxShadow = '0 0 20px rgba(52, 152, 219, 0.5)';
+            
+            setTimeout(() => {
+                container.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
+            }, 500);
+        }
+
+        // Manual refresh button
+        function refreshData() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'request_update',
+                    update_type: 'full'
+                }));
+            } else {
                 window.location.reload();
             }
-        }, 30000);
+        }
 
-        // Log page load
-        console.log('Pi-hole Network Analyzer Dashboard loaded');
-        console.log('Connection Status:', {{.ConnectionStatus.Connected}});
-        console.log('Total Queries:', {{if .AnalysisResult}}{{.AnalysisResult.TotalQueries}}{{else}}0{{end}});
+        // Send ping to server
+        function sendPing() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'ping'
+                }));
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Pi-hole Network Analyzer Dashboard loaded');
+            console.log('Connection Status:', '{{.ConnectionStatus.Connected}}');
+            console.log('Total Queries:', '{{if .AnalysisResult}}{{.AnalysisResult.TotalQueries}}{{else}}0{{end}}');
+            
+            // Initialize WebSocket connection
+            initWebSocket();
+            
+            // Send periodic pings
+            setInterval(sendPing, 30000);
+            
+            // Update refresh button to use WebSocket
+            const refreshButton = document.querySelector('.refresh-button');
+            if (refreshButton) {
+                refreshButton.onclick = refreshData;
+            }
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('Page hidden, maintaining WebSocket connection');
+            } else {
+                console.log('Page visible, requesting fresh data');
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    refreshData();
+                }
+            }
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (ws) {
+                ws.close();
+            }
+        });
     </script>
 </body>
 </html>
