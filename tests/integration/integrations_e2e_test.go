@@ -48,9 +48,9 @@ func TestIntegrationsManagerBasic(t *testing.T) {
 
 	// Test 3: Initialize with enabled but individually disabled integrations
 	config = &types.IntegrationsConfig{
-		Enabled: true,
-		Grafana: types.GrafanaConfig{Enabled: false},
-		Loki:    types.LokiConfig{Enabled: false},
+		Enabled:    true,
+		Grafana:    types.GrafanaConfig{Enabled: false},
+		Loki:       types.LokiConfig{Enabled: false},
 		Prometheus: types.PrometheusExtConfig{Enabled: false},
 	}
 
@@ -165,8 +165,10 @@ func TestIntegrationsEndToEnd(t *testing.T) {
 		Prometheus: types.PrometheusExtConfig{
 			Enabled: true,
 			PushGateway: types.PushGatewayConfig{
-				Enabled: true,
-				URL:     prometheusServer.URL,
+				Enabled:  true,
+				URL:      prometheusServer.URL,
+				Job:      "pihole-analyzer-test",
+				Instance: "test-instance",
 			},
 			ExternalLabels: map[string]string{
 				"service":  "pihole-analyzer",
@@ -320,8 +322,10 @@ func TestIntegrationsWithRealData(t *testing.T) {
 		Prometheus: types.PrometheusExtConfig{
 			Enabled: true,
 			PushGateway: types.PushGatewayConfig{
-				Enabled: true,
-				URL:     prometheusServer.URL,
+				Enabled:  true,
+				URL:      prometheusServer.URL,
+				Job:      "pihole-analyzer-test",
+				Instance: "test-instance",
 			},
 		},
 	}
@@ -385,9 +389,9 @@ func TestIntegrationsWithRealData(t *testing.T) {
 			Message:   "High query volume detected from client 192.168.1.100",
 			Component: "anomaly-detector",
 			Labels: map[string]string{
-				"client_ip":    "192.168.1.100",
-				"query_count":  "892",
-				"threshold":    "500",
+				"client_ip":   "192.168.1.100",
+				"query_count": "892",
+				"threshold":   "500",
 			},
 		},
 	}
