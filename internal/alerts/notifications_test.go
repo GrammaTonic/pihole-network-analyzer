@@ -164,17 +164,18 @@ func TestSlackHandler(t *testing.T) {
 
 	// Test with webhook URL (will fail but should reach the HTTP call)
 	configWithWebhook := config
-	configWithWebhook.WebhookURL = "https://hooks.slack.com/invalid/webhook/url"
+	configWithWebhook.WebhookURL = "https://this-domain-does-not-exist-12345.invalid/webhook"
 	handlerWithWebhook := NewSlackHandler(configWithWebhook, logger)
 
 	// This should fail with HTTP error, not config error
 	err := handlerWithWebhook.SendNotification(ctx, alert, configWithWebhook)
 	if err == nil {
 		t.Error("expected HTTP error when sending to invalid webhook")
-	}
-	// Should not be a config error about missing webhook URL
-	if err.Error() == "Slack webhook URL not configured" {
-		t.Error("unexpected config error - should be HTTP error")
+	} else {
+		// Should not be a config error about missing webhook URL
+		if err.Error() == "Slack webhook URL not configured" {
+			t.Error("unexpected config error - should be HTTP error")
+		}
 	}
 }
 
