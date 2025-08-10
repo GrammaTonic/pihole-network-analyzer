@@ -63,7 +63,7 @@ func (f *factory) CreateServer(config *types.DHCPConfig) (DHCPServer, error) {
 		return nil, fmt.Errorf("failed to create security: %w", err)
 	}
 	
-	return &server{
+	server := &server{
 		config:        config,
 		storage:       storage,
 		leaseManager:  leaseManager,
@@ -71,7 +71,15 @@ func (f *factory) CreateServer(config *types.DHCPConfig) (DHCPServer, error) {
 		networking:    networking,
 		security:      security,
 		logger:        f.logger.With(slog.String("component", "dhcp-server")),
-	}, nil
+		statistics: &types.DHCPStatistics{
+			RequestsByType: make(map[string]int64),
+			RequestsByHour: make(map[string]int64),
+			TopClients:     make([]types.DHCPClientStat, 0),
+			RecentActivity: make([]types.DHCPActivity, 0),
+		},
+	}
+	
+	return server, nil
 }
 
 // CreateLeaseManager creates a new DHCP lease manager

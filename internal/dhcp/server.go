@@ -191,7 +191,7 @@ func (s *server) GetStatus(ctx context.Context) (*types.DHCPServerStatus, error)
 	
 	status := &types.DHCPServerStatus{
 		Running:       s.running,
-		StartTime:     s.startTime.Format(time.RFC3339),
+		StartTime:     s.getStartTimeString(),
 		ConfigValid:   s.ValidateConfig(s.config) == nil,
 		Interface:     s.config.Interface,
 		ListenAddress: s.config.ListenAddress,
@@ -429,4 +429,11 @@ func (s *server) parsePacket(data []byte) (*types.DHCPRequest, error) {
 func (s *server) buildPacket(response *types.DHCPResponse) ([]byte, error) {
 	// This is a placeholder - actual implementation would build DHCP packets
 	return []byte("DHCP Response"), nil
+}
+
+func (s *server) getStartTimeString() string {
+	if s.startTime.IsZero() {
+		return ""
+	}
+	return s.startTime.Format(time.RFC3339)
 }

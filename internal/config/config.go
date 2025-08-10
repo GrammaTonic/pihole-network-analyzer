@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"pihole-analyzer/internal/dhcp"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 	"pihole-analyzer/internal/validation"
@@ -183,6 +184,8 @@ func DefaultConfig() *types.Config {
 			},
 			Generic: []types.GenericIntegrationConfig{},
 		},
+		
+		DHCP: *dhcp.DefaultDHCPConfig(),
 	}
 }
 

@@ -1,0 +1,272 @@
+{
+  "online_only": false,
+  "no_exclude": false,
+  "test_mode": false,
+  "quiet": false,
+  "pihole": {
+    "host": "192.168.1.100",
+    "port": 80,
+    "api_enabled": true,
+    "api_password": "",
+    "use_https": false,
+    "api_timeout": 30
+  },
+  "output": {
+    "colors": true,
+    "emojis": true,
+    "verbose": false,
+    "format": "table",
+    "max_clients": 20,
+    "max_domains_display": 10,
+    "save_reports": true,
+    "report_dir": "./reports",
+    "verbose_output": false
+  },
+  "exclusions": {
+    "networks": [],
+    "ips": [],
+    "domains": [],
+    "enable_docker": false,
+    "exclude_networks": ["172.16.0.0/12", "127.0.0.0/8"],
+    "exclude_ips": [],
+    "exclude_hosts": ["pi.hole"]
+  },
+  "logging": {
+    "level": "INFO",
+    "enable_colors": true,
+    "enable_emojis": true,
+    "output_file": "",
+    "show_timestamp": true,
+    "show_caller": false
+  },
+  "web": {
+    "enabled": true,
+    "port": 8080,
+    "host": "localhost",
+    "daemon_mode": false,
+    "read_timeout_seconds": 60,
+    "write_timeout_seconds": 60,
+    "idle_timeout_seconds": 120
+  },
+  "metrics": {
+    "enabled": true,
+    "port": "9090",
+    "host": "localhost",
+    "enable_endpoint": true,
+    "collect_metrics": true,
+    "enable_detailed_metrics": false
+  },
+  "dhcp": {
+    "enabled": true,
+    "interface": "eth0",
+    "listen_address": "0.0.0.0",
+    "port": 67,
+    "lease_time": "24h",
+    "max_lease_time": "72h",
+    "renewal_time": "12h",
+    "rebind_time": "21h",
+    "pool": {
+      "start_ip": "192.168.1.100",
+      "end_ip": "192.168.1.200",
+      "subnet": "192.168.1.0/24",
+      "gateway": "192.168.1.1",
+      "dns_servers": ["192.168.1.1", "8.8.8.8"],
+      "exclude": ["192.168.1.150", "192.168.1.151"]
+    },
+    "options": {
+      "router": "192.168.1.1",
+      "domain_name": "local",
+      "domain_name_server": ["192.168.1.1", "8.8.8.8"],
+      "netbios_name_servers": [],
+      "ntp_servers": ["pool.ntp.org"],
+      "tftp_server": "",
+      "boot_file_name": "",
+      "mtu": 1500,
+      "custom_options": {}
+    },
+    "reservations": [
+      {
+        "mac": "00:11:22:33:44:55",
+        "ip": "192.168.1.50",
+        "hostname": "server",
+        "description": "Main server with static IP",
+        "options": {},
+        "enabled": true
+      },
+      {
+        "mac": "aa:bb:cc:dd:ee:ff",
+        "ip": "192.168.1.51",
+        "hostname": "printer",
+        "description": "Network printer",
+        "options": {},
+        "enabled": true
+      }
+    ],
+    "storage": {
+      "type": "memory",
+      "path": "",
+      "backup_path": "/var/lib/pihole-analyzer/dhcp-backup.json",
+      "sync_interval": "5m",
+      "max_leases": 10000
+    },
+    "performance": {
+      "max_connections": 1000,
+      "read_timeout": "30s",
+      "write_timeout": "30s",
+      "buffer_size": 65536,
+      "worker_pool_size": 10,
+      "lease_cleanup_interval": "1h"
+    },
+    "security": {
+      "enable_rate_limit": true,
+      "max_requests_per_ip": 100,
+      "allowed_clients": [],
+      "blocked_clients": [],
+      "require_client_id": false,
+      "log_all_requests": false,
+      "enable_fingerprinting": true
+    }
+  },
+  "ml": {
+    "anomaly_detection": {
+      "enabled": false,
+      "sensitivity": 0.1,
+      "min_confidence": 0.75,
+      "window_size": "1h",
+      "anomaly_types": ["traffic_spike", "unusual_domains", "new_clients"],
+      "thresholds": {
+        "traffic_spike": 2.0,
+        "unusual_domains": 0.8,
+        "new_clients": 5.0
+      }
+    },
+    "trend_analysis": {
+      "enabled": false,
+      "analysis_window": "24h",
+      "forecast_window": "1h",
+      "min_data_points": 10,
+      "smoothing_factor": 0.3
+    },
+    "training": {
+      "auto_retrain": false,
+      "retrain_interval": "24h",
+      "min_training_size": 100,
+      "max_training_size": 10000,
+      "validation_split": 0.2
+    },
+    "performance": {
+      "max_concurrency": 4,
+      "timeout_duration": "30s",
+      "cache_enabled": true,
+      "cache_duration": "10m",
+      "batch_size": 100
+    }
+  },
+  "network_analysis": {
+    "enabled": false,
+    "deep_packet_inspection": {
+      "enabled": false,
+      "analyze_protocols": ["DNS_UDP", "DNS_TCP"],
+      "packet_sampling": 0.1,
+      "max_packet_size": 1500,
+      "buffer_size": 10000,
+      "time_window": "5m"
+    },
+    "traffic_patterns": {
+      "enabled": false,
+      "pattern_types": ["bandwidth", "frequency", "temporal"],
+      "analysis_window": "1h",
+      "min_data_points": 10,
+      "pattern_threshold": 0.8,
+      "anomaly_detection": true
+    },
+    "security_analysis": {
+      "enabled": false,
+      "threat_detection": true,
+      "suspicious_patterns": ["dns_tunneling", "domain_generation", "fast_flux"],
+      "blacklist_domains": [],
+      "unusual_traffic_threshold": 2.0,
+      "port_scan_detection": true,
+      "dns_tunneling_detection": true
+    },
+    "performance": {
+      "enabled": false,
+      "latency_analysis": true,
+      "bandwidth_analysis": true,
+      "throughput_analysis": true,
+      "packet_loss_detection": true,
+      "jitter_analysis": true,
+      "quality_thresholds": {
+        "max_latency_ms": 100,
+        "min_bandwidth_mbps": 1.0,
+        "max_packet_loss_percent": 1.0,
+        "max_jitter_ms": 50
+      }
+    }
+  },
+  "integrations": {
+    "enabled": false,
+    "grafana": {
+      "enabled": false,
+      "url": "http://localhost:3000",
+      "api_key": "",
+      "organization": "Main Org.",
+      "data_source": {
+        "create_if_not_exists": true,
+        "name": "pihole-analyzer",
+        "type": "prometheus",
+        "url": "http://localhost:9090",
+        "access": "proxy"
+      },
+      "dashboards": {
+        "auto_provision": false,
+        "folder_name": "Pi-hole",
+        "dashboard_files": [],
+        "overwrite_existing": true,
+        "tags": ["pihole", "dns", "network"]
+      }
+    },
+    "loki": {
+      "enabled": false,
+      "url": "http://localhost:3100",
+      "batch_size": 100,
+      "batch_timeout": "10s",
+      "buffer_size": 1000,
+      "static_labels": {
+        "service": "pihole-analyzer",
+        "env": "production"
+      },
+      "dynamic_labels": ["level", "component"]
+    }
+  },
+  "alerts": {
+    "enabled": false,
+    "rules": [],
+    "notifications": {
+      "slack": {
+        "enabled": false,
+        "webhook_url": "",
+        "channel": "#alerts",
+        "username": "Pi-hole Analyzer",
+        "icon_emoji": ":warning:",
+        "timeout": "30s"
+      },
+      "email": {
+        "enabled": false,
+        "smtp_host": "smtp.gmail.com",
+        "smtp_port": 587,
+        "username": "",
+        "password": "",
+        "from": "",
+        "recipients": [],
+        "use_tls": true,
+        "timeout": "30s"
+      }
+    },
+    "storage": {
+      "type": "memory",
+      "max_size": 1000,
+      "retention": "7d"
+    }
+  }
+}

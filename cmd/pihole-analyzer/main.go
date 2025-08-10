@@ -12,6 +12,7 @@ import (
 	"pihole-analyzer/internal/analyzer"
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/config"
+	"pihole-analyzer/internal/dhcp"
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/metrics"
@@ -292,6 +293,42 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 	if err != nil {
 		return fmt.Errorf("failed to create web server: %w", err)
 	}
+	
+	// Create and integrate DHCP server if enabled
+	if cfg.DHCP.Enabled {
+		webLogger.Info("DHCP server enabled, creating DHCP server")
+		
+		dhcpLogger := webLogger.Component("dhcp-server")
+		dhcpServer, err := createDHCPServer(cfg, dhcpLogger)
+		if err != nil {
+			webLogger.Error("Failed to create DHCP server: %v", err)
+			// Continue without DHCP server rather than failing completely
+		} else {
+			// Register DHCP routes with the web server
+			server.RegisterDHCPRoutes(dhcpServer)
+			
+			// Start DHCP server in background
+			go func() {
+				if err := dhcpServer.Start(ctx); err != nil {
+					dhcpLogger.Error("DHCP server failed to start: %v", err)
+				}
+			}()
+			
+			// Ensure DHCP server is stopped when context is cancelled
+			go func() {
+				<-ctx.Done()
+				dhcpLogger.Info("Stopping DHCP server")
+				stopCtx, stopCancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer stopCancel()
+				
+				if err := dhcpServer.Stop(stopCtx); err != nil {
+					dhcpLogger.Error("Error stopping DHCP server: %v", err)
+				}
+			}()
+			
+			webLogger.Success("DHCP server integrated and starting")
+		}
+	}
 
 	// Start server in a goroutine
 	serverErrChan := make(chan error, 1)
@@ -339,4 +376,28 @@ func loadPiholeConfig(configFile string) (*types.PiholeConfig, error) {
 		UseHTTPS:    false,
 		APITimeout:  30,
 	}, nil
+}
+
+func createDHCPServer(cfg *types.Config, logger *logger.Logger) (dhcp.DHCPServer, error) {
+	// Validate DHCP configuration
+	if err := dhcp.ValidateDHCPConfig(&cfg.DHCP); err != nil {
+		return nil, fmt.Errorf("invalid DHCP configuration: %w", err)
+	}
+	
+	// Create DHCP server
+	dhcpServer, err := dhcp.NewServer(&cfg.DHCP, logger.GetSlogger())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DHCP server: %w", err)
+	}
+	
+	logger.InfoFields("DHCP server created successfully", map[string]any{
+		"interface":      cfg.DHCP.Interface,
+		"listen_address": cfg.DHCP.ListenAddress,
+		"port":          cfg.DHCP.Port,
+		"pool_start":    cfg.DHCP.Pool.StartIP,
+		"pool_end":      cfg.DHCP.Pool.EndIP,
+		"lease_time":    cfg.DHCP.LeaseTime,
+	})
+	
+	return dhcpServer, nil
 }
