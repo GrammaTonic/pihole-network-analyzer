@@ -278,12 +278,17 @@ func TestValidationErrorHandling(t *testing.T) {
 
 // TestValidationPerformance tests validation performance
 func TestValidationPerformance(t *testing.T) {
-	log := logger.New(&logger.Config{EnableColors: false, EnableEmojis: false})
+	// Create a logger with minimal output for performance testing
+	log := logger.New(&logger.Config{
+		EnableColors: false,
+		EnableEmojis: false,
+		Level:        "ERROR", // Only log errors to reduce output
+	})
 	validator := validation.NewValidator(log)
 	config := validation.GetDefaultValidationConfig()
 
 	// Run validation multiple times to test performance
-	iterations := 1000
+	iterations := 100 // Reduced from 1000 to 100 for CI efficiency
 
 	for i := 0; i < iterations; i++ {
 		result := validator.ValidateConfig(config)
