@@ -26,6 +26,13 @@ type Flags struct {
 	WebPort    *int
 	WebHost    *string
 	DaemonMode *bool
+	// Network Analysis flags
+	EnableNetworkAnalysis     *bool
+	EnableDPI                 *bool
+	EnableTrafficPatterns     *bool
+	EnableSecurityAnalysis    *bool
+	EnablePerformanceAnalysis *bool
+	NetworkAnalysisConfig     *string
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -46,6 +53,13 @@ func ParseFlags() *Flags {
 		WebPort:    flag.Int("web-port", 8080, "Port for web interface (default: 8080)"),
 		WebHost:    flag.String("web-host", "localhost", "Host for web interface (default: localhost)"),
 		DaemonMode: flag.Bool("daemon", false, "Run in daemon mode (implies --web)"),
+		// Network Analysis flags
+		EnableNetworkAnalysis:     flag.Bool("network-analysis", false, "Enable enhanced network analysis (DPI, patterns, security, performance)"),
+		EnableDPI:                 flag.Bool("enable-dpi", false, "Enable deep packet inspection analysis"),
+		EnableTrafficPatterns:     flag.Bool("enable-traffic-patterns", false, "Enable traffic pattern analysis"),
+		EnableSecurityAnalysis:    flag.Bool("enable-security-analysis", false, "Enable security threat analysis"),
+		EnablePerformanceAnalysis: flag.Bool("enable-performance-analysis", false, "Enable network performance analysis"),
+		NetworkAnalysisConfig:     flag.String("network-config", "", "Path to network analysis configuration file"),
 	}
 
 	flag.Parse()
@@ -99,6 +113,35 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 		cfg.Quiet = true
 		cfg.Logging.Level = "ERROR"
 	}
+
+	// Apply network analysis flags
+	ApplyNetworkAnalysisFlags(flags, cfg)
+}
+
+// ApplyNetworkAnalysisFlags applies network analysis related flags to configuration
+func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
+	// Enable network analysis if any of the sub-components are enabled
+	if *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns ||
+		*flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis {
+		cfg.NetworkAnalysis.Enabled = true
+	}
+
+	// Configure individual components
+	if *flags.EnableDPI {
+		cfg.NetworkAnalysis.DeepPacketInspection.Enabled = true
+	}
+
+	if *flags.EnableTrafficPatterns {
+		cfg.NetworkAnalysis.TrafficPatterns.Enabled = true
+	}
+
+	if *flags.EnableSecurityAnalysis {
+		cfg.NetworkAnalysis.SecurityAnalysis.Enabled = true
+	}
+
+	if *flags.EnablePerformanceAnalysis {
+		cfg.NetworkAnalysis.Performance.Enabled = true
+	}
 }
 
 // IsWebModeEnabled returns true if web mode is requested
@@ -121,6 +164,24 @@ func GetWebConfig(flags *Flags) map[string]any {
 	}
 }
 
+// IsNetworkAnalysisEnabled returns true if network analysis is requested
+func IsNetworkAnalysisEnabled(flags *Flags) bool {
+	return *flags.EnableNetworkAnalysis || *flags.EnableDPI || *flags.EnableTrafficPatterns ||
+		*flags.EnableSecurityAnalysis || *flags.EnablePerformanceAnalysis
+}
+
+// GetNetworkAnalysisConfig extracts network analysis configuration from flags
+func GetNetworkAnalysisConfig(flags *Flags) map[string]any {
+	return map[string]any{
+		"enabled":              IsNetworkAnalysisEnabled(flags),
+		"dpi_enabled":          *flags.EnableDPI,
+		"traffic_patterns":     *flags.EnableTrafficPatterns,
+		"security_analysis":    *flags.EnableSecurityAnalysis,
+		"performance_analysis": *flags.EnablePerformanceAnalysis,
+		"config_file":          *flags.NetworkAnalysisConfig,
+	}
+}
+
 // ValidateInput validates command-line input
 func ValidateInput(flags *Flags) error {
 	// No specific validation needed for API-only version
@@ -138,6 +199,21 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 			fmt.Printf("🌐 Web interface enabled on http://%s:%d\n", *flags.WebHost, *flags.WebPort)
 			if *flags.DaemonMode {
 				fmt.Println("🔄 Running in daemon mode")
+			}
+		}
+		if IsNetworkAnalysisEnabled(flags) {
+			fmt.Println("🔬 Enhanced Network Analysis enabled:")
+			if *flags.EnableDPI {
+				fmt.Println("  • Deep Packet Inspection (DPI)")
+			}
+			if *flags.EnableTrafficPatterns {
+				fmt.Println("  • Traffic Pattern Analysis")
+			}
+			if *flags.EnableSecurityAnalysis {
+				fmt.Println("  • Security Threat Analysis")
+			}
+			if *flags.EnablePerformanceAnalysis {
+				fmt.Println("  • Network Performance Analysis")
 			}
 		}
 	}

@@ -278,21 +278,23 @@ func TestValidationErrorHandling(t *testing.T) {
 
 // TestValidationPerformance tests validation performance
 func TestValidationPerformance(t *testing.T) {
-	// Skip performance test if in CI to avoid log flooding
-	if os.Getenv("CI") != "" {
+	// Skip performance test in CI to avoid log flooding and timeout issues
+	if os.Getenv("CI") == "true" {
 		t.Skip("Skipping performance test in CI to avoid log flooding")
+		return
 	}
 
+	// Create a logger with minimal output for performance testing
 	log := logger.New(&logger.Config{
 		EnableColors: false,
 		EnableEmojis: false,
-		Level:        "ERROR", // Only log errors
+		Level:        "ERROR", // Only log errors to reduce output
 	})
 	validator := validation.NewValidator(log)
 	config := validation.GetDefaultValidationConfig()
 
 	// Run validation multiple times to test performance
-	iterations := 10 // Much smaller number
+	iterations := 10 // Smaller number for performance testing
 
 	for i := 0; i < iterations; i++ {
 		result := validator.ValidateConfig(config)

@@ -10,6 +10,7 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 **Container-First**: Multi-architecture Docker builds (AMD64, ARM64, ARMv7) with optimized caching  
 **Web UI**: Built-in HTTP dashboard for real-time monitoring and daemon mode  
 **Metrics**: Prometheus endpoints for monitoring and observability  
+**Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅  
 **Factory Pattern**: `interfaces.DataSourceFactory` abstracts Pi-hole vs mock data sources
 
 ## Key Components
@@ -23,13 +24,14 @@ internal/
 ├── interfaces/              # DataSource abstraction (API vs mock)
 ├── pihole/                  # Pi-hole API client with session management
 ├── logger/                  # Structured logging (slog) - USE THIS, NOT fmt.Printf
-├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig)
+├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig, NetworkAnalysisConfig)
 ├── analyzer/                # Pi-hole data processing engine
 ├── reporting/               # Colorized terminal output
 ├── cli/                     # Centralized flag management
 ├── web/                     # Web UI server and dashboard templates
 ├── metrics/                 # Prometheus metrics collection and server
 ├── ml/                      # Machine learning (anomaly detection, trend analysis)
+├── network/                 # Enhanced network analysis (DPI, traffic patterns, security, performance) ✅
 └── validation/              # Configuration validation with structured logging
 ```
 
@@ -66,11 +68,12 @@ config.MergeFlags(cfg, *flags.OnlineOnly, *flags.NoExclude, testMode, *flags.Pih
 Multi-service config in `types.Config`:
 ```go
 type Config struct {
-    Pihole     PiholeConfig    `json:"pihole"`     // Pi-hole API settings
-    Web        WebConfig       `json:"web"`        // Web UI configuration  
-    Metrics    MetricsConfig   `json:"metrics"`    // Prometheus metrics
-    ML         MLConfig        `json:"ml"`         // Machine learning features
-    Logging    LoggingConfig   `json:"logging"`    // Structured logging
+    Pihole          PiholeConfig          `json:"pihole"`           // Pi-hole API settings
+    Web             WebConfig             `json:"web"`              // Web UI configuration  
+    Metrics         MetricsConfig         `json:"metrics"`          // Prometheus metrics
+    ML              MLConfig              `json:"ml"`               // Machine learning features
+    NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"` // Enhanced network analysis ✅
+    Logging         LoggingConfig         `json:"logging"`          // Structured logging
     // No SSH fields - API only
 }
 ```
@@ -88,6 +91,23 @@ type MLEngine interface {
 // Engine creation with configuration
 engine := ml.NewEngine(config.ML, logger)
 results, err := engine.ProcessData(ctx, piholeRecords)
+```
+
+### Enhanced Network Analysis Architecture
+Complete network analysis system in `internal/network/`:
+```go
+// Four-tier network analysis system
+type NetworkAnalyzer interface {
+    DeepPacketInspector   // Protocol analysis, packet inspection
+    TrafficPatternAnalyzer // Bandwidth patterns, temporal analysis, client behavior
+    SecurityAnalyzer      // Threat detection, DNS anomalies, port scanning
+    PerformanceAnalyzer   // Latency, throughput, quality assessment
+}
+
+// Factory pattern for analyzer creation
+factory := network.NewAnalyzerFactory(logger)
+analyzer, err := factory.CreateNetworkAnalyzer(config.NetworkAnalysis)
+result, err := analyzer.AnalyzeTraffic(ctx, records, clientStats)
 ```
 
 ## Essential Commands
@@ -142,6 +162,21 @@ go run debug_ml.go  # Uses internal/ml test fixtures
 ./pihole-analyzer --web --metrics --daemon --config config.json
 ```
 
+### Enhanced Network Analysis Commands
+```bash
+# Enable all network analysis features
+./pihole-analyzer --network-analysis --pihole config.json
+
+# Enable specific analysis components
+./pihole-analyzer --enable-dpi --enable-security-analysis --pihole config.json
+
+# Combined with web UI for real-time visualization
+./pihole-analyzer --network-analysis --web --pihole config.json
+
+# Test network analysis with mock data
+./pihole-analyzer-test --network-analysis --test
+```
+
 ### Container Development
 ```bash
 make docker-dev        # Development container with persistent caches
@@ -174,6 +209,7 @@ make fast-build       # Optimized build with aggressive caching
 8. **Metrics Integration**: Prometheus endpoints at localhost:9090, use `internal/metrics`
 9. **Configuration Validation**: Use `internal/validation` with structured logging for all config checks
 10. **ML Algorithm Calibration**: Always test threshold values - confidence (0.75), score normalization (≤1.0), sensitivity (0.01-0.1)
+11. **Enhanced Network Analysis**: Use `internal/network` for DPI, traffic patterns, security, and performance analysis - all components integrate via factory pattern
 
 ## Common Tasks
 
@@ -184,7 +220,8 @@ make fast-build       # Optimized build with aggressive caching
 **Web UI Development**: Use `internal/web` templates and server, ensure daemon mode compatibility  
 **Metrics Addition**: Extend `internal/metrics` for new Prometheus endpoints  
 **Configuration Updates**: Add validation in `internal/validation` with proper error handling  
-**ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`
+**ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`  
+**Enhanced Network Analysis**: Extend `network.NetworkAnalyzer` interfaces, implement in `internal/network`, integrate via factory pattern
 
 ## Testing Infrastructure Patterns
 
@@ -280,6 +317,63 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 // Verify score normalization: all scores ≤ 1.0
 ```
 
+## Enhanced Network Analysis Development Patterns
+
+### Network Analyzer Usage
+```go
+// Initialize network analyzer with configuration
+logger := logger.New(&logger.Config{Component: "network-analyzer"})
+factory := network.NewAnalyzerFactory(logger)
+analyzer, err := factory.CreateNetworkAnalyzer(config.NetworkAnalysis)
+if err != nil {
+    logger.Error("Failed to create network analyzer", slog.String("error", err.Error()))
+}
+
+// Perform comprehensive network analysis
+result, err := analyzer.AnalyzeTraffic(ctx, piholeRecords, clientStats)
+```
+
+### Component-Specific Analysis
+```go
+// Deep Packet Inspection
+dpi, err := factory.CreateDPIAnalyzer(config.DeepPacketInspection)
+packetResult, err := dpi.InspectPackets(ctx, records, config.DeepPacketInspection)
+
+// Traffic Pattern Analysis
+trafficAnalyzer, err := factory.CreateTrafficAnalyzer(config.TrafficPatterns)
+patternResult, err := trafficAnalyzer.AnalyzePatterns(ctx, records, clientStats, config.TrafficPatterns)
+
+// Security Analysis
+securityAnalyzer, err := factory.CreateSecurityAnalyzer(config.SecurityAnalysis)
+securityResult, err := securityAnalyzer.AnalyzeSecurity(ctx, records, clientStats, config.SecurityAnalysis)
+
+// Performance Analysis
+perfAnalyzer, err := factory.CreatePerformanceAnalyzer(config.Performance)
+perfResult, err := perfAnalyzer.AnalyzePerformance(ctx, records, clientStats, config.Performance)
+```
+
+### Visualization Integration
+```go
+// Generate visualization data for web UI
+visualizer, err := factory.CreateVisualizer()
+trafficViz, err := visualizer.GenerateTrafficVisualization(analysisResult)
+topologyViz, err := visualizer.GenerateTopologyVisualization(records, clientStats)
+timeSeriesViz, err := visualizer.GenerateTimeSeriesData(records, "query_count", time.Hour)
+```
+
+### Network Analysis Testing Patterns
+```go
+// Test complete network analysis workflow
+go test -v ./internal/network/ -run TestEnhancedNetworkAnalyzer
+go test -v ./tests/integration/ -run TestNetworkAnalysis_Integration
+
+// Test individual components
+go test -v ./internal/network/ -run TestDeepPacketInspector
+go test -v ./internal/network/ -run TestTrafficPatternAnalyzer
+go test -v ./internal/network/ -run TestSecurityAnalyzer
+go test -v ./internal/network/ -run TestPerformanceAnalyzer
+```
+
 ## Roadmap
 
 ### Current Focus (Q1 2025)
@@ -288,6 +382,7 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 - **Enhanced Configuration Validation**: Comprehensive config validation with structured logging ✅
 - **Daemon Mode**: Background service for continuous Pi-hole monitoring ✅
 - **Machine Learning**: AI-powered anomaly detection and trend analysis ✅
+- **Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅
 
 ### Near Term (Q2 2025)
 - **REST API**: HTTP API for programmatic access to analysis data
@@ -298,7 +393,6 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 - **Enhanced Dashboard**: Advanced web UI with interactive charts and graphs
 - **Alert System**: Configurable alerts for network anomalies
 - **Plugin Architecture**: Extensible analysis modules and custom reporters
-- **Enhanced Network Analysis**: Deep packet inspection and traffic patterns
 
 ### Long Term (2026+)
 - **Enhanced ML Models**: Advanced machine learning with custom model training
@@ -306,4 +400,4 @@ go test -v ./internal/ml/ -run TestTrendAnalyzer
 - **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors Logging to Loki
 - **Mobile App**: Companion mobile application for network monitoring
 
-This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, and **beautiful terminal output**.
+This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, and **beautiful terminal output**.

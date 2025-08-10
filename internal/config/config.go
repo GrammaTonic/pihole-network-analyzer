@@ -70,6 +70,119 @@ func DefaultConfig() *types.Config {
 			CollectMetrics:        true,
 			EnableDetailedMetrics: true,
 		},
+
+		NetworkAnalysis: types.NetworkAnalysisConfig{
+			Enabled: false,
+			DeepPacketInspection: types.DPIConfig{
+				Enabled:          false,
+				AnalyzeProtocols: []string{"DNS_UDP", "DNS_TCP"},
+				PacketSampling:   1.0,
+				MaxPacketSize:    1500,
+				BufferSize:       10000,
+				TimeWindow:       "1h",
+			},
+			TrafficPatterns: types.TrafficPatternsConfig{
+				Enabled:          false,
+				PatternTypes:     []string{"bandwidth", "temporal", "client"},
+				AnalysisWindow:   "2h",
+				MinDataPoints:    10,
+				PatternThreshold: 0.6,
+				AnomalyDetection: true,
+			},
+			SecurityAnalysis: types.SecurityAnalysisConfig{
+				Enabled:               false,
+				ThreatDetection:       true,
+				SuspiciousPatterns:    []string{"malware", "phishing", "botnet"},
+				BlacklistDomains:      []string{},
+				UnusualTrafficThresh:  0.75,
+				PortScanDetection:     true,
+				DNSTunnelingDetection: true,
+			},
+			Performance: types.NetworkPerformanceConfig{
+				Enabled:             false,
+				LatencyAnalysis:     true,
+				BandwidthAnalysis:   true,
+				ThroughputAnalysis:  true,
+				PacketLossDetection: true,
+				JitterAnalysis:      true,
+				QualityThresholds: types.QualityThresholds{
+					MaxLatency:    150.0,
+					MinBandwidth:  5.0,
+					MaxPacketLoss: 2.0,
+					MaxJitter:     100.0,
+				},
+			},
+		},
+
+		Integrations: types.IntegrationsConfig{
+			Enabled: false,
+			Grafana: types.GrafanaConfig{
+				Enabled:      false,
+				URL:          "http://localhost:3000",
+				Organization: "main",
+				DataSource: types.DataSourceConfig{
+					CreateIfNotExists: true,
+					Name:              "pihole-analyzer-prometheus",
+					Type:              "prometheus",
+					URL:               "http://localhost:9090",
+					Access:            "proxy",
+				},
+				Dashboards: types.DashboardConfig{
+					AutoProvision:     false,
+					FolderName:        "Pi-hole Network Analyzer",
+					OverwriteExisting: true,
+					Tags:              []string{"pihole", "network", "dns"},
+				},
+				AlertIntegration: types.GrafanaAlertConfig{
+					Enabled:         false,
+					DefaultSeverity: "warning",
+				},
+				Timeout:    30,
+				VerifyTLS:  true,
+				RetryCount: 3,
+			},
+			Loki: types.LokiConfig{
+				Enabled:      false,
+				URL:          "http://localhost:3100",
+				BatchSize:    100,
+				BatchTimeout: "10s",
+				BufferSize:   1000,
+				StaticLabels: map[string]string{
+					"service": "pihole-analyzer",
+					"env":     "production",
+				},
+				DynamicLabels: []string{"level", "component"},
+				Timeout:       30,
+				VerifyTLS:     true,
+				RetryCount:    3,
+				RetryInterval: "5s",
+			},
+			Prometheus: types.PrometheusExtConfig{
+				Enabled: false,
+				PushGateway: types.PushGatewayConfig{
+					Enabled:  false,
+					URL:      "http://localhost:9091",
+					Job:      "pihole-analyzer",
+					Instance: "localhost",
+					Timeout:  10,
+					Interval: "30s",
+				},
+				RemoteWrite: types.RemoteWriteConfig{
+					Enabled:   false,
+					Timeout:   30,
+					BatchSize: 100,
+				},
+				ServiceDiscovery: types.ServiceDiscoveryConfig{
+					Enabled:         false,
+					Type:            "static",
+					RefreshInterval: "60s",
+				},
+				ExternalLabels: map[string]string{
+					"service": "pihole-analyzer",
+				},
+			},
+			Generic: []types.GenericIntegrationConfig{},
+		},
 	}
 }
 

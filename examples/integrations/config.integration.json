@@ -1,0 +1,154 @@
+{
+  "pihole": {
+    "host": "192.168.1.100",
+    "port": 80,
+    "api_key": "your-pihole-api-key-here",
+    "use_tls": false,
+    "timeout": 30,
+    "retry_count": 3
+  },
+  
+  "integrations": {
+    "enabled": true,
+    
+    "grafana": {
+      "enabled": true,
+      "url": "http://localhost:3000",
+      "api_key": "glsa_your_grafana_api_key_here",
+      "organization": "Main Org.",
+      
+      "data_source": {
+        "create_if_not_exists": true,
+        "name": "pihole-prometheus",
+        "type": "prometheus",
+        "url": "http://localhost:9090",
+        "access": "proxy",
+        "basic_auth": false
+      },
+      
+      "dashboards": {
+        "auto_provision": true,
+        "folder_name": "Pi-hole Network Analysis",
+        "overwrite_existing": true,
+        "tags": ["pihole", "dns", "network", "security"]
+      },
+      
+      "alerts": {
+        "enabled": true,
+        "notification_channels": [],
+        "default_severity": "warning",
+        "rules": [
+          {
+            "name": "High Block Rate Alert",
+            "query": "pihole_queries_blocked_total / pihole_queries_total",
+            "condition": "> 0.5",
+            "threshold": 0.5,
+            "duration": "5m",
+            "severity": "warning",
+            "labels": {
+              "team": "network",
+              "priority": "medium"
+            },
+            "annotations": {
+              "summary": "Pi-hole is blocking more than 50% of queries",
+              "description": "The Pi-hole block rate has exceeded 50% for the last 5 minutes"
+            }
+          }
+        ]
+      },
+      
+      "timeout_seconds": 30,
+      "verify_tls": true,
+      "retry_count": 3
+    },
+    
+    "loki": {
+      "enabled": true,
+      "url": "http://localhost:3100",
+      "username": "",
+      "password": "",
+      "tenant_id": "",
+      
+      "batch_size": 100,
+      "batch_timeout": "10s",
+      "max_retries": 3,
+      "retry_delay": "1s",
+      
+      "labels": {
+        "job": "pihole-analyzer",
+        "service": "dns-analysis",
+        "environment": "production",
+        "instance": "home-network"
+      },
+      
+      "dynamic_labels": {
+        "level": true,
+        "component": true,
+        "client_ip": false,
+        "domain": false
+      }
+    },
+    
+    "prometheus": {
+      "enabled": true,
+      
+      "push_gateway": {
+        "enabled": true,
+        "url": "http://localhost:9091",
+        "job_name": "pihole-analyzer",
+        "username": "",
+        "password": "",
+        "push_interval": "30s",
+        "timeout": "10s"
+      },
+      
+      "external_labels": {
+        "service": "pihole-analyzer",
+        "instance": "home-network",
+        "environment": "production",
+        "team": "network"
+      },
+      
+      "custom_metrics": {
+        "enabled": true,
+        "prefix": "pihole_"
+      }
+    }
+  },
+  
+  "analysis": {
+    "mode": "comprehensive",
+    "exclude_networks": [
+      "127.0.0.0/8",
+      "169.254.0.0/16",
+      "172.17.0.0/16"
+    ],
+    "exclude_ips": [],
+    "exclude_hosts": [],
+    "report_dir": "/tmp/pihole-reports"
+  },
+  
+  "web": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 8080,
+    "enable_cors": true,
+    "static_dir": "./web/static"
+  },
+  
+  "metrics": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 9090,
+    "path": "/metrics"
+  },
+  
+  "logging": {
+    "level": "info",
+    "enable_colors": true,
+    "enable_emojis": true,
+    "output_file": "",
+    "show_timestamp": true,
+    "show_caller": false
+  }
+}
