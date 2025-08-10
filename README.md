@@ -1,6 +1,14 @@
 # Pi-hole Network Analyzer
 
-[![CI Pipeline](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/GrammaTonic/pihole-network-analyzer/actions## 📖 Documentation
+
+- **[Installation Guide](docs/installation.md)** - Detailed setup instructions
+- **[Configuration Guide](docs/configuration.md)** - Configuration options and examples  
+- **[Usage Guide](docs/usage.md)** - Command-line options and workflows
+- **[Container Publishing Guide](docs/CONTAINER_PUBLISHING.md)** - Docker containers and GHCR publishing
+- **[API Setup](docs/api.md)** - Pi-hole API connection configuration
+- **[Development Guide](docs/development.md)** - Building, testing, and contributing
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutionsws/ci.yml/badge.svg)](https://github.com/GrammaTonic/pihole-network-analyzer/actions/workflows/ci.yml)
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -60,7 +68,51 @@ go build -o pihole-analyzer ./cmd/pihole-analyzer
 ./pihole-analyzer --create-config
 ```
 
-## 📖 Documentation
+## � Container Support
+
+Pi-hole Network Analyzer is available as multi-architecture Docker containers published to GitHub Container Registry (GHCR).
+
+### Quick Container Usage
+
+```bash
+# Pull the latest version
+docker pull ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with configuration file
+docker run --rm -v $(pwd)/config.json:/config.json \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --config /config.json
+
+# Run web UI mode
+docker run -d -p 8080:8080 -v $(pwd)/config.json:/config.json \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --config /config.json --web --daemon
+```
+
+### Container Publishing Automation
+
+For developers and advanced users:
+
+```bash
+# Build and push production containers
+make docker-push-ghcr
+
+# Build development containers
+make container-push-dev
+
+# List container information
+make container-info
+
+# See all container commands
+make container-list
+```
+
+**Supported Architectures**: linux/amd64, linux/arm64, linux/arm/v7  
+**Registry**: [ghcr.io/grammatonic/pihole-network-analyzer](https://github.com/GrammaTonic/pihole-network-analyzer/pkgs/container/pihole-network-analyzer)
+
+For detailed container usage, see the **[Container Publishing Guide](docs/CONTAINER_PUBLISHING.md)**
+
+## �📖 Documentation
 
 - **[Installation Guide](docs/installation.md)** - Detailed setup instructions
 - **[Configuration Guide](docs/configuration.md)** - Configuration options and examples  
