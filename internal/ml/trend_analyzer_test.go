@@ -128,8 +128,8 @@ func TestTrendAnalyzer_AnalyzeTrends_VolatileTrend(t *testing.T) {
 	ctx := context.Background()
 	analyzer.Initialize(ctx, config)
 
-	// Create data with volatile trend
-	volatileData := createVolatileTrendData(50)
+	// Create data with volatile trend - use more data points for better volatility detection
+	volatileData := createVolatileTrendData(250)
 
 	analysis, err := analyzer.AnalyzeTrends(ctx, volatileData, 24*time.Hour)
 	if err != nil {
@@ -476,11 +476,29 @@ func createVolatileTrendData(count int) []types.PiholeRecord {
 
 	recordID := 1
 	for hour := 0; hour < count; hour++ {
-		// Highly variable queries per hour
-		queriesThisHour := 1 + (hour%7)*2 + (hour % 3) // Irregular pattern
+		// Create highly volatile pattern with extreme variations
+		var queriesThisHour int
+		switch hour % 8 {
+		case 0:
+			queriesThisHour = 1 // Very low
+		case 1:
+			queriesThisHour = 15 // Very high
+		case 2:
+			queriesThisHour = 2 // Low
+		case 3:
+			queriesThisHour = 20 // Very high
+		case 4:
+			queriesThisHour = 1 // Very low
+		case 5:
+			queriesThisHour = 25 // Extremely high
+		case 6:
+			queriesThisHour = 3 // Low
+		case 7:
+			queriesThisHour = 18 // High
+		}
 
 		for q := 0; q < queriesThisHour; q++ {
-			timestamp := baseTime.Add(time.Duration(hour)*time.Hour + time.Duration(q)*time.Minute*5)
+			timestamp := baseTime.Add(time.Duration(hour)*time.Hour + time.Duration(q)*time.Minute*2)
 
 			if len(records) >= cap(records) {
 				break
