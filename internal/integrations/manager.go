@@ -79,7 +79,14 @@ func (m *Manager) Initialize(ctx context.Context, config *types.IntegrationsConf
 	}
 
 	m.initialized = true
-	enabledCount := len(m.GetEnabledIntegrations())
+	
+	// Count enabled integrations manually to avoid deadlock
+	enabledCount := 0
+	for _, integration := range m.integrations {
+		if integration.IsEnabled() {
+			enabledCount++
+		}
+	}
 	
 	m.logger.Info("✅ Monitoring integrations initialized successfully",
 		slog.String("component", "integrations"),

@@ -33,11 +33,17 @@ type Client struct {
 
 // NewClient creates a new Loki integration client
 func NewClient(config *types.LokiConfig, logger *slog.Logger) *Client {
+	// Use default timeout if not specified to prevent hangs
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30 // 30 seconds default
+	}
+	
 	client := &Client{
 		config:   config,
 		logger:   logger,
 		httpClient: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
+			Timeout: time.Duration(timeout) * time.Second,
 		},
 		buffer:   make([]interfaces.LogEntry, 0, config.BufferSize),
 		stopChan: make(chan struct{}),

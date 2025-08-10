@@ -28,11 +28,17 @@ type Client struct {
 
 // NewClient creates a new Grafana integration client
 func NewClient(config *types.GrafanaConfig, logger *slog.Logger) *Client {
+	// Use default timeout if not specified to prevent hangs
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = 30 // 30 seconds default
+	}
+	
 	return &Client{
 		config:     config,
 		logger:     logger,
 		httpClient: &http.Client{
-			Timeout: time.Duration(config.Timeout) * time.Second,
+			Timeout: time.Duration(timeout) * time.Second,
 		},
 		enabled: config.Enabled,
 		status: interfaces.IntegrationStatus{
