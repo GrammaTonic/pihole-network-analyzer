@@ -26,7 +26,7 @@ internal/
 ├── pihole/                  # Pi-hole API client with session management
 ├── logger/                  # Structured logging (slog) - USE THIS, NOT fmt.Printf
 ├── types/                   # Core data structures (PiholeRecord, ClientStats, MLConfig, NetworkAnalysisConfig, AlertConfig)
-├── analyzer/                # Pi-hole data processing engine with ML and Alert integration
+├── analyzer/                # Pi-hole data processing engine: processes API data, applies ML models for anomaly detection/trend analysis, and triggers alerts via integrated rules and ML results
 ├── reporting/               # Colorized terminal output
 ├── cli/                     # Centralized flag management
 ├── web/                     # Web UI server and dashboard templates
