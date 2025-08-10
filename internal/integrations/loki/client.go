@@ -8,7 +8,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -19,16 +18,16 @@ import (
 
 // Client implements Loki integration for structured log shipping
 type Client struct {
-	config    *types.LokiConfig
-	logger    *slog.Logger
-	httpClient *http.Client
-	buffer    []interfaces.LogEntry
-	bufferMu  sync.Mutex
+	config      *types.LokiConfig
+	logger      *slog.Logger
+	httpClient  *http.Client
+	buffer      []interfaces.LogEntry
+	bufferMu    sync.Mutex
 	batchTicker *time.Ticker
-	stopChan  chan struct{}
-	enabled   bool
-	status    interfaces.IntegrationStatus
-	mu        sync.RWMutex
+	stopChan    chan struct{}
+	enabled     bool
+	status      interfaces.IntegrationStatus
+	mu          sync.RWMutex
 }
 
 // NewClient creates a new Loki integration client
@@ -38,10 +37,10 @@ func NewClient(config *types.LokiConfig, logger *slog.Logger) *Client {
 	if timeout <= 0 {
 		timeout = 30 // 30 seconds default
 	}
-	
+
 	client := &Client{
-		config:   config,
-		logger:   logger,
+		config: config,
+		logger: logger,
 		httpClient: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
@@ -180,13 +179,13 @@ func (c *Client) WriteLogs(ctx context.Context, logs []interfaces.LogEntry) erro
 func (c *Client) SetLogLevel(level slog.Level) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Store log level in status metadata
 	if c.status.Metadata == nil {
 		c.status.Metadata = make(map[string]string)
 	}
 	c.status.Metadata["min_log_level"] = level.String()
-	
+
 	c.logger.Debug("📊 Set minimum log level for Loki",
 		slog.String("component", "loki"),
 		slog.String("level", level.String()))
@@ -196,16 +195,16 @@ func (c *Client) SetLogLevel(level slog.Level) {
 func (c *Client) AddStaticLabels(labels map[string]string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Merge with existing static labels
 	if c.config.StaticLabels == nil {
 		c.config.StaticLabels = make(map[string]string)
 	}
-	
+
 	for k, v := range labels {
 		c.config.StaticLabels[k] = v
 	}
-	
+
 	c.logger.Debug("🏷️ Added static labels to Loki",
 		slog.String("component", "loki"),
 		slog.Int("label_count", len(labels)))
@@ -228,7 +227,7 @@ func (c *Client) StreamLogs(ctx context.Context, logStream <-chan interfaces.Log
 			if !ok {
 				return nil
 			}
-			
+
 			if err := c.WriteLogs(ctx, []interfaces.LogEntry{log}); err != nil {
 				c.logger.Error("❌ Failed to write log to Loki stream",
 					slog.String("component", "loki"),
@@ -247,7 +246,7 @@ func (c *Client) TestConnection(ctx context.Context) error {
 
 	// Test with a simple health check
 	url := c.config.URL + "/ready"
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
@@ -293,7 +292,7 @@ func (c *Client) Close() error {
 	// Flush any remaining logs
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := c.flushBuffer(ctx); err != nil {
 		c.logger.Error("❌ Failed to flush logs on close",
 			slog.String("component", "loki"),
@@ -388,33 +387,23 @@ func (c *Client) convertToLokiStreams(logs []interfaces.LogEntry) map[string][]l
 	return streams
 }
 
-// formatLabels formats labels into Loki's label string format
+// formatLabels formats labels into JSON format for Loki stream
 func (c *Client) formatLabels(labels map[string]string) string {
 	if len(labels) == 0 {
 		return "{}"
 	}
 
-	// Sort keys for consistent output
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
+	// Convert to JSON format for stream labels
+	labelBytes, err := json.Marshal(labels)
+	if err != nil {
+		// Fallback to empty labels if marshal fails
+		c.logger.Warn("⚠️ Failed to marshal labels, using empty labels",
+			slog.String("component", "loki"),
+			slog.String("error", err.Error()))
+		return "{}"
 	}
-	sort.Strings(keys)
 
-	var buf bytes.Buffer
-	buf.WriteString("{")
-	for i, k := range keys {
-		if i > 0 {
-			buf.WriteString(",")
-		}
-		buf.WriteString(k)
-		buf.WriteString("=\"")
-		buf.WriteString(labels[k])
-		buf.WriteString("\"")
-	}
-	buf.WriteString("}")
-
-	return buf.String()
+	return string(labelBytes)
 }
 
 // formatLogLine formats a log entry into a single line
@@ -517,5 +506,5 @@ type lokiLogEntry struct {
 // Compile-time interface checks
 var (
 	_ interfaces.MonitoringIntegration = (*Client)(nil)
-	_ interfaces.LogsIntegration      = (*Client)(nil)
+	_ interfaces.LogsIntegration       = (*Client)(nil)
 )
