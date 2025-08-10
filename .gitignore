@@ -29,6 +29,18 @@ pihole-data-*.db
 # CI/CD test artifacts
 /tmp/test-*
 
+# Node.js dependencies (for release automation only)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+.yarn-integrity
+
+# Semantic release artifacts
+.semantic-release/
+
 # IDE files
 .vscode/
 .idea/

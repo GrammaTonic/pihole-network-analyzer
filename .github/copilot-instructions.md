@@ -34,6 +34,7 @@ internal/
 ├── ml/                      # Machine learning (anomaly detection, trend analysis)
 ├── network/                 # Enhanced network analysis (DPI, traffic patterns, security, performance) ✅
 ├── alerts/                  # Alert system (rules, notifications, storage) ✅
+├── integrations/            # External integrations (Grafana, Prometheus, Loki) ✅
 └── validation/              # Configuration validation with structured logging
 ```
 
@@ -76,6 +77,7 @@ type Config struct {
     ML              MLConfig              `json:"ml"`               // Machine learning features
     NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"` // Enhanced network analysis ✅
     Alerts          AlertConfig           `json:"alerts"`           // Alert system configuration ✅
+    Integrations    IntegrationsConfig    `json:"integrations"`     // External integrations (Grafana, Prometheus, Loki) ✅
     Logging         LoggingConfig         `json:"logging"`          // Structured logging
     // No SSH fields - API only
 }
@@ -130,6 +132,29 @@ err := manager.ProcessData(ctx, analysisResult, mlResults)
 ```
 
 ## Essential Commands
+
+### Semantic Versioning & Release Management
+**IMPORTANT**: Node.js is ONLY used for release automation and development workflow tools. The Go application itself has ZERO Node.js dependencies and runs completely independently.
+
+```bash
+make version           # Show current version information
+make release-setup     # Install semantic-release dependencies (requires Node.js - DEVELOPMENT ONLY)
+make commit           # Interactive conventional commit creation
+make release-dry-run  # Test what the next release would be
+
+# Conventional commit examples
+git commit -m "feat(api): add user authentication"     # MINOR bump
+git commit -m "fix(network): resolve memory leak"      # PATCH bump
+git commit -m "docs: update API documentation"         # No version bump
+
+# Breaking change (MAJOR bump)
+git commit -m "feat(api): redesign configuration interface
+
+BREAKING CHANGE: Configuration structure has changed. See migration guide."
+```
+
+**Node.js Scope**: Release automation, commit validation, changelog generation (CI/CD only)  
+**Go Application**: Pure Go - no Node.js runtime dependencies whatsoever
 
 ### Fast Development Workflow
 ```bash
@@ -248,6 +273,11 @@ make fast-build       # Optimized build with aggressive caching
 10. **ML Algorithm Calibration**: Always test threshold values - confidence (0.75), score normalization (≤1.0), sensitivity (0.01-0.1)
 11. **Enhanced Network Analysis**: Use `internal/network` for DPI, traffic patterns, security, and performance analysis - all components integrate via factory pattern
 12. **Alert System Integration**: Use `internal/alerts` for alert management, supports ML integration, multi-channel notifications (Slack/Email/Log), and configurable rules
+13. **Node.js Scope Limitation**: Node.js is STRICTLY for release automation and development tooling ONLY - the Go application has zero Node.js runtime dependencies
+14. **Pure Go Runtime**: All production binaries, Docker containers, and deployed applications run on Go only - no Node.js required in production environments
+13. **Conventional Commits**: Use conventional commit format for all commits - enables automated versioning and changelog generation
+14. **GitLab Flow**: Follow GitLab Flow with release branches - main for development, release/vX.Y for stable releases, feature branches for development
+15. **Semantic Versioning**: Automated SemVer based on commit messages - feat: (minor), fix: (patch), BREAKING CHANGE: (major)
 
 ## Common Tasks
 
@@ -260,7 +290,8 @@ make fast-build       # Optimized build with aggressive caching
 **Configuration Updates**: Add validation in `internal/validation` with proper error handling  
 **ML Development**: Implement `ml.AnomalyDetector` or `ml.TrendAnalyzer` interfaces, test with `go test ./internal/ml/...`  
 **Enhanced Network Analysis**: Extend `network.NetworkAnalyzer` interfaces, implement in `internal/network`, integrate via factory pattern  
-**Alert System Development**: Extend `alerts.AlertManager` interfaces, implement new notification channels, configure alert rules
+**Alert System Development**: Extend `alerts.AlertManager` interfaces, implement new notification channels, configure alert rules  
+**Release Management**: Use conventional commits (`make commit`), follow GitLab Flow with release branches, semantic versioning automation
 
 ## Testing Infrastructure Patterns
 
@@ -467,6 +498,8 @@ go test -v ./internal/alerts/ -run TestManager
 - **Machine Learning**: AI-powered anomaly detection and trend analysis ✅
 - **Enhanced Network Analysis**: Deep packet inspection, traffic patterns, security analysis, and performance monitoring ✅
 - **Alert System**: Configurable alerts for network anomalies with ML integration, Slack/Email notifications ✅
+- **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors and logging to Loki ✅
+- **Semantic Versioning & Release Automation**: GitLab Flow with conventional commits and automated releases ✅
 
 ### Near Term (Q2 2025)
 - **REST API**: HTTP API for programmatic access to analysis data
@@ -480,7 +513,8 @@ go test -v ./internal/alerts/ -run TestManager
 
 ### Long Term (2026+)
 - **Enhanced ML Models**: Advanced machine learning with custom model training
-- **Integration Ecosystem**: Grafana, Prometheus, and monitoring platform connectors and logging to Loki
 - **Mobile App**: Companion mobile application for network monitoring
 
-This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, and **beautiful terminal output**.
+This project prioritizes **API-only Pi-hole integration**, **structured logging**, **web UI Foundation**, **Prometheus metrics**, **fast containerized builds**, **ML-powered analysis**, **enhanced network analysis**, **alert system with notifications**, **integration ecosystem**, **automated semantic versioning**, and **beautiful terminal output**.
+
+**Architecture Note**: This is a **pure Go application** with zero runtime dependencies. Node.js is used exclusively for release automation and development workflow tools - it is never required in production environments or for running the actual Pi-hole analyzer.

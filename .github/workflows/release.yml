@@ -1,0 +1,177 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    # Only run on main branch or release branches, and not on fork repositories
+    if: github.repository == 'GrammaTonic/pihole-network-analyzer' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
+    
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        
+    # Enhanced Go module caching
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/go/pkg/mod
+          ~/.cache/go-build
+        key: ${{ runner.os }}-go-release-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-release-
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      run: |
+        npm ci
+        go mod download
+        
+    - name: Verify Go modules
+      run: go mod verify
+      
+    - name: Run tests
+      run: |
+        go test -v ./...
+        make test-mode
+        
+    - name: Lint code
+      run: |
+        if command -v golangci-lint >/dev/null 2>&1; then
+          golangci-lint run ./...
+        else
+          echo "golangci-lint not found, skipping linting"
+        fi
+        
+    - name: Build binaries
+      run: |
+        make build-all
+        
+    - name: Docker build test
+      run: |
+        make docker-build
+        
+    - name: Semantic Release (Dry Run)
+      if: github.event.inputs.dry_run == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        npx semantic-release --dry-run
+        
+    - name: Semantic Release
+      if: github.event.inputs.dry_run != 'true'
+      id: release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        npx semantic-release 2>&1 | tee release-output.log
+        
+        # Check if a release was published
+        if grep -q "Published release" release-output.log; then
+          echo "released=true" >> $GITHUB_OUTPUT
+          # Extract version from semantic-release output
+          VERSION=$(grep "Published release" release-output.log | sed -n 's/.*Published release \([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        else
+          echo "released=false" >> $GITHUB_OUTPUT
+        fi
+
+  docker-publish:
+    name: Build and Publish Docker Images
+    needs: release
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: v${{ needs.release.outputs.version }}
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/grammatonic/pihole-network-analyzer
+        tags: |
+          type=semver,pattern={{version}},value=v${{ needs.release.outputs.version }}
+          type=semver,pattern={{major}}.{{minor}},value=v${{ needs.release.outputs.version }}
+          type=semver,pattern={{major}},value=v${{ needs.release.outputs.version }}
+          type=raw,value=latest
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64,linux/arm/v7
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          VERSION=v${{ needs.release.outputs.version }}
+          BUILD_TIME=${{ github.event.head_commit.timestamp }}
+
+  notify:
+    name: Notify Release
+    needs: [release, docker-publish]
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+    
+    steps:
+    - name: Release notification
+      run: |
+        echo "🎉 Successfully released version ${{ needs.release.outputs.version }}"
+        echo "📦 Docker images published to ghcr.io/grammatonic/pihole-network-analyzer"
+        echo "🔗 Release: https://github.com/GrammaTonic/pihole-network-analyzer/releases/tag/v${{ needs.release.outputs.version }}"

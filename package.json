@@ -1,0 +1,41 @@
+{
+  "name": "pihole-network-analyzer",
+  "version": "0.0.0-development",
+  "description": "A Go-based DNS analysis tool that connects to Pi-hole via API to generate colorized terminal reports with network insights",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GrammaTonic/pihole-network-analyzer.git"
+  },
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "semantic-release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run",
+    "commit": "git-cz",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^11.1.0",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^9.2.6",
+    "@semantic-release/release-notes-generator": "^12.1.0",
+    "commitizen": "^4.3.0",
+    "conventional-changelog-conventionalcommits": "^7.0.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3",
+    "semantic-release": "^22.0.12"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "commitlint": {
+    "extends": ["@commitlint/config-conventional"]
+  }
+}

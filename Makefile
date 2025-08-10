@@ -14,11 +14,102 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod
+.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod version release-setup commit release-dry-run release-status
 
 help: ## Show this help message
 	@echo "Available commands:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# Semantic Release Commands
+version: ## Show current version information
+	@echo "📦 Version Information:"
+	@echo "Current Version: $(VERSION)"
+	@echo "Build Time: $(BUILD_TIME)"
+	@echo "Git Branch: $$(git branch --show-current 2>/dev/null || echo 'unknown')"
+	@echo "Git Commit: $$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+	@echo "Git Status: $$(git status --porcelain | wc -l | xargs echo) uncommitted changes"
+
+release-setup: ## Install semantic-release dependencies (requires Node.js)
+	@echo "🔧 Setting up semantic release..."
+	@if command -v npm >/dev/null 2>&1; then \
+		echo "📦 Installing semantic-release dependencies..."; \
+		npm install; \
+		echo "🔗 Setting up Git hooks..."; \
+		npx husky install; \
+		echo ""; \
+		echo "✅ Semantic release setup complete!"; \
+		echo ""; \
+		echo "💡 Next steps:"; \
+		echo "  • Use 'make commit' for conventional commits"; \
+		echo "  • Use 'make release-dry-run' to test releases"; \
+		echo "  • Push to main/release branches for automated releases"; \
+	else \
+		echo "❌ Node.js not found. Install options:"; \
+		echo ""; \
+		echo "🍺 Via Homebrew (recommended):"; \
+		echo "   brew install node"; \
+		echo ""; \
+		echo "📦 Via Node Version Manager:"; \
+		echo "   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"; \
+		echo "   nvm install node"; \
+		echo ""; \
+		echo "🌐 Direct download:"; \
+		echo "   https://nodejs.org/"; \
+		echo ""; \
+		echo "After installing Node.js, run 'make release-setup' again"; \
+		exit 1; \
+	fi
+
+commit: ## Interactive commit with conventional format
+	@echo "🚀 Creating conventional commit..."
+	@if command -v npx >/dev/null 2>&1 && [ -d "node_modules" ]; then \
+		npx git-cz; \
+	else \
+		echo "⚠️  Commitizen not available. Using manual commit format..."; \
+		echo "Format: <type>[scope]: <description>"; \
+		echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"; \
+		echo ""; \
+		read -p "Enter commit message: " msg; \
+		git commit -m "$$msg"; \
+	fi
+
+release-dry-run: ## Run semantic-release in dry-run mode
+	@echo "🧪 Running release dry-run..."
+	@if command -v npx >/dev/null 2>&1 && [ -d "node_modules" ]; then \
+		npx semantic-release --dry-run; \
+	else \
+		echo "❌ semantic-release not available. Run 'make release-setup' first"; \
+		exit 1; \
+	fi
+
+release-status: ## Check semantic-release setup status
+	@echo "🔍 Semantic Release Status:"
+	@echo ""
+	@if command -v node >/dev/null 2>&1; then \
+		echo "✅ Node.js: $$(node --version)"; \
+	else \
+		echo "❌ Node.js: Not installed"; \
+	fi
+	@if command -v npm >/dev/null 2>&1; then \
+		echo "✅ npm: $$(npm --version)"; \
+	else \
+		echo "❌ npm: Not available"; \
+	fi
+	@if [ -f "package.json" ]; then \
+		echo "✅ package.json: Present"; \
+	else \
+		echo "❌ package.json: Missing"; \
+	fi
+	@if [ -d "node_modules" ]; then \
+		echo "✅ Dependencies: Installed"; \
+	else \
+		echo "❌ Dependencies: Not installed (run 'make release-setup')"; \
+	fi
+	@if [ -f ".husky/commit-msg" ]; then \
+		echo "✅ Git hooks: Configured"; \
+	else \
+		echo "⚠️  Git hooks: Not configured"; \
+	fi
 
 # Container Build Commands
 
