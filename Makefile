@@ -111,6 +111,32 @@ release-status: ## Check semantic-release setup status
 		echo "⚠️  Git hooks: Not configured"; \
 	fi
 
+protect-release-branch: ## Protect a release branch (usage: make protect-release-branch VERSION=v1.1)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "❌ VERSION is required. Usage: make protect-release-branch VERSION=v1.1"; \
+		exit 1; \
+	fi
+	@./scripts/protect-release-branch.sh $(VERSION)
+
+configure-secrets: ## Configure repository secrets for automated publishing
+	@./scripts/configure-secrets.sh
+
+secrets-status: ## Show current repository secrets status
+	@echo "🔐 Repository Secrets Status:"
+	@echo ""
+	@if command -v gh >/dev/null 2>&1; then \
+		if gh auth status >/dev/null 2>&1; then \
+			echo "✅ GitHub CLI authenticated"; \
+			echo ""; \
+			echo "📋 Configured secrets:"; \
+			gh secret list 2>/dev/null || echo "   No secrets found"; \
+		else \
+			echo "❌ GitHub CLI not authenticated. Run: gh auth login"; \
+		fi; \
+	else \
+		echo "❌ GitHub CLI not found. Install from: https://cli.github.com/"; \
+	fi
+
 # Container Build Commands
 
 # Enhanced Build Commands
