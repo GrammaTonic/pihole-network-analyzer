@@ -12,6 +12,7 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 | **[Installation Guide](installation.md)** | Detailed setup instructions | New users |
 | **[Configuration Guide](configuration.md)** | Configuration options and examples | All users |
 | **[API Reference](api.md)** | Pi-hole API connectivity guide | System administrators |
+| **[Quick Start Workflow](QUICK_START_WORKFLOW.md)** | Development workflow and semantic versioning | New contributors |
 
 ### 💻 Usage and Operation
 
@@ -20,11 +21,13 @@ Welcome to the comprehensive documentation for the Pi-hole Network Analyzer! Thi
 | **[Usage Guide](usage.md)** | Command-line options and workflows | Daily users |
 | **[Troubleshooting Guide](troubleshooting.md)** | Common issues and solutions | Support and users |
 
-### 🛠️ Development and API
+### 🛠️ Development and Contribution
 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | **[Development Guide](development.md)** | Building, testing, and contributing | Developers |
+| **[Branching Strategy](BRANCHING_STRATEGY.md)** | Git workflow and release management | All contributors |
+| **[Quick Start Workflow](QUICK_START_WORKFLOW.md)** | Daily development workflow | New developers |
 | **[API Reference](api.md)** | Internal package documentation | Advanced developers |
 
 ### 🐳 Container and Deployment

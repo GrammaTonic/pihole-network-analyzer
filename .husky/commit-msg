@@ -1,0 +1,55 @@
+#!/bin/sh
+# Husky commit message hook for conventional commits
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Check if running in CI
+if [ "$CI" = "true" ]; then
+  exit 0
+fi
+
+# Check if commitlint is available
+if ! command -v npx >/dev/null 2>&1; then
+  echo "${YELLOW}Warning: npx not found. Skipping commit message validation.${NC}"
+  echo "To enable validation, install Node.js and run: npm install"
+  exit 0
+fi
+
+# Check if node_modules exists
+if [ ! -d "node_modules" ]; then
+  echo "${YELLOW}Warning: node_modules not found. Skipping commit message validation.${NC}"
+  echo "To enable validation, run: npm install"
+  exit 0
+fi
+
+# Validate commit message
+echo "Validating commit message..."
+npx commitlint --edit "$1"
+
+if [ $? -ne 0 ]; then
+  echo "${RED}❌ Commit message validation failed!${NC}"
+  echo ""
+  echo "Your commit message should follow the Conventional Commits format:"
+  echo ""
+  echo "  ${GREEN}<type>[optional scope]: <description>${NC}"
+  echo ""
+  echo "Examples:"
+  echo "  ${GREEN}feat(api): add user authentication${NC}"
+  echo "  ${GREEN}fix(network): resolve memory leak in analyzer${NC}"
+  echo "  ${GREEN}docs: update installation instructions${NC}"
+  echo ""
+  echo "Valid types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+  echo ""
+  echo "For breaking changes, add a footer:"
+  echo "  ${GREEN}feat(api): redesign authentication"
+  echo ""
+  echo "  BREAKING CHANGE: API tokens are now required${NC}"
+  echo ""
+  exit 1
+fi
+
+echo "${GREEN}✅ Commit message is valid${NC}"

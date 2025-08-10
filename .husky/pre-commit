@@ -1,0 +1,43 @@
+#!/bin/sh
+# Husky pre-commit hook
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "Running pre-commit checks..."
+
+# Check if Go is available
+if ! command -v go >/dev/null 2>&1; then
+  echo "${RED}❌ Go is not installed or not in PATH${NC}"
+  exit 1
+fi
+
+# Run Go format check
+echo "Checking Go code formatting..."
+UNFORMATTED=$(gofmt -l .)
+if [ -n "$UNFORMATTED" ]; then
+  echo "${RED}❌ The following files are not properly formatted:${NC}"
+  echo "$UNFORMATTED"
+  echo ""
+  echo "Run: ${GREEN}gofmt -w .${NC} to fix formatting"
+  exit 1
+fi
+
+# Run Go vet
+echo "Running Go vet..."
+if ! go vet ./...; then
+  echo "${RED}❌ Go vet failed${NC}"
+  exit 1
+fi
+
+# Run tests on changed files
+echo "Running quick tests..."
+if ! go test -short ./...; then
+  echo "${RED}❌ Tests failed${NC}"
+  exit 1
+fi
+
+echo "${GREEN}✅ All pre-commit checks passed${NC}"

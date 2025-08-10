@@ -21,9 +21,10 @@ A powerful, colorized DNS usage analysis tool that connects to Pi-hole servers v
 
 ### Prerequisites
 
-- Go 1.23.12+ 
-- Pi-hole with API access enabled
-- Terminal with color support (recommended)
+- **Go 1.24+** - For building and running the application
+- **Pi-hole with API access** - Target Pi-hole server
+- **Terminal with color support** (recommended)
+- **Node.js** (optional) - Only needed for release automation and development workflow
 
 ### Installation
 
@@ -175,13 +176,41 @@ make clean
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run the test suite: `make ci-test`
-5. Commit your changes: `git commit -m 'Add amazing feature'`
-6. Push to the branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+We follow a structured development workflow with semantic versioning and conventional commits. Please see our [Quick Start Workflow Guide](docs/QUICK_START_WORKFLOW.md) for details.
+
+### Development Process
+
+1. **Setup**: Install dependencies with `make release-setup`
+2. **Feature Branch**: Create from main: `git checkout -b feat/amazing-feature`
+3. **Conventional Commits**: Use `make commit` for interactive commit creation
+4. **Testing**: Run `make ci-test` before pushing
+5. **Pull Request**: Create PR to main branch
+
+### Commit Format
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```bash
+feat(component): add new feature
+fix(api): resolve bug in authentication
+docs: update installation guide
+```
+
+### Documentation
+
+- 📚 [Branching Strategy](docs/BRANCHING_STRATEGY.md) - Detailed workflow guide
+- 🚀 [Quick Start Workflow](docs/QUICK_START_WORKFLOW.md) - Getting started
+- 🔧 [Development](docs/development.md) - Technical development guide
+
+## 📦 Releases
+
+Releases are automated using semantic versioning:
+
+- **Patch** (x.y.Z): Bug fixes (`fix:` commits)
+- **Minor** (x.Y.z): New features (`feat:` commits)  
+- **Major** (X.y.z): Breaking changes (`BREAKING CHANGE:` footer)
+
+View releases: [GitHub Releases](https://github.com/GrammaTonic/pihole-network-analyzer/releases)
 
 ## 📄 License
 

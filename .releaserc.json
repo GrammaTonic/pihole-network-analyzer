@@ -1,0 +1,87 @@
+{
+  "branches": [
+    "main",
+    {
+      "name": "release/v+([0-9])?(.{+([0-9]),x}).x",
+      "range": "${name.replace(/^release\\/v/, '')}"
+    }
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "perf", "release": "patch" },
+          { "type": "revert", "release": "patch" },
+          { "type": "docs", "release": false },
+          { "type": "style", "release": false },
+          { "type": "chore", "release": false },
+          { "type": "refactor", "release": "patch" },
+          { "type": "test", "release": false },
+          { "type": "build", "release": false },
+          { "type": "ci", "release": false }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            { "type": "feat", "section": "🚀 Features" },
+            { "type": "fix", "section": "🐛 Bug Fixes" },
+            { "type": "perf", "section": "⚡ Performance Improvements" },
+            { "type": "revert", "section": "🗑 Reverts" },
+            { "type": "refactor", "section": "♻️ Code Refactoring" },
+            { "type": "security", "section": "🔒 Security" }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines."
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "verifyConditionsCmd": "go mod verify && go test -short ./...",
+        "prepareCmd": "make build-all",
+        "publishCmd": "echo 'Built version ${nextRelease.version} - binaries ready for GitHub release'"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "cmd/pihole-analyzer/pihole-analyzer",
+            "name": "pihole-analyzer-${nextRelease.version}-linux-amd64",
+            "label": "Pi-hole Analyzer Binary (Linux AMD64)"
+          },
+          {
+            "path": "cmd/pihole-analyzer-test/pihole-analyzer-test",
+            "name": "pihole-analyzer-test-${nextRelease.version}-linux-amd64",
+            "label": "Pi-hole Analyzer Test Binary (Linux AMD64)"
+          }
+        ],
+        "successComment": "🎉 This ${issue.pull_request ? 'PR is included' : 'issue has been resolved'} in version [${nextRelease.version}](${releases.filter(release => release.name == nextRelease.version)[0].html_url}) :tada:",
+        "failComment": "This release from branch `${branch.name}` had failed due to the following errors:\n- ${errors.map(err => err.message).join('\\n- ')}"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "package.json"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

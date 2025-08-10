@@ -7,6 +7,39 @@ on:
     branches: [ main, master ]  # Accept PRs to main/master
 
 jobs:
+  # Validate commit messages on pull requests
+  commit-lint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install commitlint
+      run: |
+        npm install -g @commitlint/cli @commitlint/config-conventional
+        
+    - name: Validate commit messages
+      run: |
+        # Get the base branch commit
+        git fetch origin ${{ github.base_ref }}
+        BASE_SHA=$(git merge-base origin/${{ github.base_ref }} HEAD)
+        
+        # Validate each commit message in the PR
+        for commit in $(git rev-list $BASE_SHA..HEAD); do
+          echo "Validating commit: $commit"
+          git log --format="%B" -n 1 $commit | npx commitlint
+        done
+
   test:
     name: Test
     runs-on: ubuntu-latest
