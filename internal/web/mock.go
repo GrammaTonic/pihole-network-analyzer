@@ -20,225 +20,113 @@ func NewMockWebDataSource() *MockWebDataSource {
 	}
 }
 
-// Implement interfaces.DataSource interface
-func (m *MockWebDataSource) Connect(ctx context.Context) error {
-	m.connected = true
-	return nil
-}
-
-func (m *MockWebDataSource) Close() error {
-	m.connected = false
-	return nil
-}
-
-func (m *MockWebDataSource) IsConnected() bool {
-	return m.connected
-}
-
-func (m *MockWebDataSource) GetQueries(ctx context.Context, params interfaces.QueryParams) ([]types.PiholeRecord, error) {
-	// Return realistic mock data
-	now := time.Now()
-	return []types.PiholeRecord{
-		{
-			ID:        1,
-			DateTime:  now.Add(-1 * time.Hour).Format("2006-01-02 15:04:05"),
-			Domain:    "google.com",
-			Client:    "192.168.1.100",
-			QueryType: "A",
-			Status:    2, // Forwarded
-			Timestamp: now.Add(-1 * time.Hour).Format(time.RFC3339),
+// Implement DataSourceProvider interface
+func (m *MockWebDataSource) GetAnalysisResult(ctx context.Context) (*types.AnalysisResult, error) {
+	return &types.AnalysisResult{
+		ClientStats: map[string]*types.ClientStats{
+			"192.168.1.100": {
+				IP:          "192.168.1.100",
+				Hostname:    "desktop-pc",
+				QueryCount:  5000,
+				DomainCount: 150,
+				Domains: map[string]int{
+					"google.com":        2000,
+					"github.com":        1500,
+					"stackoverflow.com": 1500,
+				},
+				MACAddress: "aa:bb:cc:dd:ee:ff",
+				IsOnline:   true,
+				LastSeen:   time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
+				TopDomains: []types.DomainStat{
+					{Domain: "google.com", Count: 2000},
+					{Domain: "github.com", Count: 1500},
+					{Domain: "stackoverflow.com", Count: 1500},
+				},
+			},
+			"192.168.1.101": {
+				IP:          "192.168.1.101",
+				Hostname:    "laptop",
+				QueryCount:  3000,
+				DomainCount: 120,
+				Domains: map[string]int{
+					"facebook.com": 1500,
+					"google.com":   1000,
+					"twitter.com":  500,
+				},
+				MACAddress: "bb:cc:dd:ee:ff:aa",
+				IsOnline:   true,
+				LastSeen:   time.Now().Add(-2 * time.Minute).Format(time.RFC3339),
+				TopDomains: []types.DomainStat{
+					{Domain: "facebook.com", Count: 1500},
+					{Domain: "google.com", Count: 1000},
+					{Domain: "twitter.com", Count: 500},
+				},
+			},
+			"192.168.1.102": {
+				IP:          "192.168.1.102",
+				Hostname:    "phone",
+				QueryCount:  2000,
+				DomainCount: 80,
+				Domains: map[string]int{
+					"instagram.com": 800,
+					"google.com":    700,
+					"spotify.com":   500,
+				},
+				MACAddress: "cc:dd:ee:ff:aa:bb",
+				IsOnline:   false,
+				LastSeen:   time.Now().Add(-30 * time.Minute).Format(time.RFC3339),
+				TopDomains: []types.DomainStat{
+					{Domain: "instagram.com", Count: 800},
+					{Domain: "google.com", Count: 700},
+					{Domain: "spotify.com", Count: 500},
+				},
+			},
 		},
-		{
-			ID:        2,
-			DateTime:  now.Add(-50 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "facebook.com",
-			Client:    "192.168.1.101",
-			QueryType: "A",
-			Status:    1, // Blocked
-			Timestamp: now.Add(-50 * time.Minute).Format(time.RFC3339),
+		NetworkDevices: []types.NetworkDevice{
+			{
+				IP:       "192.168.1.100",
+				Hardware: "aa:bb:cc:dd:ee:ff",
+				Name:     "desktop-pc",
+				MAC:      "aa:bb:cc:dd:ee:ff",
+				Hostname: "desktop-pc",
+				Type:     "computer",
+				IsOnline: true,
+			},
+			{
+				IP:       "192.168.1.101",
+				Hardware: "bb:cc:dd:ee:ff:aa",
+				Name:     "laptop",
+				MAC:      "bb:cc:dd:ee:ff:aa",
+				Hostname: "laptop",
+				Type:     "computer",
+				IsOnline: true,
+			},
+			{
+				IP:       "192.168.1.102",
+				Hardware: "cc:dd:ee:ff:aa:bb",
+				Name:     "phone",
+				MAC:      "cc:dd:ee:ff:aa:bb",
+				Hostname: "phone",
+				Type:     "mobile",
+				IsOnline: false,
+			},
 		},
-		{
-			ID:        3,
-			DateTime:  now.Add(-45 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "github.com",
-			Client:    "192.168.1.102",
-			QueryType: "A",
-			Status:    2, // Forwarded
-			Timestamp: now.Add(-45 * time.Minute).Format(time.RFC3339),
-		},
-		{
-			ID:        4,
-			DateTime:  now.Add(-30 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "doubleclick.net",
-			Client:    "192.168.1.100",
-			QueryType: "A",
-			Status:    1, // Blocked
-			Timestamp: now.Add(-30 * time.Minute).Format(time.RFC3339),
-		},
-		{
-			ID:        5,
-			DateTime:  now.Add(-25 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "stackoverflow.com",
-			Client:    "192.168.1.103",
-			QueryType: "A",
-			Status:    2, // Forwarded
-			Timestamp: now.Add(-25 * time.Minute).Format(time.RFC3339),
-		},
-		{
-			ID:        6,
-			DateTime:  now.Add(-20 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "ads.yahoo.com",
-			Client:    "192.168.1.101",
-			QueryType: "A",
-			Status:    1, // Blocked
-			Timestamp: now.Add(-20 * time.Minute).Format(time.RFC3339),
-		},
-		{
-			ID:        7,
-			DateTime:  now.Add(-15 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "example.com",
-			Client:    "192.168.1.104",
-			QueryType: "AAAA",
-			Status:    2, // Forwarded
-			Timestamp: now.Add(-15 * time.Minute).Format(time.RFC3339),
-		},
-		{
-			ID:        8,
-			DateTime:  now.Add(-10 * time.Minute).Format("2006-01-02 15:04:05"),
-			Domain:    "tracker.malware.com",
-			Client:    "192.168.1.102",
-			QueryType: "A",
-			Status:    1, // Blocked
-			Timestamp: now.Add(-10 * time.Minute).Format(time.RFC3339),
-		},
-	}, nil
-}
-
-func (m *MockWebDataSource) GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error) {
-	return map[string]*types.ClientStats{
-		"192.168.1.100": {
-			IP:          "192.168.1.100",
-			Hostname:    "laptop-john",
-			QueryCount:  45,
-			DomainCount: 12,
-			MACAddress:  "aa:bb:cc:dd:ee:01",
-			IsOnline:    true,
-			LastSeen:    time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
-			QueryTypes:  map[int]int{1: 40, 28: 5},
-			StatusCodes: map[int]int{1: 10, 2: 35},
-		},
-		"192.168.1.101": {
-			IP:          "192.168.1.101",
-			Hostname:    "phone-alice",
-			QueryCount:  32,
-			DomainCount: 8,
-			MACAddress:  "aa:bb:cc:dd:ee:02",
-			IsOnline:    true,
-			LastSeen:    time.Now().Add(-2 * time.Minute).Format(time.RFC3339),
-			QueryTypes:  map[int]int{1: 30, 28: 2},
-			StatusCodes: map[int]int{1: 8, 2: 24},
-		},
-		"192.168.1.102": {
-			IP:          "192.168.1.102",
-			Hostname:    "desktop-bob",
-			QueryCount:  67,
-			DomainCount: 23,
-			MACAddress:  "aa:bb:cc:dd:ee:03",
-			IsOnline:    false,
-			LastSeen:    time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-			QueryTypes:  map[int]int{1: 60, 28: 7},
-			StatusCodes: map[int]int{1: 15, 2: 52},
-		},
-		"192.168.1.103": {
-			IP:          "192.168.1.103",
-			Hostname:    "tablet-charlie",
-			QueryCount:  18,
-			DomainCount: 6,
-			MACAddress:  "aa:bb:cc:dd:ee:04",
-			IsOnline:    true,
-			LastSeen:    time.Now().Add(-1 * time.Minute).Format(time.RFC3339),
-			QueryTypes:  map[int]int{1: 15, 28: 3},
-			StatusCodes: map[int]int{1: 3, 2: 15},
-		},
-		"192.168.1.104": {
-			IP:          "192.168.1.104",
-			Hostname:    "iot-device",
-			QueryCount:  8,
-			DomainCount: 3,
-			MACAddress:  "aa:bb:cc:dd:ee:05",
-			IsOnline:    true,
-			LastSeen:    time.Now().Add(-30 * time.Second).Format(time.RFC3339),
-			QueryTypes:  map[int]int{1: 6, 28: 2},
-			StatusCodes: map[int]int{1: 1, 2: 7},
+		TotalQueries:   10000,
+		UniqueClients:  3,
+		AnalysisMode:   "mock",
+		DataSourceType: "mock",
+		Timestamp:      time.Now().Format(time.RFC3339),
+		Performance: &types.QueryPerformance{
+			AverageResponseTime: 15.5,
+			TotalQueries:        10000,
+			QueriesPerSecond:    2.78,
+			PeakQueries:         45,
+			SlowQueries:         12,
 		},
 	}, nil
 }
 
-func (m *MockWebDataSource) GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error) {
-	return []types.NetworkDevice{
-		{
-			IP:       "192.168.1.100",
-			MAC:      "aa:bb:cc:dd:ee:01",
-			Hostname: "laptop-john",
-			IsOnline: true,
-		},
-		{
-			IP:       "192.168.1.101",
-			MAC:      "aa:bb:cc:dd:ee:02",
-			Hostname: "phone-alice",
-			IsOnline: true,
-		},
-		{
-			IP:       "192.168.1.102",
-			MAC:      "aa:bb:cc:dd:ee:03",
-			Hostname: "desktop-bob",
-			IsOnline: false,
-		},
-		{
-			IP:       "192.168.1.103",
-			MAC:      "aa:bb:cc:dd:ee:04",
-			Hostname: "tablet-charlie",
-			IsOnline: true,
-		},
-		{
-			IP:       "192.168.1.104",
-			MAC:      "aa:bb:cc:dd:ee:05",
-			Hostname: "iot-device",
-			IsOnline: true,
-		},
-	}, nil
-}
-
-func (m *MockWebDataSource) GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error) {
-	return &types.DomainAnalysis{
-		TopDomains: []types.DomainCount{
-			{Domain: "google.com", Count: 25},
-			{Domain: "github.com", Count: 18},
-			{Domain: "stackoverflow.com", Count: 12},
-		},
-		BlockedDomains: []types.DomainCount{
-			{Domain: "facebook.com", Count: 15},
-			{Domain: "doubleclick.net", Count: 10},
-			{Domain: "ads.yahoo.com", Count: 8},
-		},
-		QueryTypes:     map[string]int{"A": 120, "AAAA": 15, "PTR": 5},
-		TotalQueries:   170,
-		TotalBlocked:   37,
-		BlockedPercent: 21.8,
-	}, nil
-}
-
-func (m *MockWebDataSource) GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error) {
-	return &types.QueryPerformance{
-		AverageResponseTime: 45.2,
-		TotalQueries:        170,
-		QueriesPerSecond:    2.3,
-		PeakQueries:         8,
-		SlowQueries:         3,
-	}, nil
-}
-
-func (m *MockWebDataSource) GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error) {
+func (m *MockWebDataSource) GetConnectionStatus() *types.ConnectionStatus {
 	return &types.ConnectionStatus{
 		Connected:    m.connected,
 		LastConnect:  time.Now().Format(time.RFC3339),
@@ -248,22 +136,94 @@ func (m *MockWebDataSource) GetConnectionStatus(ctx context.Context) (*types.Con
 			"mode":        "demo",
 			"data_source": "mock_web_source",
 		},
+	}
+}
+
+// ProductionMockDataSource implements interfaces.DataSource for main application demo
+type ProductionMockDataSource struct {
+	connected bool
+}
+
+// NewMockDataSourceForProduction creates a production mock data source for demo purposes
+func NewMockDataSourceForProduction() *ProductionMockDataSource {
+	return &ProductionMockDataSource{
+		connected: true,
+	}
+}
+
+// Implement interfaces.DataSource interface
+func (m *ProductionMockDataSource) Connect(ctx context.Context) error {
+	return nil
+}
+
+func (m *ProductionMockDataSource) Close() error {
+	return nil
+}
+
+func (m *ProductionMockDataSource) IsConnected() bool {
+	return m.connected
+}
+
+func (m *ProductionMockDataSource) GetQueries(ctx context.Context, params interfaces.QueryParams) ([]types.PiholeRecord, error) {
+	return []types.PiholeRecord{
+		{
+			ID:        1,
+			DateTime:  time.Now().Add(-time.Hour).Format("2006-01-02 15:04:05"),
+			Domain:    "example.com",
+			Client:    "192.168.1.100",
+			QueryType: "A",
+			Status:    0,
+			Timestamp: time.Now().Add(-time.Hour).Format(time.RFC3339),
+		},
+		{
+			ID:        2,
+			DateTime:  time.Now().Add(-30 * time.Minute).Format("2006-01-02 15:04:05"),
+			Domain:    "google.com",
+			Client:    "192.168.1.101",
+			QueryType: "AAAA",
+			Status:    0,
+			Timestamp: time.Now().Add(-30 * time.Minute).Format(time.RFC3339),
+		},
 	}, nil
 }
 
-func (m *MockWebDataSource) GetDataSourceType() interfaces.DataSourceType {
+func (m *ProductionMockDataSource) GetClientStats(ctx context.Context) (map[string]*types.ClientStats, error) {
+	return map[string]*types.ClientStats{
+		"192.168.1.100": {
+			IP:          "192.168.1.100",
+			Hostname:    "demo-desktop",
+			QueryCount:  150,
+			DomainCount: 45,
+		},
+	}, nil
+}
+
+func (m *ProductionMockDataSource) GetNetworkInfo(ctx context.Context) ([]types.NetworkDevice, error) {
+	return []types.NetworkDevice{}, nil
+}
+
+func (m *ProductionMockDataSource) GetDomainAnalysis(ctx context.Context) (*types.DomainAnalysis, error) {
+	return &types.DomainAnalysis{}, nil
+}
+
+func (m *ProductionMockDataSource) GetQueryPerformance(ctx context.Context) (*types.QueryPerformance, error) {
+	return &types.QueryPerformance{}, nil
+}
+
+func (m *ProductionMockDataSource) GetConnectionStatus(ctx context.Context) (*types.ConnectionStatus, error) {
+	return &types.ConnectionStatus{
+		Connected:   m.connected,
+		LastConnect: time.Now().Format(time.RFC3339),
+	}, nil
+}
+
+func (m *ProductionMockDataSource) GetDataSourceType() interfaces.DataSourceType {
 	return interfaces.DataSourceTypeAPI
 }
 
-func (m *MockWebDataSource) GetConnectionInfo() *interfaces.ConnectionInfo {
+func (m *ProductionMockDataSource) GetConnectionInfo() *interfaces.ConnectionInfo {
 	return &interfaces.ConnectionInfo{
 		Type:      interfaces.DataSourceTypeAPI,
-		Host:      "mock-pihole",
-		Port:      80,
 		Connected: m.connected,
-		Metadata: map[string]interface{}{
-			"mock": true,
-			"demo": true,
-		},
 	}
 }
