@@ -413,7 +413,7 @@ type GrafanaConfig struct {
 	Dashboards DashboardConfig `json:"dashboards"`
 
 	// Alert management
-	AlertIntegration GrafanaAlertConfig `json:"alerts"`
+	AlertIntegration GrafanaAlertConfig `json:"alert_integration"`
 
 	// Connection settings
 	Timeout    int  `json:"timeout_seconds"`
