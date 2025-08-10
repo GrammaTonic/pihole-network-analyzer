@@ -4,7 +4,11 @@
 [![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A powerful, colorized DNS usage analysis tool that connects to Pi-hole servers via API to provide comprehensive network insights and beautiful terminal reports.
+# Pi-hole Network Analyzer
+
+🎉 **Production Ready v1.0** 🎉
+
+A Go-based DNS analysis tool that connects to Pi-hole via API to generate colorized terminal reports with network insights, featuring web UI, metrics collection, and daemon mode.
 
 ## 🚀 Features
 
