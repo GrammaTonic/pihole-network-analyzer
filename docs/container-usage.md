@@ -103,12 +103,36 @@ docker run --rm ghcr.io/grammatonic/pihole-analyzer:latest-development
 
 ### Environment Variables
 
-| Variable | Description | Default | Example |
-|----------|-------------|---------|---------|
-| `PIHOLE_CONFIG` | Configuration file path | `/home/appuser/.pihole-analyzer/config.json` | `/config/pihole.json` |
-| `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `warn`, `error` |
-| `OUTPUT_FORMAT` | Output format | `table` | `json`, `csv`, `table` |
-| `DEVELOPMENT` | Development mode | `false` | `true` |
+Complete environment variable support for container-first deployments:
+
+| Category | Variable | Description | Default | Example |
+|----------|----------|-------------|---------|---------|
+| **Pi-hole** | `PIHOLE_HOST` | Pi-hole server IP/hostname | `pi.hole` | `192.168.1.100` |
+| | `PIHOLE_PORT` | Pi-hole server port | `80` | `8080` |
+| | `PIHOLE_API_PASSWORD` | Pi-hole API token | *(required)* | `your-api-token` |
+| | `PIHOLE_USE_HTTPS` | Use HTTPS for API | `false` | `true` |
+| | `PIHOLE_API_TIMEOUT` | API timeout seconds | `30` | `60` |
+| **Web** | `WEB_ENABLED` | Enable web dashboard | `false` | `true` |
+| | `WEB_HOST` | Web server bind address | `localhost` | `0.0.0.0` |
+| | `WEB_PORT` | Web server port | `8080` | `3000` |
+| | `WEB_DAEMON_MODE` | Run as background service | `false` | `true` |
+| **Logging** | `LOG_LEVEL` | Logging level | `info` | `debug`, `warn`, `error` |
+| | `LOG_ENABLE_COLORS` | Colorized log output | `true` | `false` |
+| | `LOG_ENABLE_EMOJIS` | Emoji in logs | `true` | `false` |
+| **Analysis** | `ANALYSIS_ONLINE_ONLY` | Show only online devices | `false` | `true` |
+| **Metrics** | `METRICS_ENABLED` | Enable Prometheus metrics | `true` | `false` |
+| | `METRICS_HOST` | Metrics server bind address | `localhost` | `0.0.0.0` |
+| | `METRICS_PORT` | Metrics server port | `9090` | `9091` |
+| **Runtime** | `GOMEMLIMIT` | Go memory limit | `128MiB` | `256MiB` |
+| | `GOMAXPROCS` | Go max processors | `2` | `4` |
+
+### Configuration Priority
+
+Environment variables follow this precedence order:
+1. **CLI flags** (highest priority)
+2. **Environment variables**
+3. **Configuration file** 
+4. **Defaults** (lowest priority)
 
 ## Docker Compose Configurations
 
