@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [2.1.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v2.0.0...v2.1.0) (2025-08-11)
+
+
+### 🚀 Features
+
+* Make Docker the primary installation method with comprehensive environment variable support ([#20](https://github.com/GrammaTonic/pihole-network-analyzer/issues/20)) ([4f1952a](https://github.com/GrammaTonic/pihole-network-analyzer/commit/4f1952a74709162ab8d7e2315c4d22c41ccb5f9a))
+
 ## [2.0.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v1.0.0...v2.0.0) (2025-08-10)
 
 
