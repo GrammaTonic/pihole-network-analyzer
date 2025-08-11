@@ -353,8 +353,8 @@ func TestLeaseManager(t *testing.T) {
 			t.Fatalf("Failed to load original lease: %v", err)
 		}
 		
-		// Wait a bit to ensure time difference
-		time.Sleep(100 * time.Millisecond) // Increase sleep time
+		// Wait to ensure time difference (RFC3339 has second precision)
+		time.Sleep(1100 * time.Millisecond) // Wait just over 1 second to cross second boundary
 		
 		// Record current time for comparison
 		renewTime := time.Now()
