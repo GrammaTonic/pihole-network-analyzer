@@ -280,12 +280,12 @@ func TestEmailHandler(t *testing.T) {
 
 	// Test sending notification (should fail without valid SMTP server)
 	ctx := context.Background()
-	
+
 	// Use localhost instead of external domain to avoid DNS blocks
 	localConfig := config
 	localConfig.SMTPHost = "localhost"
 	localConfig.SMTPPort = 65534 // Use unused port to ensure quick failure
-	
+
 	if err := handler.SendNotification(ctx, alert, localConfig); err == nil {
 		t.Error("expected error when sending email without valid SMTP server")
 	}
@@ -424,7 +424,7 @@ func TestNotificationErrorHandling(t *testing.T) {
 	slackHandler := NewSlackHandler(SlackConfig{
 		Enabled:    true,
 		WebhookURL: "https://localhost:65534/webhook", // Use localhost instead of external domain
-		Timeout:    1 * time.Second, // Short timeout
+		Timeout:    1 * time.Second,                   // Short timeout
 	}, logger)
 
 	// This should either fail quickly due to context cancellation or invalid URL
