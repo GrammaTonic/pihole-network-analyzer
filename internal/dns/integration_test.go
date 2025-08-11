@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +14,12 @@ import (
 func TestDNSServer_Integration(t *testing.T) {
 	// Skip integration test in CI environments where external DNS may not work
 	if testing.Short() {
-		t.Skip("Skipping integration test")
+		t.Skip("Skipping integration test in short mode")
+	}
+	
+	// Skip in CI environments
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping integration test in CI environment")
 	}
 
 	// Create logger
@@ -257,7 +263,12 @@ func TestDNSCache_Integration(t *testing.T) {
 func TestDNSForwarder_Integration(t *testing.T) {
 	// Skip if no internet connection
 	if testing.Short() {
-		t.Skip("Skipping forwarder integration test")
+		t.Skip("Skipping forwarder integration test in short mode")
+	}
+	
+	// Skip in CI environments
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping forwarder integration test in CI environment")
 	}
 
 	config := ForwarderConfig{

@@ -368,7 +368,7 @@ func TestIntegrationConfigurationScenarios(t *testing.T) {
 				Notifications: NotificationConfig{
 					Email: EmailConfig{
 						Enabled:    true,
-						SMTPHost:   "smtp.test.com",
+						SMTPHost:   "localhost", // Use localhost to avoid external network calls
 						SMTPPort:   587,
 						Username:   "test@test.com",
 						Password:   "password",
