@@ -33,15 +33,63 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 
 ### Prerequisites
 
-- **Go 1.24+** - For building and running the application
-- **Pi-hole with API access** - Target Pi-hole server
+- **Docker** (recommended) - For the easiest setup and deployment
 - **Terminal with color support** (recommended)
-- **Node.js** (optional) - Only needed for release automation and development workflow
+- **Pi-hole with API access** - Target Pi-hole server
 
-### Installation
+### 🐳 Docker Installation (Recommended)
+
+The fastest way to get started is using Docker:
 
 ```bash
-# Clone the repository
+# Pull the latest image
+docker pull ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with environment variables (no config file needed)
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with configuration file
+docker run --rm \
+  -v ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --config /home/appuser/.pihole-analyzer/config.json
+
+# Start web UI with environment variables
+docker run -d -p 8080:8080 \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  -e WEB_ENABLED=true \
+  -e WEB_DAEMON_MODE=true \
+  --name pihole-analyzer \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+```
+
+### Docker Compose (Production Ready)
+
+```bash
+# Create docker-compose.yml with your Pi-hole details
+curl -O https://raw.githubusercontent.com/GrammaTonic/pihole-network-analyzer/main/docker-compose.yml
+
+# Configure via environment variables
+export PIHOLE_HOST=192.168.1.100
+export PIHOLE_API_PASSWORD=your-api-token
+
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+### 🔧 Alternative: Build from Source
+
+For development or custom builds:
+
+```bash
+# Requires Go 1.24+ and Node.js (dev tools only)
 git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
 cd pihole-network-analyzer
 
@@ -52,20 +100,46 @@ make build
 go build -o pihole-analyzer ./cmd/pihole-analyzer
 ```
 
+### Configuration Options
+
+**Environment Variables** (Docker-friendly):
+```bash
+# Required
+PIHOLE_HOST=192.168.1.100
+PIHOLE_API_PASSWORD=your-api-token
+
+# Optional
+LOG_LEVEL=info
+WEB_ENABLED=true
+WEB_PORT=8080
+METRICS_ENABLED=true
+ANALYSIS_ONLINE_ONLY=false
+```
+
+**Configuration File** (traditional):
+```bash
+# Create default config
+docker run --rm -v $(pwd):/output \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --create-config
+
+# Edit the generated config.json file
+```
+
 ### Basic Usage
 
 ```bash
-# Setup Pi-hole configuration (interactive)
-./pihole-analyzer --pihole-setup
+# Docker with environment variables
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
 
-# Analyze Pi-hole data
+# Binary with config file (if built from source)
 ./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
 
-# Run with test data (no Pi-hole required)
-./pihole-analyzer-test
-
-# Create default configuration file
-./pihole-analyzer --create-config
+# Test with mock data (no Pi-hole required)
+docker run --rm ghcr.io/grammatonic/pihole-network-analyzer:latest-development
 ```
 
 ## � Container Support
