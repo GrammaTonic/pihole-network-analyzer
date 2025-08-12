@@ -19,10 +19,10 @@ import (
 
 // WebIntegrationTestSuite handles web integration testing
 type WebIntegrationTestSuite struct {
-	server       *web.Server
-	mockProvider *MockWebDataSource
-	baseURL      string
-	logger       *logger.Logger
+	server        *web.Server
+	mockProvider  *MockWebDataSource
+	baseURL       string
+	logger        *logger.Logger
 	screenshotDir string
 }
 
@@ -113,7 +113,7 @@ func setupWebTestSuite(t *testing.T) *WebIntegrationTestSuite {
 	if os.Getenv("SKIP_CHROME_TESTS") == "true" {
 		t.Skip("Chrome tests skipped via SKIP_CHROME_TESTS environment variable")
 	}
-	
+
 	// Create screenshot directory
 	screenshotDir := filepath.Join("test-screenshots")
 	if err := os.MkdirAll(screenshotDir, 0755); err != nil {
@@ -143,7 +143,7 @@ func (suite *WebIntegrationTestSuite) startServer(t *testing.T) {
 	// Use a specific test port to avoid conflicts
 	testPort := 18080
 	suite.baseURL = fmt.Sprintf("http://127.0.0.1:%d", testPort)
-	
+
 	// Update server config with the specific port
 	config := &web.Config{
 		Port:            testPort,
@@ -200,7 +200,7 @@ func (suite *WebIntegrationTestSuite) stopServer() {
 // takeScreenshot captures a screenshot and saves it to the test directory
 func (suite *WebIntegrationTestSuite) takeScreenshot(ctx context.Context, filename string) error {
 	var buf []byte
-	
+
 	// Take screenshot
 	if err := chromedp.Run(ctx, chromedp.CaptureScreenshot(&buf)); err != nil {
 		return fmt.Errorf("failed to capture screenshot: %w", err)
@@ -284,7 +284,7 @@ func (suite *WebIntegrationTestSuite) createBrowserContext() (context.Context, c
 
 	allocCtx, _ := chromedp.NewExecAllocator(context.Background(), opts...)
 	ctx, cancel := chromedp.NewContext(allocCtx)
-	
+
 	return ctx, cancel
 }
 
@@ -358,9 +358,9 @@ func TestWebIntegration_Dashboard(t *testing.T) {
 
 	// Log what we actually found for debugging
 	suite.logger.InfoFields("Dashboard content validation", map[string]any{
-		"title":         title,
-		"body_length":   len(bodyText),
-		"found_content": foundContent,
+		"title":          title,
+		"body_length":    len(bodyText),
+		"found_content":  foundContent,
 		"total_expected": len(expectedContent),
 	})
 
@@ -377,7 +377,7 @@ func TestWebIntegration_EnhancedDashboard(t *testing.T) {
 	// Create browser context with shorter timeout for enhanced dashboard
 	ctx, cancel := suite.createBrowserContext()
 	defer cancel()
-	
+
 	// Use shorter timeout for enhanced dashboard to avoid long waits for CDN resources
 	ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 20*time.Second)
 	defer timeoutCancel()
@@ -430,7 +430,7 @@ func TestWebIntegration_APIEndpoints(t *testing.T) {
 		name     string
 	}{
 		{"/api/status", "Status API"},
-		{"/api/analysis", "Analysis API"}, 
+		{"/api/analysis", "Analysis API"},
 		{"/api/clients", "Clients API"},
 		{"/health", "Health Check"},
 	}
@@ -484,7 +484,7 @@ func TestWebIntegration_Responsive(t *testing.T) {
 			// Create browser context
 			ctx, cancel := suite.createBrowserContext()
 			defer cancel()
-			
+
 			// Add timeout for responsive tests
 			ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 15*time.Second)
 			defer timeoutCancel()
@@ -527,7 +527,7 @@ func TestWebIntegration_WebSocketConnection(t *testing.T) {
 	// Create browser context
 	ctx, cancel := suite.createBrowserContext()
 	defer cancel()
-	
+
 	// Add timeout for WebSocket tests
 	ctxWithTimeout, timeoutCancel := context.WithTimeout(ctx, 15*time.Second)
 	defer timeoutCancel()

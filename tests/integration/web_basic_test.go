@@ -69,7 +69,7 @@ func TestWebBasic_ServerStart(t *testing.T) {
 
 	// Stop server
 	server.Stop()
-	
+
 	testLogger.Success("Basic server test completed successfully")
 }
 
@@ -159,7 +159,7 @@ func TestWebBasic_Dashboard(t *testing.T) {
 
 	// Stop server
 	server.Stop()
-	
+
 	testLogger.Success("Dashboard test completed successfully")
 }
 
@@ -208,10 +208,10 @@ func TestWebBasic_APIEndpoints(t *testing.T) {
 
 	// Test API endpoints
 	testCases := []struct {
-		endpoint    string
-		name        string
-		expectJSON  bool
-		expectHTTP  bool
+		endpoint   string
+		name       string
+		expectJSON bool
+		expectHTTP bool
 	}{
 		{"/api/status", "Status API", true, false},
 		{"/api/analysis", "Analysis API", true, false},
@@ -255,7 +255,7 @@ func TestWebBasic_APIEndpoints(t *testing.T) {
 
 	// Stop server
 	server.Stop()
-	
+
 	testLogger.Success("API endpoints test completed successfully")
 }
 
@@ -338,6 +338,6 @@ func TestWebBasic_ConcurrentRequests(t *testing.T) {
 
 	// Stop server
 	server.Stop()
-	
+
 	testLogger.Success("Concurrent requests test completed successfully")
 }
