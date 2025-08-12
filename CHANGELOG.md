@@ -2,6 +2,117 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## 1.0.0 (2025-08-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Enhanced dashboard introduces new API endpoints and WebSocket integration
+* **web:** Web server now includes WebSocket endpoints and requires
+gorilla/websocket dependency
+* **release:** Implement comprehensive release pipeline with semantic versioning.
+
+This introduces automated release management with:
+- GitLab Flow with Release Branches strategy
+- semantic-release automation for version bumping and changelog generation  
+- Enhanced GitHub token integration with fallback pattern
+- Multi-architecture Docker builds and container registry publishing
+- Comprehensive CI/CD pipeline with 17 validation checks
+- Repository secrets configuration automation
+- Branch protection with proper release branch patterns
+
+This change establishes the foundation for automated v1.0.0 release.
+
+* feat(release): add automated branch protection via GitHub CLI
+
+- Create script to protect release branches using gh CLI
+- Add make target: make protect-release-branch VERSION=vX.Y
+- Enable protection for main and release/v1.0 branches
+- Require PR reviews, CI checks, and restrict force pushes
+- Complete branch protection implementation for v1.0.0
+
+* feat(release): complete repository secrets configuration
+
+- Add interactive secrets configuration script
+- Create comprehensive secrets management tools
+- Update workflow to use enhanced GitHub token
+- Add documentation for secrets configuration
+- Enable automated publishing capabilities
+
+Features:
+- scripts/configure-secrets.sh for guided setup
+- make configure-secrets and make secrets-status targets
+- Enhanced token fallback in GitHub Actions workflow
+- Docker Hub and Slack integration support
+- Complete secrets configuration documentation
+* This marks the stable v1.0.0 API and feature set. Production ready
+release with complete semantic versioning framework, GitLab Flow branching strategy,
+and automated CI/CD pipeline.
+* **release:** Development workflow now requires conventional commit format.
+See docs/QUICK_START_WORKFLOW.md for migration guide.
+
+* Enhanced Dashboard with Chart.js Integration and Real-time WebSocket Updates (#18) ([654ae75](https://github.com/GrammaTonic/pihole-network-analyzer/commit/654ae7583de87de2b6b517ae57079803a1cfdb47)), closes [#18](https://github.com/GrammaTonic/pihole-network-analyzer/issues/18)
+
+
+### docs
+
+* **release:** implement semantic versioning and release automation framework ([003c765](https://github.com/GrammaTonic/pihole-network-analyzer/commit/003c76516638c7ea46f584db569bbd97a28b4e7a))
+
+
+### 🚀 Features
+
+* add colorized terminal output support ([e729e63](https://github.com/GrammaTonic/pihole-network-analyzer/commit/e729e63afb48c6e2fc0be5390af9d810e36941f9))
+* Add comprehensive AI coding assistant instructions ([a545a03](https://github.com/GrammaTonic/pihole-network-analyzer/commit/a545a03186e6be997e412ce9d75ce2ee6559bd9f))
+* Add comprehensive colorized output functionality with integration testing ([d276a8d](https://github.com/GrammaTonic/pihole-network-analyzer/commit/d276a8d769a27409347dfabb7a8f9e4feca585a8))
+* Add DNS Usage Analyzer tool with CSV and Pi-hole support ([bb5ee14](https://github.com/GrammaTonic/pihole-network-analyzer/commit/bb5ee148cdb1976b5db162bf3427fe0bdc6fddd6))
+* Add structured logging to replace fmt.Printf statements ([#5](https://github.com/GrammaTonic/pihole-network-analyzer/issues/5)) ([720257d](https://github.com/GrammaTonic/pihole-network-analyzer/commit/720257d9432f25a76dd42d91170ba463427d15ed))
+* Add test configuration and mock data for DNS Analyzer ([e12b5b8](https://github.com/GrammaTonic/pihole-network-analyzer/commit/e12b5b8a94d5492600c90a06f514418445547bf9))
+* Complete ML engine implementation and CLI integration ([55f2fb6](https://github.com/GrammaTonic/pihole-network-analyzer/commit/55f2fb6c1892a5392c46c4ebe11314a49aef43f6))
+* Enhance DNS Usage Analyzer with Pi-hole support and usage instructions ([5dc719e](https://github.com/GrammaTonic/pihole-network-analyzer/commit/5dc719e8bd5f5882eb5b87bcbb8de47a647b7bcc))
+* Implement comprehensive ML system for anomaly detection and trend analysis ([aecf4b3](https://github.com/GrammaTonic/pihole-network-analyzer/commit/aecf4b31ece651614297f43b0e0267af0ed69bf1))
+* integrate Phase 5 enhanced analyzer with API-first architecture ([7fe16b1](https://github.com/GrammaTonic/pihole-network-analyzer/commit/7fe16b14cfb0c6eca439817e32cf31a972ab425b))
+* mainstream Docker API-only configuration ([c8ee355](https://github.com/GrammaTonic/pihole-network-analyzer/commit/c8ee3556db0ea6640d1063ae52c78f9be65a75d8))
+* Major refactoring and standardization release ([e326a71](https://github.com/GrammaTonic/pihole-network-analyzer/commit/e326a711fa6aba9d94f09be42cc07c496d6f7f15))
+* Make Docker the primary installation method with comprehensive environment variable support ([#20](https://github.com/GrammaTonic/pihole-network-analyzer/issues/20)) ([8d7ccb7](https://github.com/GrammaTonic/pihole-network-analyzer/commit/8d7ccb79179f75dd196e118a761dfeb9bb0268ec))
+* prepare for v1.0.0 production release ([1bbeb23](https://github.com/GrammaTonic/pihole-network-analyzer/commit/1bbeb235fe6dde73d99434d5667cc286228f4f2e))
+* **release:** implement unified Git branching and semantic versioning framework ([a7942c4](https://github.com/GrammaTonic/pihole-network-analyzer/commit/a7942c471888519e54fe388429a206e48f210e2d))
+* separate IP and MAC address into distinct table columns ([c06dd12](https://github.com/GrammaTonic/pihole-network-analyzer/commit/c06dd1222b29817dba0aa5c5e65932548eb3c8e3))
+* Speed - Fast builds with caching ([#6](https://github.com/GrammaTonic/pihole-network-analyzer/issues/6)) ([54d9fc0](https://github.com/GrammaTonic/pihole-network-analyzer/commit/54d9fc02c78ed50a642921be311b44c59800ebf3))
+* Update GitHub Actions workflows to use latest setup-go and cache actions; add custom configuration files for DNS Analyzer ([29daf16](https://github.com/GrammaTonic/pihole-network-analyzer/commit/29daf16f57a8e954287fa9c62e873a265a287b7a))
+* **web:** implement comprehensive WebSocket real-time updates system ([#16](https://github.com/GrammaTonic/pihole-network-analyzer/issues/16)) ([5150d71](https://github.com/GrammaTonic/pihole-network-analyzer/commit/5150d71690a232b3bddd221a6522c9286d97b3bc))
+
+
+### 🐛 Bug Fixes
+
+* CI pipeline failures with colorized integration tests ([2c2addd](https://github.com/GrammaTonic/pihole-network-analyzer/commit/2c2addd90a01285a94595db64280aaf81bb97c35))
+* **ci:** Add registry authentication to test-containers job ([2f30de8](https://github.com/GrammaTonic/pihole-network-analyzer/commit/2f30de8f545b723874de1738fd373b59533daafd))
+* **ci:** use standard GitHub token for release workflow ([b31a1d8](https://github.com/GrammaTonic/pihole-network-analyzer/commit/b31a1d8dd8ce01ac49a60745c43318932cab0047))
+* complete domain colorization and document colorized output ([b377d58](https://github.com/GrammaTonic/pihole-network-analyzer/commit/b377d58b4539d90480b4f2f22c67f19c893037b0))
+* correct image reference in security scan ([8529915](https://github.com/GrammaTonic/pihole-network-analyzer/commit/852991528ee6cc6ea9bc618cb4293b5b11948ac3))
+* correct table structure alignment ([044ef79](https://github.com/GrammaTonic/pihole-network-analyzer/commit/044ef791a58631318ffcf09118a20f02757aeb31))
+* **deps:** include package-lock.json for CI dependency caching ([f1808bc](https://github.com/GrammaTonic/pihole-network-analyzer/commit/f1808bc8453ae4ceb00508e65790a654d1d7bd69))
+* make security scan upload non-blocking ([0457e87](https://github.com/GrammaTonic/pihole-network-analyzer/commit/0457e870f2707a30b62bdbfa629ade4bb4ef17f4))
+* **release:** update branch pattern for v1.0 release branch ([cb7612f](https://github.com/GrammaTonic/pihole-network-analyzer/commit/cb7612f943c1d419270f24e00b500619ba19d543))
+* remove duplicate registry prefix in security scan ([9f80a2e](https://github.com/GrammaTonic/pihole-network-analyzer/commit/9f80a2e6c19d49b7c6a3dd60b80bb277f289983f))
+* resolve code formatting issues for CI pipeline ([5edb4f8](https://github.com/GrammaTonic/pihole-network-analyzer/commit/5edb4f82fb1593afc4ec8fe62adbab1ba3252985))
+* resolve colorized output test failures in CI pipeline ([7665d70](https://github.com/GrammaTonic/pihole-network-analyzer/commit/7665d700f4b3e2b28fe837abbd8d92d857d2f23d))
+* resolve CSV Analysis integration test failures ([118aa9d](https://github.com/GrammaTonic/pihole-network-analyzer/commit/118aa9d2e26a3f834e92bc03c8b0317f13317efa))
+* resolve Go version compatibility and format string issues ([a02b478](https://github.com/GrammaTonic/pihole-network-analyzer/commit/a02b478b17801d69ae22362839dac559831e22e6))
+* resolve integration test failures in CI pipeline ([7f440ee](https://github.com/GrammaTonic/pihole-network-analyzer/commit/7f440eec9846cde3c7fa49d47ea2df0c06fd0b23))
+* resolve Pi-hole DB Analysis pipeline failure ([a950106](https://github.com/GrammaTonic/pihole-network-analyzer/commit/a9501068936d6e0b85cf53ba0810612ed184ae8b))
+* update CI pipeline Go versions for compatibility ([7fee279](https://github.com/GrammaTonic/pihole-network-analyzer/commit/7fee2795c6e1b6ae3398b2be8dbadb1095d6c40a))
+
+
+### ♻️ Code Refactoring
+
+* remove legacy phase references from codebase ([5ab9fb9](https://github.com/GrammaTonic/pihole-network-analyzer/commit/5ab9fb9eba6646d9d471b9bfcb689f1def234855))
+* Remove obsolete workflow files and streamline CI/CD configurations ([9ce2286](https://github.com/GrammaTonic/pihole-network-analyzer/commit/9ce22869d239a6b024b5b50aabb62405a5dfbd89))
+
+
+### 🔒 Security
+
+* fix Go standard library vulnerability GO-2025-3849 ([1c3ad3e](https://github.com/GrammaTonic/pihole-network-analyzer/commit/1c3ad3eddb4611e9f7e0f71801b30b8bdb3ce3b5))
+
 ## [2.1.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v2.0.0...v2.1.0) (2025-08-11)
 
 
