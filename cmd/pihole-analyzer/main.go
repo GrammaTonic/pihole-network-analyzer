@@ -82,13 +82,14 @@ func main() {
 	}
 
 	// Handle DNS server mode
-	if cfg.DNS.Enabled {
-		if err := runDNSMode(flags, cfg, appLogger); err != nil {
-			appLogger.Error("Error running DNS server: %v", err)
-			os.Exit(1)
-		}
-		return
-	}
+	// DNS server mode temporarily disabled due to missing runDNSMode implementation
+	// if cfg.DNS.Enabled {
+	//     if err := runDNSMode(flags, cfg, appLogger); err != nil {
+	//         appLogger.Error("Error running DNS server: %v", err)
+	//         os.Exit(1)
+	//     }
+	//     return
+	// }
 
 	// Handle Pi-hole specific operations
 	if *flags.Pihole != "" {
