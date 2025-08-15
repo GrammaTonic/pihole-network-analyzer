@@ -21,14 +21,14 @@ func (ph *packetHandler) ProcessDiscover(ctx context.Context, request *types.DHC
 	ph.logger.Debug("Processing DHCP DISCOVER",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("requested_ip", request.RequestedIP))
-	
+
 	// Try to allocate an IP address
 	allocatedIP, err := ph.leaseManager.AllocateIP(ctx, request.ClientMAC, request.RequestedIP, request.ClientID)
 	if err != nil {
 		ph.logger.Error("Failed to allocate IP", slog.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to allocate IP: %w", err)
 	}
-	
+
 	// Build DHCP OFFER response
 	response := &types.DHCPResponse{
 		MessageType:   2, // DHCP OFFER
@@ -40,14 +40,14 @@ func (ph *packetHandler) ProcessDiscover(ctx context.Context, request *types.DHC
 		LeaseTime:     uint32(ph.getLeaseTimeSeconds()),
 		Timestamp:     time.Now().Format(time.RFC3339),
 	}
-	
+
 	// Add standard DHCP options
 	ph.addStandardOptions(response)
-	
+
 	ph.logger.Info("DHCP OFFER sent",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("offered_ip", allocatedIP))
-	
+
 	return response, nil
 }
 
@@ -56,22 +56,22 @@ func (ph *packetHandler) ProcessRequest(ctx context.Context, request *types.DHCP
 	ph.logger.Debug("Processing DHCP REQUEST",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("requested_ip", request.RequestedIP))
-	
+
 	// Validate the request
 	if err := ph.ValidateRequest(request); err != nil {
 		ph.logger.Warn("Invalid DHCP REQUEST", slog.String("error", err.Error()))
 		return ph.buildNAK(request, "Invalid request")
 	}
-	
+
 	// Check if we have an active lease for this client
 	existingLease, err := ph.leaseManager.GetActiveLease(ctx, request.ClientMAC)
 	if err != nil {
 		ph.logger.Error("Failed to get active lease", slog.String("error", err.Error()))
 		return ph.buildNAK(request, "Internal error")
 	}
-	
+
 	var assignedIP string
-	
+
 	if existingLease != nil && existingLease.IP == request.RequestedIP {
 		// Renew existing lease
 		leaseDuration := ph.getLeaseDuration()
@@ -89,7 +89,7 @@ func (ph *packetHandler) ProcessRequest(ctx context.Context, request *types.DHCP
 		}
 		assignedIP = allocatedIP
 	}
-	
+
 	// Build DHCP ACK response
 	response := &types.DHCPResponse{
 		MessageType:   5, // DHCP ACK
@@ -101,14 +101,14 @@ func (ph *packetHandler) ProcessRequest(ctx context.Context, request *types.DHCP
 		LeaseTime:     uint32(ph.getLeaseTimeSeconds()),
 		Timestamp:     time.Now().Format(time.RFC3339),
 	}
-	
+
 	// Add standard DHCP options
 	ph.addStandardOptions(response)
-	
+
 	ph.logger.Info("DHCP ACK sent",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("assigned_ip", assignedIP))
-	
+
 	return response, nil
 }
 
@@ -117,16 +117,16 @@ func (ph *packetHandler) ProcessRelease(ctx context.Context, request *types.DHCP
 	ph.logger.Debug("Processing DHCP RELEASE",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("client_ip", request.ClientIP))
-	
+
 	if err := ph.leaseManager.ReleaseIP(ctx, request.ClientIP, request.ClientMAC); err != nil {
 		ph.logger.Error("Failed to release IP", slog.String("error", err.Error()))
 		return fmt.Errorf("failed to release IP: %w", err)
 	}
-	
+
 	ph.logger.Info("IP released",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("released_ip", request.ClientIP))
-	
+
 	return nil
 }
 
@@ -135,15 +135,15 @@ func (ph *packetHandler) ProcessDecline(ctx context.Context, request *types.DHCP
 	ph.logger.Debug("Processing DHCP DECLINE",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("declined_ip", request.RequestedIP))
-	
+
 	// Mark IP as declined (could implement conflict detection here)
 	ph.logger.Warn("IP declined by client",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("declined_ip", request.RequestedIP))
-	
+
 	// In a full implementation, we would mark this IP as problematic
 	// and potentially remove it from the available pool temporarily
-	
+
 	return nil
 }
 
@@ -152,7 +152,7 @@ func (ph *packetHandler) ProcessInform(ctx context.Context, request *types.DHCPR
 	ph.logger.Debug("Processing DHCP INFORM",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("client_ip", request.ClientIP))
-	
+
 	// Build DHCP ACK response with configuration options only
 	response := &types.DHCPResponse{
 		MessageType:   5, // DHCP ACK
@@ -164,12 +164,12 @@ func (ph *packetHandler) ProcessInform(ctx context.Context, request *types.DHCPR
 		LeaseTime:     0, // No lease for INFORM
 		Timestamp:     time.Now().Format(time.RFC3339),
 	}
-	
+
 	// Add configuration options only
 	ph.addStandardOptions(response)
-	
+
 	ph.logger.Info("DHCP INFORM ACK sent", slog.String("client_mac", request.ClientMAC))
-	
+
 	return response, nil
 }
 
@@ -178,43 +178,43 @@ func (ph *packetHandler) ValidateRequest(request *types.DHCPRequest) error {
 	if request.ClientMAC == "" {
 		return fmt.Errorf("client MAC address is required")
 	}
-	
+
 	if request.TransactionID == 0 {
 		return fmt.Errorf("transaction ID is required")
 	}
-	
+
 	return nil
 }
 
 // BuildOptions builds DHCP options for a lease
 func (ph *packetHandler) BuildOptions(ctx context.Context, lease *types.DHCPLease, requestedOptions []int) (map[int]string, error) {
 	options := make(map[int]string)
-	
+
 	// Add standard options
 	if ph.config.Pool.Gateway != "" {
 		options[3] = ph.config.Pool.Gateway // Router
 	}
-	
+
 	if len(ph.config.Pool.DNSServers) > 0 {
 		// DNS Servers (simplified - would handle multiple servers properly)
 		options[6] = ph.config.Pool.DNSServers[0]
 	}
-	
+
 	if ph.config.Options.DomainName != "" {
 		options[15] = ph.config.Options.DomainName // Domain Name
 	}
-	
+
 	// Add lease time
 	options[51] = fmt.Sprintf("%d", ph.getLeaseTimeSeconds())
-	
+
 	// Add server identifier
 	options[54] = ph.config.ListenAddress
-	
+
 	// Add custom options from configuration
 	for optionCode, optionValue := range ph.config.Options.CustomOptions {
 		options[optionCode] = optionValue
 	}
-	
+
 	return options, nil
 }
 
@@ -223,25 +223,25 @@ func (ph *packetHandler) ParseClientOptions(options map[int]string) (*DHCPClient
 	clientInfo := &DHCPClientInfo{
 		Fingerprint: "", // Would be generated based on options
 	}
-	
+
 	// Parse hostname (option 12)
 	if hostname, ok := options[12]; ok {
 		clientInfo.Hostname = hostname
 	}
-	
+
 	// Parse vendor class (option 60)
 	if vendorClass, ok := options[60]; ok {
 		clientInfo.VendorClass = vendorClass
 	}
-	
+
 	// Parse client identifier (option 61)
 	if clientID, ok := options[61]; ok {
 		clientInfo.ClientID = clientID
 	}
-	
+
 	// Generate device fingerprint based on options
 	clientInfo.Fingerprint = ph.generateFingerprint(options)
-	
+
 	return clientInfo, nil
 }
 
@@ -251,7 +251,7 @@ func (ph *packetHandler) buildNAK(request *types.DHCPRequest, reason string) (*t
 	ph.logger.Warn("Sending DHCP NAK",
 		slog.String("client_mac", request.ClientMAC),
 		slog.String("reason", reason))
-	
+
 	return &types.DHCPResponse{
 		MessageType:   6, // DHCP NAK
 		TransactionID: request.TransactionID,
@@ -270,28 +270,28 @@ func (ph *packetHandler) addStandardOptions(response *types.DHCPResponse) {
 		// Extract subnet mask from CIDR notation
 		response.Options[1] = "255.255.255.0" // Simplified
 	}
-	
+
 	// Router (option 3)
 	if ph.config.Pool.Gateway != "" {
 		response.Options[3] = ph.config.Pool.Gateway
 	}
-	
+
 	// DNS servers (option 6)
 	if len(ph.config.Pool.DNSServers) > 0 {
 		response.Options[6] = ph.config.Pool.DNSServers[0] // Simplified
 	}
-	
+
 	// Domain name (option 15)
 	if ph.config.Options.DomainName != "" {
 		response.Options[15] = ph.config.Options.DomainName
 	}
-	
+
 	// Lease time (option 51)
 	response.Options[51] = fmt.Sprintf("%d", response.LeaseTime)
-	
+
 	// Server identifier (option 54)
 	response.Options[54] = ph.config.ListenAddress
-	
+
 	// Add custom options
 	for optionCode, optionValue := range ph.config.Options.CustomOptions {
 		response.Options[optionCode] = optionValue
@@ -317,15 +317,15 @@ func (ph *packetHandler) getLeaseDuration() time.Duration {
 func (ph *packetHandler) generateFingerprint(options map[int]string) string {
 	// Simplified fingerprinting - would be more sophisticated in practice
 	fingerprint := ""
-	
+
 	// Use parameter request list (option 55) and vendor class (option 60)
 	if paramList, ok := options[55]; ok {
 		fingerprint += "PRL:" + paramList + ";"
 	}
-	
+
 	if vendorClass, ok := options[60]; ok {
 		fingerprint += "VC:" + vendorClass + ";"
 	}
-	
+
 	return fingerprint
 }

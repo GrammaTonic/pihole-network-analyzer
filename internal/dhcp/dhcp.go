@@ -14,7 +14,7 @@ func NewServer(config *types.DHCPConfig, l *slog.Logger) (DHCPServer, error) {
 		loggerInstance := logger.New(&logger.Config{Component: "dhcp"})
 		l = loggerInstance.GetSlogger()
 	}
-	
+
 	factory := NewFactory(l)
 	return factory.CreateServer(config)
 }
@@ -25,7 +25,7 @@ func NewLeaseManager(config *types.DHCPConfig, storage DHCPStorage, l *slog.Logg
 		loggerInstance := logger.New(&logger.Config{Component: "dhcp-lease-manager"})
 		l = loggerInstance.GetSlogger()
 	}
-	
+
 	factory := NewFactory(l)
 	return factory.CreateLeaseManager(config, storage)
 }
@@ -36,7 +36,7 @@ func NewStorage(config *types.DHCPStorageConfig, l *slog.Logger) (DHCPStorage, e
 		loggerInstance := logger.New(&logger.Config{Component: "dhcp-storage"})
 		l = loggerInstance.GetSlogger()
 	}
-	
+
 	factory := NewFactory(l)
 	return factory.CreateStorage(config)
 }

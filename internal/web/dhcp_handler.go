@@ -55,77 +55,77 @@ func (s *Server) RegisterDHCPRoutes(dhcpServer dhcp.DHCPServer) {
 		s.logger.Warn("DHCP server is nil, skipping DHCP route registration")
 		return
 	}
-	
+
 	handler := NewDHCPHandler(dhcpServer, s.logger.GetSlogger())
-	
+
 	// Register DHCP API routes
 	http.HandleFunc("/api/dhcp/status", handler.HandleStatus)
 	http.HandleFunc("/api/dhcp/leases", handler.HandleLeases)
 	http.HandleFunc("/api/dhcp/reservations", handler.HandleReservations)
 	http.HandleFunc("/api/dhcp/lease/", handler.HandleLeaseAction)
 	http.HandleFunc("/api/dhcp/reservation/", handler.HandleReservationAction)
-	
+
 	// Register DHCP web interface routes
 	http.HandleFunc("/dhcp", handler.HandleDHCPPage)
 	http.HandleFunc("/dhcp/", handler.HandleDHCPPage)
-	
+
 	s.logger.Info("DHCP routes registered successfully")
 }
 
 // HandleStatus handles GET /api/dhcp/status
 func (h *DHCPHandler) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Handling DHCP status request")
-	
+
 	if r.Method != http.MethodGet {
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	
+
 	status, err := h.dhcpServer.GetStatus(ctx)
 	if err != nil {
 		h.logger.Error("Failed to get DHCP status", slog.String("error", err.Error()))
 		h.sendError(w, http.StatusInternalServerError, "Failed to get DHCP status")
 		return
 	}
-	
+
 	statistics, err := h.dhcpServer.GetStatistics(ctx)
 	if err != nil {
 		h.logger.Error("Failed to get DHCP statistics", slog.String("error", err.Error()))
 		h.sendError(w, http.StatusInternalServerError, "Failed to get DHCP statistics")
 		return
 	}
-	
+
 	response := DHCPStatusResponse{
 		Status:     status,
 		Statistics: statistics,
 		Timestamp:  time.Now().Format(time.RFC3339),
 	}
-	
+
 	h.sendJSON(w, response)
 }
 
 // HandleLeases handles GET /api/dhcp/leases
 func (h *DHCPHandler) HandleLeases(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Handling DHCP leases request")
-	
+
 	if r.Method != http.MethodGet {
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	
+
 	leases, err := h.dhcpServer.GetLeases(ctx)
 	if err != nil {
 		h.logger.Error("Failed to get DHCP leases", slog.String("error", err.Error()))
 		h.sendError(w, http.StatusInternalServerError, "Failed to get DHCP leases")
 		return
 	}
-	
+
 	// Count active and expired leases
 	activeCount := 0
 	expiredCount := 0
@@ -137,7 +137,7 @@ func (h *DHCPHandler) HandleLeases(w http.ResponseWriter, r *http.Request) {
 			expiredCount++
 		}
 	}
-	
+
 	response := DHCPLeasesResponse{
 		Leases:    leases,
 		Total:     len(leases),
@@ -145,32 +145,32 @@ func (h *DHCPHandler) HandleLeases(w http.ResponseWriter, r *http.Request) {
 		Expired:   expiredCount,
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
-	
+
 	h.sendJSON(w, response)
 }
 
 // HandleReservations handles GET /api/dhcp/reservations
 func (h *DHCPHandler) HandleReservations(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Handling DHCP reservations request")
-	
+
 	if r.Method != http.MethodGet {
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	
+
 	// Get lease manager to access reservations
 	// For now, we'll return an empty response since we need access to the lease manager
 	// In a full implementation, the DHCP server would expose reservation methods
 	reservations := []types.DHCPReservation{}
 	enabledCount := 0
-	
+
 	response := DHCPReservationsResponse{
 		Reservations: reservations,
 		Total:        len(reservations),
 		Enabled:      enabledCount,
 		Timestamp:    time.Now().Format(time.RFC3339),
 	}
-	
+
 	h.sendJSON(w, response)
 }
 
@@ -182,31 +182,31 @@ func (h *DHCPHandler) HandleLeaseAction(w http.ResponseWriter, r *http.Request) 
 		h.sendError(w, http.StatusBadRequest, "Missing lease identifier")
 		return
 	}
-	
-	h.logger.Debug("Handling DHCP lease action", 
+
+	h.logger.Debug("Handling DHCP lease action",
 		slog.String("method", r.Method),
 		slog.String("lease_id", path))
-	
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	
+
 	switch r.Method {
 	case http.MethodGet:
 		// Get specific lease
 		lease, err := h.dhcpServer.GetLease(ctx, path)
 		if err != nil {
-			h.logger.Error("Failed to get DHCP lease", 
+			h.logger.Error("Failed to get DHCP lease",
 				slog.String("lease_id", path),
 				slog.String("error", err.Error()))
 			h.sendError(w, http.StatusNotFound, "Lease not found")
 			return
 		}
 		h.sendJSON(w, lease)
-		
+
 	case http.MethodDelete:
 		// Release lease (simplified - would need proper implementation)
 		h.sendError(w, http.StatusNotImplemented, "Lease release not yet implemented")
-		
+
 	default:
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
@@ -220,14 +220,14 @@ func (h *DHCPHandler) HandleReservationAction(w http.ResponseWriter, r *http.Req
 		h.sendError(w, http.StatusBadRequest, "Missing MAC address")
 		return
 	}
-	
+
 	h.logger.Debug("Handling DHCP reservation action",
 		slog.String("method", r.Method),
 		slog.String("mac", path))
-	
+
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
-	
+
 	switch r.Method {
 	case http.MethodPost:
 		// Create new reservation
@@ -236,7 +236,7 @@ func (h *DHCPHandler) HandleReservationAction(w http.ResponseWriter, r *http.Req
 			h.sendError(w, http.StatusBadRequest, "Invalid reservation data")
 			return
 		}
-		
+
 		if err := h.dhcpServer.CreateReservation(ctx, &reservation); err != nil {
 			h.logger.Error("Failed to create DHCP reservation",
 				slog.String("mac", reservation.MAC),
@@ -244,9 +244,9 @@ func (h *DHCPHandler) HandleReservationAction(w http.ResponseWriter, r *http.Req
 			h.sendError(w, http.StatusInternalServerError, "Failed to create reservation")
 			return
 		}
-		
+
 		h.sendJSON(w, map[string]string{"status": "created"})
-		
+
 	case http.MethodDelete:
 		// Delete reservation
 		if err := h.dhcpServer.DeleteReservation(ctx, path); err != nil {
@@ -256,9 +256,9 @@ func (h *DHCPHandler) HandleReservationAction(w http.ResponseWriter, r *http.Req
 			h.sendError(w, http.StatusInternalServerError, "Failed to delete reservation")
 			return
 		}
-		
+
 		h.sendJSON(w, map[string]string{"status": "deleted"})
-		
+
 	default:
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
@@ -267,12 +267,12 @@ func (h *DHCPHandler) HandleReservationAction(w http.ResponseWriter, r *http.Req
 // HandleDHCPPage handles the DHCP web interface page
 func (h *DHCPHandler) HandleDHCPPage(w http.ResponseWriter, r *http.Request) {
 	h.logger.Debug("Handling DHCP page request")
-	
+
 	if r.Method != http.MethodGet {
 		h.sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	
+
 	// For now, return a simple HTML page
 	// In a full implementation, this would render a proper template
 	html := `
@@ -431,7 +431,7 @@ func (h *DHCPHandler) HandleDHCPPage(w http.ResponseWriter, r *http.Request) {
 </body>
 </html>
 `
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
 }

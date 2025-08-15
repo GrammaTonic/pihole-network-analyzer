@@ -23,7 +23,7 @@ type memoryStorage struct {
 func (ms *memoryStorage) Initialize(ctx context.Context) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	ms.leases = make(map[string]*types.DHCPLease)
 	ms.reservations = make(map[string]*types.DHCPReservation)
 	ms.statistics = &types.DHCPStatistics{
@@ -32,7 +32,7 @@ func (ms *memoryStorage) Initialize(ctx context.Context) error {
 		TopClients:     make([]types.DHCPClientStat, 0),
 		RecentActivity: make([]types.DHCPActivity, 0),
 	}
-	
+
 	ms.logger.Info("Memory storage initialized")
 	return nil
 }
@@ -41,11 +41,11 @@ func (ms *memoryStorage) Initialize(ctx context.Context) error {
 func (ms *memoryStorage) Close() error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	ms.leases = nil
 	ms.reservations = nil
 	ms.statistics = nil
-	
+
 	ms.logger.Info("Memory storage closed")
 	return nil
 }
@@ -54,17 +54,17 @@ func (ms *memoryStorage) Close() error {
 func (ms *memoryStorage) SaveLease(ctx context.Context, lease *types.DHCPLease) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	if lease == nil {
 		return fmt.Errorf("lease cannot be nil")
 	}
-	
+
 	ms.leases[lease.ID] = lease
 	ms.logger.Debug("Lease saved to memory",
 		slog.String("lease_id", lease.ID),
 		slog.String("ip", lease.IP),
 		slog.String("mac", lease.MAC))
-	
+
 	return nil
 }
 
@@ -72,12 +72,12 @@ func (ms *memoryStorage) SaveLease(ctx context.Context, lease *types.DHCPLease) 
 func (ms *memoryStorage) LoadLease(ctx context.Context, id string) (*types.DHCPLease, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	lease, exists := ms.leases[id]
 	if !exists {
 		return nil, fmt.Errorf("lease not found: %s", id)
 	}
-	
+
 	// Return a copy to prevent external modification
 	leaseCopy := *lease
 	return &leaseCopy, nil
@@ -87,14 +87,14 @@ func (ms *memoryStorage) LoadLease(ctx context.Context, id string) (*types.DHCPL
 func (ms *memoryStorage) LoadLeaseByIP(ctx context.Context, ip string) (*types.DHCPLease, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	for _, lease := range ms.leases {
 		if lease.IP == ip {
 			leaseCopy := *lease
 			return &leaseCopy, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("lease not found for IP: %s", ip)
 }
 
@@ -102,14 +102,14 @@ func (ms *memoryStorage) LoadLeaseByIP(ctx context.Context, ip string) (*types.D
 func (ms *memoryStorage) LoadLeaseByMAC(ctx context.Context, mac string) (*types.DHCPLease, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	for _, lease := range ms.leases {
 		if lease.MAC == mac && lease.State == types.LeaseStateActive {
 			leaseCopy := *lease
 			return &leaseCopy, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("active lease not found for MAC: %s", mac)
 }
 
@@ -117,12 +117,12 @@ func (ms *memoryStorage) LoadLeaseByMAC(ctx context.Context, mac string) (*types
 func (ms *memoryStorage) LoadAllLeases(ctx context.Context) ([]types.DHCPLease, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	leases := make([]types.DHCPLease, 0, len(ms.leases))
 	for _, lease := range ms.leases {
 		leases = append(leases, *lease)
 	}
-	
+
 	return leases, nil
 }
 
@@ -130,14 +130,14 @@ func (ms *memoryStorage) LoadAllLeases(ctx context.Context) ([]types.DHCPLease, 
 func (ms *memoryStorage) DeleteLease(ctx context.Context, id string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	if _, exists := ms.leases[id]; !exists {
 		return fmt.Errorf("lease not found: %s", id)
 	}
-	
+
 	delete(ms.leases, id)
 	ms.logger.Debug("Lease deleted from memory", slog.String("lease_id", id))
-	
+
 	return nil
 }
 
@@ -145,16 +145,16 @@ func (ms *memoryStorage) DeleteLease(ctx context.Context, id string) error {
 func (ms *memoryStorage) SaveReservation(ctx context.Context, reservation *types.DHCPReservation) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	if reservation == nil {
 		return fmt.Errorf("reservation cannot be nil")
 	}
-	
+
 	ms.reservations[reservation.MAC] = reservation
 	ms.logger.Debug("Reservation saved to memory",
 		slog.String("mac", reservation.MAC),
 		slog.String("ip", reservation.IP))
-	
+
 	return nil
 }
 
@@ -162,12 +162,12 @@ func (ms *memoryStorage) SaveReservation(ctx context.Context, reservation *types
 func (ms *memoryStorage) LoadReservation(ctx context.Context, mac string) (*types.DHCPReservation, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	reservation, exists := ms.reservations[mac]
 	if !exists {
 		return nil, fmt.Errorf("reservation not found: %s", mac)
 	}
-	
+
 	reservationCopy := *reservation
 	return &reservationCopy, nil
 }
@@ -176,12 +176,12 @@ func (ms *memoryStorage) LoadReservation(ctx context.Context, mac string) (*type
 func (ms *memoryStorage) LoadAllReservations(ctx context.Context) ([]types.DHCPReservation, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	reservations := make([]types.DHCPReservation, 0, len(ms.reservations))
 	for _, reservation := range ms.reservations {
 		reservations = append(reservations, *reservation)
 	}
-	
+
 	return reservations, nil
 }
 
@@ -189,14 +189,14 @@ func (ms *memoryStorage) LoadAllReservations(ctx context.Context) ([]types.DHCPR
 func (ms *memoryStorage) DeleteReservation(ctx context.Context, mac string) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	if _, exists := ms.reservations[mac]; !exists {
 		return fmt.Errorf("reservation not found: %s", mac)
 	}
-	
+
 	delete(ms.reservations, mac)
 	ms.logger.Debug("Reservation deleted from memory", slog.String("mac", mac))
-	
+
 	return nil
 }
 
@@ -204,14 +204,14 @@ func (ms *memoryStorage) DeleteReservation(ctx context.Context, mac string) erro
 func (ms *memoryStorage) SaveStatistics(ctx context.Context, stats *types.DHCPStatistics) error {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
-	
+
 	if stats == nil {
 		return fmt.Errorf("statistics cannot be nil")
 	}
-	
+
 	ms.statistics = stats
 	ms.logger.Debug("Statistics saved to memory")
-	
+
 	return nil
 }
 
@@ -219,7 +219,7 @@ func (ms *memoryStorage) SaveStatistics(ctx context.Context, stats *types.DHCPSt
 func (ms *memoryStorage) LoadStatistics(ctx context.Context) (*types.DHCPStatistics, error) {
 	ms.mu.RLock()
 	defer ms.mu.RUnlock()
-	
+
 	if ms.statistics == nil {
 		// Return empty statistics if none exist
 		return &types.DHCPStatistics{
@@ -229,7 +229,7 @@ func (ms *memoryStorage) LoadStatistics(ctx context.Context) (*types.DHCPStatist
 			RecentActivity: make([]types.DHCPActivity, 0),
 		}, nil
 	}
-	
+
 	statsCopy := *ms.statistics
 	return &statsCopy, nil
 }
