@@ -219,14 +219,17 @@ func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 // responseWrapper captures HTTP response status code
 type responseWrapper struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode    int
+	headerWritten bool
 }
 
 func (rw *responseWrapper) WriteHeader(code int) {
-	if rw.statusCode == 0 {
-		rw.statusCode = code
-		rw.ResponseWriter.WriteHeader(code)
+	if rw.headerWritten {
+		return
 	}
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+	rw.headerWritten = true
 }
 
 // handleDashboard serves the main dashboard page
