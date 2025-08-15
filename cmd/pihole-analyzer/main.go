@@ -12,7 +12,7 @@ import (
 	"pihole-analyzer/internal/analyzer"
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/config"
-	"pihole-analyzer/internal/dns"
+	"pihole-analyzer/internal/dhcp"
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/metrics"
@@ -303,6 +303,42 @@ func runWebMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 		return fmt.Errorf("failed to create web server: %w", err)
 	}
 
+	// Create and integrate DHCP server if enabled
+	if cfg.DHCP.Enabled {
+		webLogger.Info("DHCP server enabled, creating DHCP server")
+
+		dhcpLogger := webLogger.Component("dhcp-server")
+		dhcpServer, err := createDHCPServer(cfg, dhcpLogger)
+		if err != nil {
+			webLogger.Error("Failed to create DHCP server: %v", err)
+			// Continue without DHCP server rather than failing completely
+		} else {
+			// Register DHCP routes with the web server
+			server.RegisterDHCPRoutes(dhcpServer)
+
+			// Start DHCP server in background
+			go func() {
+				if err := dhcpServer.Start(ctx); err != nil {
+					dhcpLogger.Error("DHCP server failed to start: %v", err)
+				}
+			}()
+
+			// Ensure DHCP server is stopped when context is cancelled
+			go func() {
+				<-ctx.Done()
+				dhcpLogger.Info("Stopping DHCP server")
+				stopCtx, stopCancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer stopCancel()
+
+				if err := dhcpServer.Stop(stopCtx); err != nil {
+					dhcpLogger.Error("Error stopping DHCP server: %v", err)
+				}
+			}()
+
+			webLogger.Success("DHCP server integrated and starting")
+		}
+	}
+
 	// Start server in a goroutine
 	serverErrChan := make(chan error, 1)
 	go func() {
@@ -351,117 +387,26 @@ func loadPiholeConfig(configFile string) (*types.PiholeConfig, error) {
 	}, nil
 }
 
-func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) error {
-	dnsLogger := appLogger.Component("dns-server")
+func createDHCPServer(cfg *types.Config, logger *logger.Logger) (dhcp.DHCPServer, error) {
+	// Validate DHCP configuration
+	if err := dhcp.ValidateDHCPConfig(&cfg.DHCP); err != nil {
+		return nil, fmt.Errorf("invalid DHCP configuration: %w", err)
+	}
 
-	dnsLogger.InfoFields("Starting DNS server mode", map[string]any{
-		"host":              cfg.DNS.Host,
-		"port":              cfg.DNS.Port,
-		"cache_enabled":     cfg.DNS.Cache.Enabled,
-		"forwarder_enabled": cfg.DNS.Forwarder.Enabled,
-		"tcp_enabled":       cfg.DNS.TCPEnabled,
-		"udp_enabled":       cfg.DNS.UDPEnabled,
+	// Create DHCP server
+	dhcpServer, err := dhcp.NewServer(&cfg.DHCP, logger.GetSlogger())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DHCP server: %w", err)
+	}
+
+	logger.InfoFields("DHCP server created successfully", map[string]any{
+		"interface":      cfg.DHCP.Interface,
+		"listen_address": cfg.DHCP.ListenAddress,
+		"port":           cfg.DHCP.Port,
+		"pool_start":     cfg.DHCP.Pool.StartIP,
+		"pool_end":       cfg.DHCP.Pool.EndIP,
+		"lease_time":     cfg.DHCP.LeaseTime,
 	})
 
-	// Create context for graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Set up signal handling for graceful shutdown
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Convert configuration
-	dnsConfig := dns.ConvertConfig(cfg.DNS)
-
-	// Create DNS server factory
-	factory := dns.NewFactory(dnsLogger)
-
-	// Create DNS server
-	server, err := factory.CreateServer(dnsConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create DNS server: %w", err)
-	}
-
-	// Start server in a goroutine
-	serverErrChan := make(chan error, 1)
-	go func() {
-		dnsLogger.Success("🚀 DNS server starting on %s:%d", cfg.DNS.Host, cfg.DNS.Port)
-		dnsLogger.InfoFields("DNS server configuration", map[string]any{
-			"cache_max_size":    cfg.DNS.Cache.MaxSize,
-			"cache_default_ttl": cfg.DNS.Cache.DefaultTTL,
-			"upstream_servers":  len(cfg.DNS.Forwarder.Upstreams),
-			"max_concurrent":    cfg.DNS.MaxConcurrentQueries,
-		})
-
-		if len(cfg.DNS.Forwarder.Upstreams) > 0 {
-			dnsLogger.InfoFields("Upstream servers", map[string]any{
-				"upstreams": cfg.DNS.Forwarder.Upstreams,
-				"timeout":   cfg.DNS.Forwarder.Timeout,
-				"retries":   cfg.DNS.Forwarder.Retries,
-			})
-		}
-
-		err := server.Start(ctx)
-		if err != nil {
-			serverErrChan <- err
-		}
-	}()
-
-	// Start metrics collection if enabled
-	var metricsServer *metrics.Server
-	if cfg.Metrics.Enabled && cfg.Metrics.EnableEndpoint {
-		serverConfig := metrics.ServerConfig{
-			Port:    cfg.Metrics.Port,
-			Host:    cfg.Metrics.Host,
-			Enabled: cfg.Metrics.EnableEndpoint,
-		}
-		metricsCollector := metrics.New(dnsLogger.GetSlogger())
-		metricsServer = metrics.NewServer(serverConfig, metricsCollector, dnsLogger.GetSlogger())
-		metricsServer.StartInBackground()
-
-		dnsLogger.Info("📊 Metrics endpoint available at: http://%s:%s/metrics",
-			cfg.Metrics.Host, cfg.Metrics.Port)
-
-		defer func() {
-			if metricsServer != nil {
-				metricsServer.Stop(ctx)
-			}
-		}()
-	}
-
-	// Print startup status
-	go func() {
-		time.Sleep(2 * time.Second)
-		stats := server.GetStats()
-		dnsLogger.InfoFields("DNS server status", map[string]any{
-			"uptime":        time.Since(stats.StartTime),
-			"queries_total": stats.QueriesReceived,
-			"cache_hits":    stats.CacheHits,
-			"cache_misses":  stats.CacheMisses,
-		})
-	}()
-
-	// Wait for shutdown signal or server error
-	select {
-	case sig := <-sigChan:
-		dnsLogger.Info("Received shutdown signal: %v", sig)
-		cancel()
-
-		// Graceful shutdown with timeout
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer shutdownCancel()
-
-		if err := server.Stop(shutdownCtx); err != nil {
-			dnsLogger.Error("Error during server shutdown: %v", err)
-		}
-
-		dnsLogger.Success("✅ DNS server shutdown complete")
-
-	case err := <-serverErrChan:
-		dnsLogger.Error("DNS server error: %v", err)
-		return err
-	}
-
-	return nil
+	return dhcpServer, nil
 }

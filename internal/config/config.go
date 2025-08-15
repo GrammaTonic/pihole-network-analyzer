@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"pihole-analyzer/internal/dhcp"
 	"pihole-analyzer/internal/dns"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
@@ -188,6 +189,8 @@ func DefaultConfig() *types.Config {
 		},
 
 		DNS: dns.GetDefaultTypesConfig(),
+
+		DHCP: *dhcp.DefaultDHCPConfig(),
 	}
 }
 

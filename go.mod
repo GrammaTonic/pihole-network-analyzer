@@ -6,6 +6,8 @@ require (
 	github.com/chromedp/chromedp v0.14.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 	modernc.org/sqlite v1.38.2

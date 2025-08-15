@@ -92,6 +92,7 @@ type Config struct {
 	Integrations    IntegrationsConfig    `json:"integrations"`
 	Alerts          AlertConfig           `json:"alerts"`
 	DNS             DNSConfig             `json:"dns"`
+	DHCP            DHCPConfig            `json:"dhcp"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -1017,4 +1018,230 @@ type DNSForwarderConfig struct {
 	// EDNS0 support
 	EDNS0Enabled bool `json:"edns0_enabled"`
 	UDPSize      int  `json:"udp_size"`
+}
+
+// DHCP Server Configuration and Types
+
+// DHCPConfig represents configuration for the DHCP server
+type DHCPConfig struct {
+	Enabled       bool               `json:"enabled"`
+	Interface     string             `json:"interface"`      // Network interface to bind to
+	ListenAddress string             `json:"listen_address"` // IP address to listen on
+	Port          int                `json:"port"`           // DHCP server port (default: 67)
+	Pool          DHCPPoolConfig     `json:"pool"`           // IP address pool configuration
+	LeaseTime     string             `json:"lease_time"`     // Default lease duration (e.g., "24h")
+	MaxLeaseTime  string             `json:"max_lease_time"` // Maximum lease duration
+	RenewalTime   string             `json:"renewal_time"`   // T1 renewal time
+	RebindTime    string             `json:"rebind_time"`    // T2 rebind time
+	Options       DHCPOptionsConfig  `json:"options"`        // DHCP options configuration
+	Reservations  []DHCPReservation  `json:"reservations"`   // Static IP reservations
+	Storage       DHCPStorageConfig  `json:"storage"`        // Lease storage configuration
+	Performance   DHCPPerfConfig     `json:"performance"`    // Performance settings
+	Security      DHCPSecurityConfig `json:"security"`       // Security settings
+}
+
+// DHCPPoolConfig configures the IP address pool
+type DHCPPoolConfig struct {
+	StartIP    string   `json:"start_ip"`    // Pool start IP address
+	EndIP      string   `json:"end_ip"`      // Pool end IP address
+	Subnet     string   `json:"subnet"`      // Subnet in CIDR notation (e.g., "192.168.1.0/24")
+	Gateway    string   `json:"gateway"`     // Default gateway IP
+	DNSServers []string `json:"dns_servers"` // DNS server IP addresses
+	Exclude    []string `json:"exclude"`     // IP addresses to exclude from pool
+}
+
+// DHCPOptionsConfig configures DHCP options
+type DHCPOptionsConfig struct {
+	Router             string         `json:"router"`               // Option 3: Router
+	DomainName         string         `json:"domain_name"`          // Option 15: Domain Name
+	DomainNameServer   []string       `json:"domain_name_server"`   // Option 6: DNS Servers
+	NetBIOSNameServers []string       `json:"netbios_name_servers"` // Option 44: NetBIOS Name Servers
+	NTPServers         []string       `json:"ntp_servers"`          // Option 42: NTP Servers
+	TFTPServer         string         `json:"tftp_server"`          // Option 66: TFTP Server
+	BootFileName       string         `json:"boot_file_name"`       // Option 67: Boot File Name
+	MTU                int            `json:"mtu"`                  // Option 26: MTU
+	CustomOptions      map[int]string `json:"custom_options"`       // Custom DHCP options
+}
+
+// DHCPReservation represents a static IP reservation
+type DHCPReservation struct {
+	MAC         string         `json:"mac"`         // MAC address
+	IP          string         `json:"ip"`          // Reserved IP address
+	Hostname    string         `json:"hostname"`    // Optional hostname
+	Description string         `json:"description"` // Optional description
+	Options     map[int]string `json:"options"`     // Custom options for this reservation
+	Enabled     bool           `json:"enabled"`     // Whether reservation is active
+}
+
+// DHCPStorageConfig configures lease storage
+type DHCPStorageConfig struct {
+	Type         string `json:"type"`          // "memory", "file", "database"
+	Path         string `json:"path"`          // File path or database connection string
+	BackupPath   string `json:"backup_path"`   // Backup file path
+	SyncInterval string `json:"sync_interval"` // How often to sync to storage
+	MaxLeases    int    `json:"max_leases"`    // Maximum number of leases to store
+}
+
+// DHCPPerfConfig configures performance settings
+type DHCPPerfConfig struct {
+	MaxConnections       int    `json:"max_connections"`        // Maximum concurrent connections
+	ReadTimeout          string `json:"read_timeout"`           // Read timeout for packets
+	WriteTimeout         string `json:"write_timeout"`          // Write timeout for packets
+	BufferSize           int    `json:"buffer_size"`            // UDP buffer size
+	WorkerPoolSize       int    `json:"worker_pool_size"`       // Number of worker goroutines
+	LeaseCleanupInterval string `json:"lease_cleanup_interval"` // How often to clean expired leases
+}
+
+// DHCPSecurityConfig configures security settings
+type DHCPSecurityConfig struct {
+	EnableRateLimit      bool     `json:"enable_rate_limit"`     // Enable rate limiting
+	MaxRequestsPerIP     int      `json:"max_requests_per_ip"`   // Max requests per IP per minute
+	AllowedClients       []string `json:"allowed_clients"`       // Allowed client MAC addresses (if set, only these can get leases)
+	BlockedClients       []string `json:"blocked_clients"`       // Blocked client MAC addresses
+	RequireClientID      bool     `json:"require_client_id"`     // Require DHCP client identifier
+	LogAllRequests       bool     `json:"log_all_requests"`      // Log all DHCP requests
+	EnableFingerprinting bool     `json:"enable_fingerprinting"` // Enable device fingerprinting
+}
+
+// DHCP Lease and Runtime Types
+
+// DHCPLease represents an active or historical DHCP lease
+type DHCPLease struct {
+	ID               string            `json:"id"`                // Unique lease identifier
+	IP               string            `json:"ip"`                // Assigned IP address
+	MAC              string            `json:"mac"`               // Client MAC address
+	Hostname         string            `json:"hostname"`          // Client hostname (if provided)
+	ClientID         string            `json:"client_id"`         // DHCP client identifier
+	VendorClass      string            `json:"vendor_class"`      // Vendor class identifier
+	UserClass        string            `json:"user_class"`        // User class
+	StartTime        string            `json:"start_time"`        // Lease start time (RFC3339)
+	EndTime          string            `json:"end_time"`          // Lease expiry time (RFC3339)
+	LastRenewal      string            `json:"last_renewal"`      // Last renewal time (RFC3339)
+	State            DHCPLeaseState    `json:"state"`             // Current lease state
+	Type             DHCPLeaseType     `json:"type"`              // Lease type (dynamic, static, etc.)
+	Options          map[int]string    `json:"options"`           // DHCP options sent to client
+	RequestedOptions []int             `json:"requested_options"` // Options requested by client
+	Fingerprint      string            `json:"fingerprint"`       // Device fingerprint
+	Metadata         map[string]string `json:"metadata"`          // Additional metadata
+}
+
+// DHCPLeaseState represents the state of a DHCP lease
+type DHCPLeaseState string
+
+const (
+	LeaseStateOffered  DHCPLeaseState = "offered"  // DHCP Offer sent, waiting for Request
+	LeaseStateActive   DHCPLeaseState = "active"   // Lease is active and in use
+	LeaseStateExpired  DHCPLeaseState = "expired"  // Lease has expired
+	LeaseStateReleased DHCPLeaseState = "released" // Client released the lease
+	LeaseStateDeclined DHCPLeaseState = "declined" // Client declined the lease
+	LeaseStateReserved DHCPLeaseState = "reserved" // Static reservation
+)
+
+// DHCPLeaseType represents the type of DHCP lease
+type DHCPLeaseType string
+
+const (
+	LeaseTypeDynamic DHCPLeaseType = "dynamic" // Dynamically allocated
+	LeaseTypeStatic  DHCPLeaseType = "static"  // Static reservation
+	LeaseTypeBootP   DHCPLeaseType = "bootp"   // BootP allocation
+)
+
+// DHCPRequest represents a DHCP request from a client
+type DHCPRequest struct {
+	MessageType      int            `json:"message_type"`                // DHCP message type (1=DISCOVER, 3=REQUEST, etc.)
+	TransactionID    uint32         `json:"transaction_id"`              // DHCP transaction ID
+	ClientMAC        string         `json:"client_mac"`                  // Client MAC address
+	ClientIP         string         `json:"client_ip,omitempty"`         // Client IP (for DHCP REQUEST)
+	RequestedIP      string         `json:"requested_ip,omitempty"`      // Requested IP address
+	ServerIdentifier string         `json:"server_identifier,omitempty"` // DHCP server identifier
+	Options          map[int]string `json:"options"`                     // DHCP options from client
+	RequestedOptions []int          `json:"requested_options"`           // Parameter request list
+	Timestamp        string         `json:"timestamp"`                   // Request timestamp
+	ClientHostname   string         `json:"client_hostname,omitempty"`   // Client hostname
+	VendorClass      string         `json:"vendor_class,omitempty"`      // Vendor class identifier
+	ClientID         string         `json:"client_id,omitempty"`         // Client identifier
+}
+
+// DHCPResponse represents a DHCP response to a client
+type DHCPResponse struct {
+	MessageType   int            `json:"message_type"`   // DHCP message type (2=OFFER, 5=ACK, etc.)
+	TransactionID uint32         `json:"transaction_id"` // DHCP transaction ID
+	ClientMAC     string         `json:"client_mac"`     // Client MAC address
+	YourIP        string         `json:"your_ip"`        // Assigned IP address
+	ServerIP      string         `json:"server_ip"`      // DHCP server IP
+	Options       map[int]string `json:"options"`        // DHCP options sent to client
+	LeaseTime     uint32         `json:"lease_time"`     // Lease time in seconds
+	Timestamp     string         `json:"timestamp"`      // Response timestamp
+}
+
+// DHCPStatistics represents DHCP server statistics
+type DHCPStatistics struct {
+	TotalRequests    int64            `json:"total_requests"`   // Total DHCP requests processed
+	TotalOffers      int64            `json:"total_offers"`     // Total DHCP offers sent
+	TotalAcks        int64            `json:"total_acks"`       // Total DHCP ACKs sent
+	TotalNaks        int64            `json:"total_naks"`       // Total DHCP NAKs sent
+	TotalDeclines    int64            `json:"total_declines"`   // Total DHCP declines received
+	TotalReleases    int64            `json:"total_releases"`   // Total DHCP releases received
+	TotalInforms     int64            `json:"total_informs"`    // Total DHCP informs received
+	ActiveLeases     int              `json:"active_leases"`    // Number of active leases
+	AvailableIPs     int              `json:"available_ips"`    // Number of available IP addresses
+	PoolUtilization  float64          `json:"pool_utilization"` // Pool utilization percentage
+	AverageLeaseTime float64          `json:"avg_lease_time"`   // Average lease time in hours
+	RequestsByType   map[string]int64 `json:"requests_by_type"` // Requests broken down by message type
+	RequestsByHour   map[string]int64 `json:"requests_by_hour"` // Requests broken down by hour
+	TopClients       []DHCPClientStat `json:"top_clients"`      // Top clients by request count
+	RecentActivity   []DHCPActivity   `json:"recent_activity"`  // Recent DHCP activity
+	ErrorCount       int64            `json:"error_count"`      // Total errors encountered
+	Uptime           string           `json:"uptime"`           // Server uptime
+}
+
+// DHCPClientStat represents statistics for a DHCP client
+type DHCPClientStat struct {
+	MAC          string `json:"mac"`           // Client MAC address
+	Hostname     string `json:"hostname"`      // Client hostname
+	RequestCount int64  `json:"request_count"` // Number of requests from this client
+	LastSeen     string `json:"last_seen"`     // Last seen timestamp
+	CurrentIP    string `json:"current_ip"`    // Currently assigned IP
+}
+
+// DHCPActivity represents recent DHCP activity
+type DHCPActivity struct {
+	Timestamp   string `json:"timestamp"`   // Activity timestamp
+	Type        string `json:"type"`        // Activity type (DISCOVER, REQUEST, etc.)
+	ClientMAC   string `json:"client_mac"`  // Client MAC address
+	IP          string `json:"ip"`          // IP address involved
+	Description string `json:"description"` // Human-readable description
+}
+
+// DHCPServerStatus represents the current status of the DHCP server
+type DHCPServerStatus struct {
+	Running       bool           `json:"running"`        // Whether server is running
+	StartTime     string         `json:"start_time"`     // Server start time
+	ConfigValid   bool           `json:"config_valid"`   // Whether configuration is valid
+	Interface     string         `json:"interface"`      // Network interface
+	ListenAddress string         `json:"listen_address"` // Listen address
+	PoolInfo      DHCPPoolInfo   `json:"pool_info"`      // Pool information
+	Statistics    DHCPStatistics `json:"statistics"`     // Server statistics
+	RecentErrors  []DHCPError    `json:"recent_errors"`  // Recent errors
+	Version       string         `json:"version"`        // DHCP server version
+}
+
+// DHCPPoolInfo represents information about the IP address pool
+type DHCPPoolInfo struct {
+	StartIP         string  `json:"start_ip"`         // Pool start IP
+	EndIP           string  `json:"end_ip"`           // Pool end IP
+	TotalIPs        int     `json:"total_ips"`        // Total IP addresses in pool
+	AllocatedIPs    int     `json:"allocated_ips"`    // Number of allocated IPs
+	AvailableIPs    int     `json:"available_ips"`    // Number of available IPs
+	ReservedIPs     int     `json:"reserved_ips"`     // Number of reserved IPs
+	UtilizationRate float64 `json:"utilization_rate"` // Pool utilization percentage
+}
+
+// DHCPError represents a DHCP server error
+type DHCPError struct {
+	Timestamp string `json:"timestamp"`  // Error timestamp
+	Type      string `json:"type"`       // Error type
+	Message   string `json:"message"`    // Error message
+	ClientMAC string `json:"client_mac"` // Client MAC (if applicable)
+	Context   string `json:"context"`    // Additional context
 }

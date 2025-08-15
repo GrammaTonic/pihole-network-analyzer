@@ -164,7 +164,7 @@ func TestSlackHandler(t *testing.T) {
 
 	// Test with webhook URL (will fail but should reach the HTTP call)
 	configWithWebhook := config
-	configWithWebhook.WebhookURL = "https://localhost:65534/webhook" // Use localhost with unused port instead of external domain
+	configWithWebhook.WebhookURL = "http://localhost:9999/webhook"
 	handlerWithWebhook := NewSlackHandler(configWithWebhook, logger)
 
 	// This should fail with HTTP error, not config error
@@ -333,7 +333,7 @@ func TestNotificationHandlerInterfaces(t *testing.T) {
 			name: "EmailHandler",
 			handler: NewEmailHandler(EmailConfig{
 				Enabled:    true,
-				SMTPHost:   "localhost", // Use localhost instead of external domain
+				SMTPHost:   "smtp.test.com",
 				SMTPPort:   587,
 				From:       "test@test.com",
 				Recipients: []string{"admin@test.com"},
@@ -418,8 +418,8 @@ func TestNotificationErrorHandling(t *testing.T) {
 	// Slack handler should respect context cancellation
 	slackHandler := NewSlackHandler(SlackConfig{
 		Enabled:    true,
-		WebhookURL: "https://localhost:65534/webhook", // Use localhost instead of external domain
-		Timeout:    1 * time.Second,                   // Short timeout
+		WebhookURL: "https://this-domain-does-not-exist-12345.invalid/webhook",
+		Timeout:    1 * time.Second, // Short timeout
 	}, logger)
 
 	// This should either fail quickly due to context cancellation or invalid URL
