@@ -305,6 +305,12 @@ release-build: ci-test multi-build ## Full release build validation with optimiz
 	echo "✅ Release build validation complete in $${duration}s!"
 	@echo "Your code is ready for main/master branch."
 
+# Build, test, and update documentation
+build-docs-test: all test test-web
+	@echo "📝 Updating documentation..."
+	@cp README.md docs/README.md
+	@echo "✅ Build, tests, and documentation update complete."
+
 # Development workflow with caching
 dev-setup: install-deps cache-info ## Setup development environment with caching info
 	@echo "🔧 Development environment setup complete!"
