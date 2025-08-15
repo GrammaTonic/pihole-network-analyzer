@@ -1,0 +1,34 @@
+{
+  "dns": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 5354,
+    "tcp_enabled": true,
+    "udp_enabled": true,
+    "cache": {
+      "enabled": true,
+      "max_size": 1000,
+      "default_ttl": 300,
+      "eviction_policy": "lru"
+    },
+    "forwarder": {
+      "enabled": true,
+      "upstreams": ["8.8.8.8:53"],
+      "timeout": 5,
+      "retries": 1
+    },
+    "log_queries": false,
+    "max_concurrent_queries": 100
+  },
+  "web": {
+    "enabled": false
+  },
+  "metrics": {
+    "enabled": false
+  },
+  "logging": {
+    "level": "INFO",
+    "enableColors": false,
+    "enableEmojis": false
+  }
+}

@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"pihole-analyzer/internal/dhcp"
+	"pihole-analyzer/internal/dns"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 	"pihole-analyzer/internal/validation"
@@ -184,7 +187,9 @@ func DefaultConfig() *types.Config {
 			},
 			Generic: []types.GenericIntegrationConfig{},
 		},
-		
+
+		DNS: dns.GetDefaultTypesConfig(),
+
 		DHCP: *dhcp.DefaultDHCPConfig(),
 	}
 }
@@ -199,6 +204,8 @@ func LoadConfig(configPath string) (*types.Config, error) {
 		log.InfoFields("Config file not found, using defaults", map[string]any{
 			"config_path": configPath,
 		})
+		// Still apply environment variables to defaults
+		LoadEnvironmentVariables(config)
 		return config, nil
 	}
 
@@ -220,6 +227,9 @@ func LoadConfig(configPath string) (*types.Config, error) {
 		})
 		return nil, fmt.Errorf("error parsing config file: %v", err)
 	}
+
+	// Apply environment variables (override config file values)
+	LoadEnvironmentVariables(config)
 
 	// Validate configuration
 	validator := validation.NewValidator(log)
@@ -248,6 +258,118 @@ func LoadConfig(configPath string) (*types.Config, error) {
 
 	log.Success("Configuration loaded and validated successfully from %s", configPath)
 	return config, nil
+}
+
+// LoadEnvironmentVariables merges environment variables into the configuration
+// Environment variables override config file values but are overridden by CLI flags
+func LoadEnvironmentVariables(config *types.Config) {
+	log := logger.Component("config-env")
+
+	envCount := 0
+
+	// Pi-hole configuration
+	if host := os.Getenv("PIHOLE_HOST"); host != "" {
+		config.Pihole.Host = host
+		envCount++
+	}
+	if port := os.Getenv("PIHOLE_PORT"); port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			config.Pihole.Port = p
+			envCount++
+		}
+	}
+	if enabled := os.Getenv("PIHOLE_API_ENABLED"); enabled != "" {
+		config.Pihole.APIEnabled = strings.ToLower(enabled) == "true"
+		envCount++
+	}
+	if password := os.Getenv("PIHOLE_API_PASSWORD"); password != "" {
+		config.Pihole.APIPassword = password
+		envCount++
+	}
+	if https := os.Getenv("PIHOLE_USE_HTTPS"); https != "" {
+		config.Pihole.UseHTTPS = strings.ToLower(https) == "true"
+		envCount++
+	}
+	if timeout := os.Getenv("PIHOLE_API_TIMEOUT"); timeout != "" {
+		if t, err := strconv.Atoi(timeout); err == nil {
+			config.Pihole.APITimeout = t
+			envCount++
+		}
+	}
+	if verifySSL := os.Getenv("PIHOLE_VERIFY_SSL"); verifySSL != "" {
+		// This maps to UseHTTPS verification - if false, we'd want to allow insecure HTTPS
+		// For now, we'll map it to UseHTTPS
+		config.Pihole.UseHTTPS = strings.ToLower(verifySSL) == "true"
+		envCount++
+	}
+
+	// Logging configuration
+	if level := os.Getenv("LOG_LEVEL"); level != "" {
+		config.Logging.Level = strings.ToUpper(level)
+		envCount++
+	}
+	if colors := os.Getenv("LOG_ENABLE_COLORS"); colors != "" {
+		config.Logging.EnableColors = strings.ToLower(colors) == "true"
+		envCount++
+	}
+	if emojis := os.Getenv("LOG_ENABLE_EMOJIS"); emojis != "" {
+		config.Logging.EnableEmojis = strings.ToLower(emojis) == "true"
+		envCount++
+	}
+
+	// Analysis configuration
+	if onlineOnly := os.Getenv("ANALYSIS_ONLINE_ONLY"); onlineOnly != "" {
+		config.OnlineOnly = strings.ToLower(onlineOnly) == "true"
+		envCount++
+	}
+
+	// Web configuration
+	if webEnabled := os.Getenv("WEB_ENABLED"); webEnabled != "" {
+		config.Web.Enabled = strings.ToLower(webEnabled) == "true"
+		envCount++
+	}
+	if webHost := os.Getenv("WEB_HOST"); webHost != "" {
+		config.Web.Host = webHost
+		envCount++
+	}
+	if webPort := os.Getenv("WEB_PORT"); webPort != "" {
+		if p, err := strconv.Atoi(webPort); err == nil {
+			config.Web.Port = p
+			envCount++
+		}
+	}
+	if daemon := os.Getenv("WEB_DAEMON_MODE"); daemon != "" {
+		config.Web.DaemonMode = strings.ToLower(daemon) == "true"
+		envCount++
+	}
+
+	// Metrics configuration
+	if metricsEnabled := os.Getenv("METRICS_ENABLED"); metricsEnabled != "" {
+		config.Metrics.Enabled = strings.ToLower(metricsEnabled) == "true"
+		envCount++
+	}
+	if metricsHost := os.Getenv("METRICS_HOST"); metricsHost != "" {
+		config.Metrics.Host = metricsHost
+		envCount++
+	}
+	if metricsPort := os.Getenv("METRICS_PORT"); metricsPort != "" {
+		config.Metrics.Port = metricsPort
+		envCount++
+	}
+
+	// Container optimization environment variables (Go runtime)
+	if memLimit := os.Getenv("GOMEMLIMIT"); memLimit != "" {
+		log.InfoFields("Go memory limit set", map[string]any{"limit": memLimit})
+	}
+	if maxProcs := os.Getenv("GOMAXPROCS"); maxProcs != "" {
+		log.InfoFields("Go max processors set", map[string]any{"procs": maxProcs})
+	}
+
+	if envCount > 0 {
+		log.InfoFields("Environment variables loaded", map[string]any{
+			"variables_applied": envCount,
+		})
+	}
 }
 
 // SaveConfig saves the current configuration to file

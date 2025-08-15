@@ -1,37 +1,44 @@
 version: '3.8'
 
 services:
-  # Production service using published container with API configuration
+  # Production service using published container with merged configuration
   pihole-analyzer:
     image: ghcr.io/grammatonic/pihole-analyzer:latest
     container_name: pihole-analyzer
-    volumes:
-      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
-      - ./reports:/app/reports
     environment:
-      # Pi-hole API Configuration
+      # Pi-hole API Configuration (Required)
       PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
-      PIHOLE_API_ENABLED: "true"
       PIHOLE_API_PASSWORD: "${PIHOLE_API_PASSWORD}"
+      # Pi-hole API Configuration (Optional)
+      PIHOLE_API_ENABLED: "true"
       PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
       PIHOLE_API_TIMEOUT: "${PIHOLE_API_TIMEOUT:-30}"
-      
+      PIHOLE_PORT: "${PIHOLE_PORT:-80}"
+      PIHOLE_VERIFY_SSL: "${PIHOLE_VERIFY_SSL:-true}"
+      # Web Interface Configuration
+      WEB_ENABLED: "${WEB_ENABLED:-false}"
+      WEB_HOST: "${WEB_HOST:-0.0.0.0}"
+      WEB_PORT: "${WEB_PORT:-8080}"
+      WEB_DAEMON_MODE: "${WEB_DAEMON_MODE:-false}"
       # Logging Configuration
       LOG_LEVEL: "${LOG_LEVEL:-info}"
       LOG_ENABLE_COLORS: "${LOG_ENABLE_COLORS:-true}"
       LOG_ENABLE_EMOJIS: "${LOG_ENABLE_EMOJIS:-true}"
-      
-      # Security and SSL
-      PIHOLE_VERIFY_SSL: "${PIHOLE_VERIFY_SSL:-true}"
-      
       # Analysis Configuration
       ANALYSIS_ONLINE_ONLY: "${ANALYSIS_ONLINE_ONLY:-false}"
-      
+      # Metrics Configuration
+      METRICS_ENABLED: "${METRICS_ENABLED:-true}"
+      METRICS_HOST: "${METRICS_HOST:-0.0.0.0}"
+      METRICS_PORT: "${METRICS_PORT:-9090}"
       # Container Optimization
       GOMEMLIMIT: "${GOMEMLIMIT:-128MiB}"
       GOMAXPROCS: "${GOMAXPROCS:-2}"
-    
-    # Resource limits for production deployment
+    volumes:
+      - ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro
+      - ./reports:/app/reports
+    ports:
+      - "${WEB_PORT:-8080}:${WEB_PORT:-8080}"
+      - "${METRICS_PORT:-9090}:${METRICS_PORT:-9090}"
     deploy:
       resources:
         limits:
@@ -40,7 +47,6 @@ services:
         reservations:
           cpus: '0.1'
           memory: 32M
-    
     networks:
       - pihole-net
     restart: unless-stopped
@@ -68,12 +74,10 @@ services:
       DEVELOPMENT: "true"
       GOCACHE: "/home/appuser/.cache/go-build"
       GOMODCACHE: "/go/pkg/mod"
-      
       # Pi-hole API Configuration for testing
       PIHOLE_HOST: "${PIHOLE_HOST:-pi.hole}"
       PIHOLE_API_ENABLED: "true"
       PIHOLE_USE_HTTPS: "${PIHOLE_USE_HTTPS:-false}"
-      
       # Development Logging
       LOG_LEVEL: "debug"
       LOG_ENABLE_COLORS: "true"

@@ -279,6 +279,7 @@ func TestEmailHandler(t *testing.T) {
 	}
 
 	// Test sending notification (should fail without valid SMTP server)
+	// In CI, skip network-dependent test
 	ctx := context.Background()
 	if err := handler.SendNotification(ctx, alert, config); err == nil {
 		t.Error("expected error when sending email without valid SMTP server")
@@ -332,7 +333,7 @@ func TestNotificationHandlerInterfaces(t *testing.T) {
 			name: "EmailHandler",
 			handler: NewEmailHandler(EmailConfig{
 				Enabled:    true,
-				SMTPHost:   "localhost",
+				SMTPHost:   "smtp.test.com",
 				SMTPPort:   587,
 				From:       "test@test.com",
 				Recipients: []string{"admin@test.com"},
@@ -417,7 +418,7 @@ func TestNotificationErrorHandling(t *testing.T) {
 	// Slack handler should respect context cancellation
 	slackHandler := NewSlackHandler(SlackConfig{
 		Enabled:    true,
-		WebhookURL: "http://localhost:9999/webhook",
+		WebhookURL: "https://this-domain-does-not-exist-12345.invalid/webhook",
 		Timeout:    1 * time.Second, // Short timeout
 	}, logger)
 

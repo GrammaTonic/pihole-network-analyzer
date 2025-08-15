@@ -33,12 +33,18 @@ type Flags struct {
 	EnableSecurityAnalysis    *bool
 	EnablePerformanceAnalysis *bool
 	NetworkAnalysisConfig     *string
+	// DNS Server flags
+	EnableDNS      *bool
+	DNSPort        *int
+	DNSHost        *string
+	DNSConfig      *string
+	EnableDNSCache *bool
 	// DHCP Server flags
-	EnableDHCP     *bool
-	DHCPInterface  *string
-	DHCPPoolStart  *string
-	DHCPPoolEnd    *string
-	DHCPConfig     *string
+	EnableDHCP    *bool
+	DHCPInterface *string
+	DHCPPoolStart *string
+	DHCPPoolEnd   *string
+	DHCPConfig    *string
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -72,6 +78,12 @@ func ParseFlags() *Flags {
 		DHCPPoolStart: flag.String("dhcp-pool-start", "", "DHCP pool start IP address"),
 		DHCPPoolEnd:   flag.String("dhcp-pool-end", "", "DHCP pool end IP address"),
 		DHCPConfig:    flag.String("dhcp-config", "", "Path to DHCP server configuration file"),
+		// DNS Server flags
+		EnableDNS:      flag.Bool("dns", false, "Enable DNS server with caching and super fast responses"),
+		DNSPort:        flag.Int("dns-port", 5353, "Port for DNS server (default: 5353)"),
+		DNSHost:        flag.String("dns-host", "0.0.0.0", "Host for DNS server (default: 0.0.0.0)"),
+		DNSConfig:      flag.String("dns-config", "", "Path to DNS server configuration file"),
+		EnableDNSCache: flag.Bool("dns-cache", true, "Enable DNS response caching (default: true)"),
 	}
 
 	flag.Parse()
@@ -128,7 +140,10 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 	// Apply network analysis flags
 	ApplyNetworkAnalysisFlags(flags, cfg)
-	
+
+	// Apply DNS server flags
+	ApplyDNSFlags(flags, cfg)
+
 	// Apply DHCP flags
 	ApplyDHCPFlags(flags, cfg)
 }
@@ -159,20 +174,46 @@ func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
 	}
 }
 
+// ApplyDNSFlags applies DNS server related flags to configuration
+func ApplyDNSFlags(flags *Flags, cfg *types.Config) {
+	if *flags.EnableDNS {
+		cfg.DNS.Enabled = true
+		cfg.DNS.Host = *flags.DNSHost
+		cfg.DNS.Port = *flags.DNSPort
+		cfg.DNS.Cache.Enabled = *flags.EnableDNSCache
+	}
+}
+
+// IsDNSEnabled returns true if DNS server is requested
+func IsDNSEnabled(flags *Flags) bool {
+	return *flags.EnableDNS
+}
+
+// GetDNSConfig extracts DNS configuration from flags
+func GetDNSConfig(flags *Flags) map[string]any {
+	return map[string]any{
+		"enabled":     IsDNSEnabled(flags),
+		"host":        *flags.DNSHost,
+		"port":        *flags.DNSPort,
+		"cache":       *flags.EnableDNSCache,
+		"config_file": *flags.DNSConfig,
+	}
+}
+
 // ApplyDHCPFlags applies DHCP related flags to configuration
 func ApplyDHCPFlags(flags *Flags, cfg *types.Config) {
 	if *flags.EnableDHCP {
 		cfg.DHCP.Enabled = true
 	}
-	
+
 	if *flags.DHCPInterface != "" {
 		cfg.DHCP.Interface = *flags.DHCPInterface
 	}
-	
+
 	if *flags.DHCPPoolStart != "" {
 		cfg.DHCP.Pool.StartIP = *flags.DHCPPoolStart
 	}
-	
+
 	if *flags.DHCPPoolEnd != "" {
 		cfg.DHCP.Pool.EndIP = *flags.DHCPPoolEnd
 	}
@@ -224,10 +265,10 @@ func IsDHCPEnabled(flags *Flags) bool {
 // GetDHCPConfig extracts DHCP configuration from flags
 func GetDHCPConfig(flags *Flags) map[string]any {
 	return map[string]any{
-		"enabled":    IsDHCPEnabled(flags),
-		"interface":  *flags.DHCPInterface,
-		"pool_start": *flags.DHCPPoolStart,
-		"pool_end":   *flags.DHCPPoolEnd,
+		"enabled":     IsDHCPEnabled(flags),
+		"interface":   *flags.DHCPInterface,
+		"pool_start":  *flags.DHCPPoolStart,
+		"pool_end":    *flags.DHCPPoolEnd,
 		"config_file": *flags.DHCPConfig,
 	}
 }
@@ -264,6 +305,12 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 			}
 			if *flags.EnablePerformanceAnalysis {
 				fmt.Println("  • Network Performance Analysis")
+			}
+		}
+		if IsDNSEnabled(flags) {
+			fmt.Printf("🚀 DNS server enabled on %s:%d\n", *flags.DNSHost, *flags.DNSPort)
+			if *flags.EnableDNSCache {
+				fmt.Println("  • DNS response caching enabled")
 			}
 		}
 		if IsDHCPEnabled(flags) {

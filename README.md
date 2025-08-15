@@ -28,6 +28,12 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 - **🧪 Testing Support**: Built-in mock data for development and CI
 - **🔒 Security**: Session-based API authentication with 2FA support
 - **📈 Performance**: Optimized for large Pi-hole datasets
+- **🚀 DNS Server**: Built-in DNS server with caching and super fast responses
+- **📦 Web UI**: Real-time dashboard with WebSocket updates
+- **📊 Prometheus Metrics**: Built-in metrics collection and monitoring
+- **🤖 Machine Learning**: AI-powered anomaly detection and trend analysis
+- **🔍 Network Analysis**: Deep packet inspection, traffic patterns, security analysis
+- **⚠️ Alert System**: Configurable alerts with Slack/Email notifications
 
 ## 📋 Quick Start
 
@@ -61,11 +67,93 @@ go build -o pihole-analyzer ./cmd/pihole-analyzer
 # Analyze Pi-hole data
 ./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
 
+# Start DNS server with caching (NEW!)
+./pihole-analyzer --dns
+
+# Start DNS server with custom settings
+./pihole-analyzer --dns --dns-port 5353 --dns-host 0.0.0.0
+
+# Run web dashboard
+./pihole-analyzer --web --pihole config.json
+
 # Run with test data (no Pi-hole required)
 ./pihole-analyzer-test
 
 # Create default configuration file
 ./pihole-analyzer --create-config
+```
+
+### Configuration Options
+
+**Environment Variables** (Docker-friendly):
+```bash
+# Required
+PIHOLE_HOST=192.168.1.100
+PIHOLE_API_PASSWORD=your-api-token
+
+# Optional
+LOG_LEVEL=info
+WEB_ENABLED=true
+WEB_PORT=8080
+METRICS_ENABLED=true
+ANALYSIS_ONLINE_ONLY=false
+```
+
+**Configuration File** (traditional):
+```bash
+# Create default config
+docker run --rm -v $(pwd):/output \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --create-config
+
+# Edit the generated config.json file
+```
+
+### Docker Installation (Recommended)
+
+The fastest way to get started is using Docker:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with environment variables (no config file needed)
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with configuration file
+docker run --rm \
+  -v ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --config /home/appuser/.pihole-analyzer/config.json
+
+# Start web UI with environment variables
+docker run -d -p 8080:8080 \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  -e WEB_ENABLED=true \
+  -e WEB_DAEMON_MODE=true \
+  --name pihole-analyzer \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+```
+
+### Docker Compose (Production Ready)
+
+```bash
+# Create docker-compose.yml with your Pi-hole details
+curl -O https://raw.githubusercontent.com/GrammaTonic/pihole-network-analyzer/main/docker-compose.yml
+
+# Configure via environment variables
+export PIHOLE_HOST=192.168.1.100
+export PIHOLE_API_PASSWORD=your-api-token
+
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
 ```
 
 ## � Container Support
@@ -165,6 +253,25 @@ Example configuration:
     "colors": true,
     "emoji": true,
     "saveReports": true
+  },
+  "dns": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 5353,
+    "tcp_enabled": true,
+    "udp_enabled": true,
+    "cache": {
+      "enabled": true,
+      "max_size": 10000,
+      "default_ttl": 300,
+      "eviction_policy": "lru"
+    },
+    "forwarder": {
+      "enabled": true,
+      "upstreams": ["8.8.8.8:53", "1.1.1.1:53"],
+      "timeout": 5,
+      "retries": 2
+    }
   }
 }
 ```
@@ -176,6 +283,19 @@ Example configuration:
 --pihole <config>     # Analyze Pi-hole with configuration file
 --pihole-setup        # Interactive Pi-hole configuration setup
 --test               # Run with mock data for testing
+
+# DNS Server (NEW!)
+--dns                # Enable DNS server with caching and super fast responses
+--dns-port <port>    # DNS server port (default: 5353)
+--dns-host <host>    # DNS server host (default: 0.0.0.0)
+--dns-cache          # Enable DNS response caching (default: true)
+--dns-config <path>  # DNS server configuration file
+
+# Web Interface
+--web                # Enable web dashboard
+--web-port <port>    # Web interface port (default: 8080)
+--web-host <host>    # Web interface host (default: localhost)
+--daemon             # Run in daemon mode (implies --web)
 
 # Configuration
 --config <path>      # Custom configuration file path
@@ -203,6 +323,7 @@ The project follows the Standard Go Project Layout:
 │   ├── cli/                # Command-line interface
 │   ├── colors/             # Terminal colorization
 │   ├── config/             # Configuration management
+│   ├── dns/                # DNS server with caching (NEW!)
 │   ├── interfaces/         # Data source abstraction
 │   ├── logger/             # Structured logging
 │   ├── network/            # Network analysis & ARP

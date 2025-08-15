@@ -1,0 +1,77 @@
+{
+  "pihole": {
+    "host": "192.168.1.50",
+    "port": 80,
+    "apiEnabled": true,
+    "apiPassword": "your-api-password",
+    "useHTTPS": false,
+    "apiTimeout": 30
+  },
+  "dns": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 5353,
+    "tcp_enabled": true,
+    "udp_enabled": true,
+    "read_timeout": 30,
+    "write_timeout": 30,
+    "idle_timeout": 60,
+    "cache": {
+      "enabled": true,
+      "max_size": 10000,
+      "default_ttl": 300,
+      "max_ttl": 86400,
+      "min_ttl": 10,
+      "cleanup_interval": 300,
+      "eviction_policy": "lru",
+      "max_memory_mb": 100
+    },
+    "forwarder": {
+      "enabled": true,
+      "upstreams": [
+        "8.8.8.8:53",
+        "8.8.4.4:53",
+        "1.1.1.1:53",
+        "1.0.0.1:53"
+      ],
+      "timeout": 5,
+      "retries": 2,
+      "health_check": true,
+      "health_interval": 30,
+      "load_balancing": "round_robin",
+      "edns0_enabled": true,
+      "udp_size": 4096
+    },
+    "log_queries": true,
+    "log_level": 1,
+    "max_concurrent_queries": 1000,
+    "buffer_size": 4096
+  },
+  "web": {
+    "enabled": true,
+    "port": 8080,
+    "host": "localhost"
+  },
+  "metrics": {
+    "enabled": true,
+    "port": "9090",
+    "host": "localhost",
+    "enableEndpoint": true
+  },
+  "logging": {
+    "level": "INFO",
+    "enableColors": true,
+    "enableEmojis": true,
+    "showTimestamp": true
+  },
+  "exclusions": {
+    "networks": ["172.16.0.0/12", "127.0.0.0/8"],
+    "hostnames": ["docker", "localhost"],
+    "ips": ["192.168.1.1"]
+  },
+  "output": {
+    "colors": true,
+    "emoji": true,
+    "saveReports": true
+  }
+}
