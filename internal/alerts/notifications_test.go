@@ -164,11 +164,7 @@ func TestSlackHandler(t *testing.T) {
 
 	// Test with webhook URL (will fail but should reach the HTTP call)
 	configWithWebhook := config
-<<<<<<< HEAD
-	configWithWebhook.WebhookURL = "https://this-domain-does-not-exist-12345.invalid/webhook"
-=======
 	configWithWebhook.WebhookURL = "https://localhost:65534/webhook" // Use localhost with unused port instead of external domain
->>>>>>> main
 	handlerWithWebhook := NewSlackHandler(configWithWebhook, logger)
 
 	// This should fail with HTTP error, not config error
@@ -188,11 +184,7 @@ func TestEmailHandler(t *testing.T) {
 	logger := logger.New(logger.DefaultConfig())
 	config := EmailConfig{
 		Enabled:    true,
-<<<<<<< HEAD
-		SMTPHost:   "smtp.example.com",
-=======
 		SMTPHost:   "localhost",
->>>>>>> main
 		SMTPPort:   587,
 		Username:   "test@example.com",
 		Password:   "password",
@@ -287,20 +279,9 @@ func TestEmailHandler(t *testing.T) {
 	}
 
 	// Test sending notification (should fail without valid SMTP server)
-<<<<<<< HEAD
 	// In CI, skip network-dependent test
 	ctx := context.Background()
 	if err := handler.SendNotification(ctx, alert, config); err == nil {
-=======
-	ctx := context.Background()
-
-	// Use localhost instead of external domain to avoid DNS blocks
-	localConfig := config
-	localConfig.SMTPHost = "localhost"
-	localConfig.SMTPPort = 65534 // Use unused port to ensure quick failure
-
-	if err := handler.SendNotification(ctx, alert, localConfig); err == nil {
->>>>>>> main
 		t.Error("expected error when sending email without valid SMTP server")
 	}
 
@@ -352,11 +333,7 @@ func TestNotificationHandlerInterfaces(t *testing.T) {
 			name: "EmailHandler",
 			handler: NewEmailHandler(EmailConfig{
 				Enabled:    true,
-<<<<<<< HEAD
-				SMTPHost:   "smtp.test.com",
-=======
 				SMTPHost:   "localhost", // Use localhost instead of external domain
->>>>>>> main
 				SMTPPort:   587,
 				From:       "test@test.com",
 				Recipients: []string{"admin@test.com"},
@@ -441,13 +418,8 @@ func TestNotificationErrorHandling(t *testing.T) {
 	// Slack handler should respect context cancellation
 	slackHandler := NewSlackHandler(SlackConfig{
 		Enabled:    true,
-<<<<<<< HEAD
-		WebhookURL: "https://this-domain-does-not-exist-12345.invalid/webhook",
-		Timeout:    1 * time.Second, // Short timeout
-=======
 		WebhookURL: "https://localhost:65534/webhook", // Use localhost instead of external domain
 		Timeout:    1 * time.Second,                   // Short timeout
->>>>>>> main
 	}, logger)
 
 	// This should either fail quickly due to context cancellation or invalid URL

@@ -152,12 +152,10 @@ func (s *Server) Stop() error {
 
 // setupRoutes configures HTTP routes
 func (s *Server) setupRoutes(mux *http.ServeMux) {
-<<<<<<< HEAD
-=======
 	// Serve static files
 	fs := http.FileServer(http.Dir("internal/web/static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
->>>>>>> main
+
 	// Main dashboard (original)
 	mux.HandleFunc("/", s.handleDashboard)
 

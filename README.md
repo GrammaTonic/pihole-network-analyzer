@@ -28,21 +28,17 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 - **🧪 Testing Support**: Built-in mock data for development and CI
 - **🔒 Security**: Session-based API authentication with 2FA support
 - **📈 Performance**: Optimized for large Pi-hole datasets
-<<<<<<< HEAD
 - **🚀 DNS Server**: Built-in DNS server with caching and super fast responses
 - **📦 Web UI**: Real-time dashboard with WebSocket updates
 - **📊 Prometheus Metrics**: Built-in metrics collection and monitoring
 - **🤖 Machine Learning**: AI-powered anomaly detection and trend analysis
 - **🔍 Network Analysis**: Deep packet inspection, traffic patterns, security analysis
 - **⚠️ Alert System**: Configurable alerts with Slack/Email notifications
-=======
->>>>>>> main
 
 ## 📋 Quick Start
 
 ### Prerequisites
 
-<<<<<<< HEAD
 - **Go 1.24+** - For building and running the application
 - **Pi-hole with API access** - Target Pi-hole server
 - **Terminal with color support** (recommended)
@@ -52,12 +48,68 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 
 ```bash
 # Clone the repository
-=======
-- **Docker** (recommended) - For the easiest setup and deployment
-- **Terminal with color support** (recommended)
-- **Pi-hole with API access** - Target Pi-hole server
+git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
+cd pihole-network-analyzer
 
-### 🐳 Docker Installation (Recommended)
+# Build the binary
+make build
+
+# Or use Go directly
+go build -o pihole-analyzer ./cmd/pihole-analyzer
+```
+
+### Basic Usage
+
+```bash
+# Setup Pi-hole configuration (interactive)
+./pihole-analyzer --pihole-setup
+
+# Analyze Pi-hole data
+./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
+
+# Start DNS server with caching (NEW!)
+./pihole-analyzer --dns
+
+# Start DNS server with custom settings
+./pihole-analyzer --dns --dns-port 5353 --dns-host 0.0.0.0
+
+# Run web dashboard
+./pihole-analyzer --web --pihole config.json
+
+# Run with test data (no Pi-hole required)
+./pihole-analyzer-test
+
+# Create default configuration file
+./pihole-analyzer --create-config
+```
+
+### Configuration Options
+
+**Environment Variables** (Docker-friendly):
+```bash
+# Required
+PIHOLE_HOST=192.168.1.100
+PIHOLE_API_PASSWORD=your-api-token
+
+# Optional
+LOG_LEVEL=info
+WEB_ENABLED=true
+WEB_PORT=8080
+METRICS_ENABLED=true
+ANALYSIS_ONLINE_ONLY=false
+```
+
+**Configuration File** (traditional):
+```bash
+# Create default config
+docker run --rm -v $(pwd):/output \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --create-config
+
+# Edit the generated config.json file
+```
+
+### Docker Installation (Recommended)
 
 The fastest way to get started is using Docker:
 
@@ -102,91 +154,6 @@ docker-compose up -d
 
 # View logs
 docker-compose logs -f
-```
-
-### 🔧 Alternative: Build from Source
-
-For development or custom builds:
-
-```bash
-# Requires Go 1.24+ and Node.js (dev tools only)
->>>>>>> main
-git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
-cd pihole-network-analyzer
-
-# Build the binary
-make build
-
-# Or use Go directly
-go build -o pihole-analyzer ./cmd/pihole-analyzer
-```
-
-<<<<<<< HEAD
-### Basic Usage
-
-```bash
-# Setup Pi-hole configuration (interactive)
-./pihole-analyzer --pihole-setup
-
-# Analyze Pi-hole data
-./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
-
-# Start DNS server with caching (NEW!)
-./pihole-analyzer --dns
-
-# Start DNS server with custom settings
-./pihole-analyzer --dns --dns-port 5353 --dns-host 0.0.0.0
-
-# Run web dashboard
-./pihole-analyzer --web --pihole config.json
-
-# Run with test data (no Pi-hole required)
-./pihole-analyzer-test
-
-# Create default configuration file
-./pihole-analyzer --create-config
-=======
-### Configuration Options
-
-**Environment Variables** (Docker-friendly):
-```bash
-# Required
-PIHOLE_HOST=192.168.1.100
-PIHOLE_API_PASSWORD=your-api-token
-
-# Optional
-LOG_LEVEL=info
-WEB_ENABLED=true
-WEB_PORT=8080
-METRICS_ENABLED=true
-ANALYSIS_ONLINE_ONLY=false
-```
-
-**Configuration File** (traditional):
-```bash
-# Create default config
-docker run --rm -v $(pwd):/output \
-  ghcr.io/grammatonic/pihole-network-analyzer:latest \
-  --create-config
-
-# Edit the generated config.json file
-```
-
-### Basic Usage
-
-```bash
-# Docker with environment variables
-docker run --rm \
-  -e PIHOLE_HOST=192.168.1.100 \
-  -e PIHOLE_API_PASSWORD=your-token \
-  ghcr.io/grammatonic/pihole-network-analyzer:latest
-
-# Binary with config file (if built from source)
-./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
-
-# Test with mock data (no Pi-hole required)
-docker run --rm ghcr.io/grammatonic/pihole-network-analyzer:latest-development
->>>>>>> main
 ```
 
 ## � Container Support
@@ -286,7 +253,6 @@ Example configuration:
     "colors": true,
     "emoji": true,
     "saveReports": true
-<<<<<<< HEAD
   },
   "dns": {
     "enabled": true,
@@ -306,8 +272,6 @@ Example configuration:
       "timeout": 5,
       "retries": 2
     }
-=======
->>>>>>> main
   }
 }
 ```
@@ -320,7 +284,6 @@ Example configuration:
 --pihole-setup        # Interactive Pi-hole configuration setup
 --test               # Run with mock data for testing
 
-<<<<<<< HEAD
 # DNS Server (NEW!)
 --dns                # Enable DNS server with caching and super fast responses
 --dns-port <port>    # DNS server port (default: 5353)
@@ -334,8 +297,6 @@ Example configuration:
 --web-host <host>    # Web interface host (default: localhost)
 --daemon             # Run in daemon mode (implies --web)
 
-=======
->>>>>>> main
 # Configuration
 --config <path>      # Custom configuration file path
 --create-config      # Create default configuration file
@@ -362,10 +323,7 @@ The project follows the Standard Go Project Layout:
 │   ├── cli/                # Command-line interface
 │   ├── colors/             # Terminal colorization
 │   ├── config/             # Configuration management
-<<<<<<< HEAD
 │   ├── dns/                # DNS server with caching (NEW!)
-=======
->>>>>>> main
 │   ├── interfaces/         # Data source abstraction
 │   ├── logger/             # Structured logging
 │   ├── network/            # Network analysis & ARP

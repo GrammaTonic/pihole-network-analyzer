@@ -33,15 +33,12 @@ type Flags struct {
 	EnableSecurityAnalysis    *bool
 	EnablePerformanceAnalysis *bool
 	NetworkAnalysisConfig     *string
-<<<<<<< HEAD
 	// DNS Server flags
 	EnableDNS      *bool
 	DNSPort        *int
 	DNSHost        *string
 	DNSConfig      *string
 	EnableDNSCache *bool
-=======
->>>>>>> main
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -69,15 +66,12 @@ func ParseFlags() *Flags {
 		EnableSecurityAnalysis:    flag.Bool("enable-security-analysis", false, "Enable security threat analysis"),
 		EnablePerformanceAnalysis: flag.Bool("enable-performance-analysis", false, "Enable network performance analysis"),
 		NetworkAnalysisConfig:     flag.String("network-config", "", "Path to network analysis configuration file"),
-<<<<<<< HEAD
 		// DNS Server flags
 		EnableDNS:      flag.Bool("dns", false, "Enable DNS server with caching and super fast responses"),
 		DNSPort:        flag.Int("dns-port", 5353, "Port for DNS server (default: 5353)"),
 		DNSHost:        flag.String("dns-host", "0.0.0.0", "Host for DNS server (default: 0.0.0.0)"),
 		DNSConfig:      flag.String("dns-config", "", "Path to DNS server configuration file"),
 		EnableDNSCache: flag.Bool("dns-cache", true, "Enable DNS response caching (default: true)"),
-=======
->>>>>>> main
 	}
 
 	flag.Parse()
@@ -134,12 +128,9 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 	// Apply network analysis flags
 	ApplyNetworkAnalysisFlags(flags, cfg)
-<<<<<<< HEAD
 
 	// Apply DNS server flags
 	ApplyDNSFlags(flags, cfg)
-=======
->>>>>>> main
 }
 
 // ApplyNetworkAnalysisFlags applies network analysis related flags to configuration
@@ -168,7 +159,6 @@ func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
 	}
 }
 
-<<<<<<< HEAD
 // ApplyDNSFlags applies DNS server related flags to configuration
 func ApplyDNSFlags(flags *Flags, cfg *types.Config) {
 	if *flags.EnableDNS {
@@ -195,8 +185,6 @@ func GetDNSConfig(flags *Flags) map[string]any {
 	}
 }
 
-=======
->>>>>>> main
 // IsWebModeEnabled returns true if web mode is requested
 func IsWebModeEnabled(flags *Flags) bool {
 	return *flags.EnableWeb || *flags.DaemonMode
@@ -269,15 +257,12 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 				fmt.Println("  • Network Performance Analysis")
 			}
 		}
-<<<<<<< HEAD
 		if IsDNSEnabled(flags) {
 			fmt.Printf("🚀 DNS server enabled on %s:%d\n", *flags.DNSHost, *flags.DNSPort)
 			if *flags.EnableDNSCache {
 				fmt.Println("  • DNS response caching enabled")
 			}
 		}
-=======
->>>>>>> main
 	}
 }
 

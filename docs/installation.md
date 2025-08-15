@@ -5,13 +5,12 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 ## System Requirements
 
 ### Minimum Requirements
-<<<<<<< HEAD
 - **Operating System**: Linux, macOS, or Windows
 - **Go Version**: 1.23.12 or later
 - **Memory**: 256MB RAM
 - **Storage**: 50MB free space
 
-=======
+### Recommended Requirements
 - **Docker** (recommended) - For the easiest and most reliable setup
 - **Memory**: 256MB RAM
 - **Storage**: 50MB free space
@@ -21,7 +20,6 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 - **Go Version**: 1.24+ 
 - **Node.js** (optional) - Only for development and release automation
 
->>>>>>> main
 ### Network Requirements
 - Pi-hole API access enabled
 - Network connectivity to Pi-hole server
@@ -29,9 +27,6 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 
 ## Installation Methods
 
-<<<<<<< HEAD
-### Method 1: Build from Source (Recommended)
-=======
 ### Method 1: Docker (Recommended)
 
 Docker provides the fastest, most reliable installation with zero dependencies.
@@ -122,7 +117,6 @@ METRICS_PORT=9090                  # Metrics server port
 ### Method 2: Build from Source
 
 For development or custom requirements:
->>>>>>> main
 
 #### 1. Clone Repository
 
@@ -166,7 +160,7 @@ docker pull ghcr.io/grammatonic/pihole-analyzer:latest
 
 # Run with configuration
 docker run --rm -v $(pwd)/config.json:/config.json \
-  ghcr.io/grammatonic/pihole-analyzer:latest --pihole /config.json
+  ghcr.io/grammatonic/pihole-network-analyzer:latest --pihole /config.json
 ```
 
 #### Build from Source
@@ -359,7 +353,7 @@ make docker-prod
 version: '3.8'
 services:
   pihole-analyzer:
-    image: ghcr.io/grammatonic/pihole-analyzer:latest
+    image: ghcr.io/grammatonic/pihole-network-analyzer:latest
     volumes:
       - ./config/config.json:/config.json:ro
       - ./reports:/reports

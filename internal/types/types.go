@@ -91,10 +91,7 @@ type Config struct {
 	NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"`
 	Integrations    IntegrationsConfig    `json:"integrations"`
 	Alerts          AlertConfig           `json:"alerts"`
-<<<<<<< HEAD
 	DNS             DNSConfig             `json:"dns"`
-=======
->>>>>>> main
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -957,7 +954,6 @@ type NetworkAnalysisSummary struct {
 	HealthScore       float64  `json:"health_score"` // 0-100
 	KeyInsights       []string `json:"key_insights"`
 }
-<<<<<<< HEAD
 
 // DNS Server Configuration
 
@@ -1022,5 +1018,3 @@ type DNSForwarderConfig struct {
 	EDNS0Enabled bool `json:"edns0_enabled"`
 	UDPSize      int  `json:"udp_size"`
 }
-=======
->>>>>>> main

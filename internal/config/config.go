@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-<<<<<<< HEAD
-
-	"pihole-analyzer/internal/dns"
-=======
 	"strconv"
 	"strings"
 
->>>>>>> main
+	"pihole-analyzer/internal/dns"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 	"pihole-analyzer/internal/validation"
@@ -190,11 +186,8 @@ func DefaultConfig() *types.Config {
 			},
 			Generic: []types.GenericIntegrationConfig{},
 		},
-<<<<<<< HEAD
 
 		DNS: dns.GetDefaultTypesConfig(),
-=======
->>>>>>> main
 	}
 }
 
@@ -208,11 +201,8 @@ func LoadConfig(configPath string) (*types.Config, error) {
 		log.InfoFields("Config file not found, using defaults", map[string]any{
 			"config_path": configPath,
 		})
-<<<<<<< HEAD
-=======
 		// Still apply environment variables to defaults
 		LoadEnvironmentVariables(config)
->>>>>>> main
 		return config, nil
 	}
 
@@ -235,12 +225,9 @@ func LoadConfig(configPath string) (*types.Config, error) {
 		return nil, fmt.Errorf("error parsing config file: %v", err)
 	}
 
-<<<<<<< HEAD
-=======
 	// Apply environment variables (override config file values)
 	LoadEnvironmentVariables(config)
 
->>>>>>> main
 	// Validate configuration
 	validator := validation.NewValidator(log)
 	result := validator.ValidateConfig(config)
@@ -270,8 +257,6 @@ func LoadConfig(configPath string) (*types.Config, error) {
 	return config, nil
 }
 
-<<<<<<< HEAD
-=======
 // LoadEnvironmentVariables merges environment variables into the configuration
 // Environment variables override config file values but are overridden by CLI flags
 func LoadEnvironmentVariables(config *types.Config) {
@@ -384,7 +369,6 @@ func LoadEnvironmentVariables(config *types.Config) {
 	}
 }
 
->>>>>>> main
 // SaveConfig saves the current configuration to file
 func SaveConfig(config *types.Config, configPath string) error {
 	log := logger.Component("config")

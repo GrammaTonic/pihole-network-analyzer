@@ -207,11 +207,7 @@ func TestMLAnomalyProcessing(t *testing.T) {
 				Description: "Unusual domain pattern detected",
 				Score:       0.7,
 				Confidence:  0.75,
-<<<<<<< HEAD
-				Domain:      "malware.example.com",
-=======
 				Domain:      "malware.localhost",
->>>>>>> main
 			},
 		},
 		Summary: ml.MLSummary{

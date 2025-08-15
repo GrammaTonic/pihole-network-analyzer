@@ -14,11 +14,7 @@ BUILD_TIME=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 export GOCACHE
 export GOMODCACHE
 
-<<<<<<< HEAD
-.PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod docker-push-ghcr docker-login-ghcr version release-setup commit release-dry-run release-status
-=======
 .PHONY: build build-test build-all run clean install-deps help setup-pihole analyze-pihole pre-push ci-test test-mode cache-info cache-clean docker-build docker-dev docker-prod docker-push-ghcr docker-login-ghcr version release-setup commit release-dry-run release-status test-web test-web-clean
->>>>>>> main
 
 help: ## Show this help message
 	@echo "Available commands:"
@@ -221,16 +217,14 @@ test-pihole: build ## Test Pi-hole connection and analyze data
 	./$(BINARY_NAME) --pihole $(PIHOLE_CONFIG)
 
 clean: ## Clean build artifacts
-	rm -f $(BINARY_NAME)
-	rm -f $(TEST_BINARY)
-	rm -f dns_usage_report_*.txt
-	rm -f pihole-data-*.db
+	 rm -f $(BINARY_NAME)
+	 rm -f $(TEST_BINARY)
+	 rm -f dns_usage_report_*.txt
+	 rm -f pihole-data-*.db
 
 test: ## Run tests (if any)
-	go test ./...
+	 go test ./...
 
-<<<<<<< HEAD
-=======
 test-web: ## Run web integration tests with screenshots
 	@echo "🌐 Running web integration tests with screenshot capture..."
 	@mkdir -p test-screenshots
@@ -246,7 +240,6 @@ test-web-clean: ## Clean web test artifacts
 	@rm -rf test-screenshots/
 	@echo "✅ Web test artifacts cleaned"
 
->>>>>>> main
 fmt: ## Format Go code
 	go fmt ./...
 

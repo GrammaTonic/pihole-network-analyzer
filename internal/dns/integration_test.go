@@ -16,7 +16,7 @@ func TestDNSServer_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	// Skip in CI environments
 	if os.Getenv("CI") == "true" {
 		t.Skip("Skipping integration test in CI environment")
@@ -265,7 +265,7 @@ func TestDNSForwarder_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping forwarder integration test in short mode")
 	}
-	
+
 	// Skip in CI environments
 	if os.Getenv("CI") == "true" {
 		t.Skip("Skipping forwarder integration test in CI environment")
