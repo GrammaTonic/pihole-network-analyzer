@@ -33,6 +33,12 @@ type Flags struct {
 	EnableSecurityAnalysis    *bool
 	EnablePerformanceAnalysis *bool
 	NetworkAnalysisConfig     *string
+	// DNS Server flags
+	EnableDNS      *bool
+	DNSPort        *int
+	DNSHost        *string
+	DNSConfig      *string
+	EnableDNSCache *bool
 }
 
 // ParseFlags parses command-line flags and returns the flags struct
@@ -60,6 +66,12 @@ func ParseFlags() *Flags {
 		EnableSecurityAnalysis:    flag.Bool("enable-security-analysis", false, "Enable security threat analysis"),
 		EnablePerformanceAnalysis: flag.Bool("enable-performance-analysis", false, "Enable network performance analysis"),
 		NetworkAnalysisConfig:     flag.String("network-config", "", "Path to network analysis configuration file"),
+		// DNS Server flags
+		EnableDNS:      flag.Bool("dns", false, "Enable DNS server with caching and super fast responses"),
+		DNSPort:        flag.Int("dns-port", 5353, "Port for DNS server (default: 5353)"),
+		DNSHost:        flag.String("dns-host", "0.0.0.0", "Host for DNS server (default: 0.0.0.0)"),
+		DNSConfig:      flag.String("dns-config", "", "Path to DNS server configuration file"),
+		EnableDNSCache: flag.Bool("dns-cache", true, "Enable DNS response caching (default: true)"),
 	}
 
 	flag.Parse()
@@ -116,6 +128,9 @@ func ApplyFlags(flags *Flags, cfg *types.Config) {
 
 	// Apply network analysis flags
 	ApplyNetworkAnalysisFlags(flags, cfg)
+
+	// Apply DNS server flags
+	ApplyDNSFlags(flags, cfg)
 }
 
 // ApplyNetworkAnalysisFlags applies network analysis related flags to configuration
@@ -141,6 +156,32 @@ func ApplyNetworkAnalysisFlags(flags *Flags, cfg *types.Config) {
 
 	if *flags.EnablePerformanceAnalysis {
 		cfg.NetworkAnalysis.Performance.Enabled = true
+	}
+}
+
+// ApplyDNSFlags applies DNS server related flags to configuration
+func ApplyDNSFlags(flags *Flags, cfg *types.Config) {
+	if *flags.EnableDNS {
+		cfg.DNS.Enabled = true
+		cfg.DNS.Host = *flags.DNSHost
+		cfg.DNS.Port = *flags.DNSPort
+		cfg.DNS.Cache.Enabled = *flags.EnableDNSCache
+	}
+}
+
+// IsDNSEnabled returns true if DNS server is requested
+func IsDNSEnabled(flags *Flags) bool {
+	return *flags.EnableDNS
+}
+
+// GetDNSConfig extracts DNS configuration from flags
+func GetDNSConfig(flags *Flags) map[string]any {
+	return map[string]any{
+		"enabled":     IsDNSEnabled(flags),
+		"host":        *flags.DNSHost,
+		"port":        *flags.DNSPort,
+		"cache":       *flags.EnableDNSCache,
+		"config_file": *flags.DNSConfig,
 	}
 }
 
@@ -214,6 +255,12 @@ func PrintStartupInfo(flags *Flags, cfg *types.Config) {
 			}
 			if *flags.EnablePerformanceAnalysis {
 				fmt.Println("  • Network Performance Analysis")
+			}
+		}
+		if IsDNSEnabled(flags) {
+			fmt.Printf("🚀 DNS server enabled on %s:%d\n", *flags.DNSHost, *flags.DNSPort)
+			if *flags.EnableDNSCache {
+				fmt.Println("  • DNS response caching enabled")
 			}
 		}
 	}

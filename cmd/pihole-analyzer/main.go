@@ -12,6 +12,7 @@ import (
 	"pihole-analyzer/internal/analyzer"
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/config"
+	"pihole-analyzer/internal/dns"
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/metrics"
@@ -75,6 +76,15 @@ func main() {
 	if cfg.Web.Enabled {
 		if err := runWebMode(flags, cfg, appLogger); err != nil {
 			appLogger.Error("Error running web mode: %v", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Handle DNS server mode
+	if cfg.DNS.Enabled {
+		if err := runDNSMode(flags, cfg, appLogger); err != nil {
+			appLogger.Error("Error running DNS server: %v", err)
 			os.Exit(1)
 		}
 		return
@@ -339,4 +349,119 @@ func loadPiholeConfig(configFile string) (*types.PiholeConfig, error) {
 		UseHTTPS:    false,
 		APITimeout:  30,
 	}, nil
+}
+
+func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) error {
+	dnsLogger := appLogger.Component("dns-server")
+
+	dnsLogger.InfoFields("Starting DNS server mode", map[string]any{
+		"host":              cfg.DNS.Host,
+		"port":              cfg.DNS.Port,
+		"cache_enabled":     cfg.DNS.Cache.Enabled,
+		"forwarder_enabled": cfg.DNS.Forwarder.Enabled,
+		"tcp_enabled":       cfg.DNS.TCPEnabled,
+		"udp_enabled":       cfg.DNS.UDPEnabled,
+	})
+
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Set up signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Convert configuration
+	dnsConfig := dns.ConvertConfig(cfg.DNS)
+
+	// Create DNS server factory
+	factory := dns.NewFactory(dnsLogger)
+
+	// Create DNS server
+	server, err := factory.CreateServer(dnsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create DNS server: %w", err)
+	}
+
+	// Start server in a goroutine
+	serverErrChan := make(chan error, 1)
+	go func() {
+		dnsLogger.Success("🚀 DNS server starting on %s:%d", cfg.DNS.Host, cfg.DNS.Port)
+		dnsLogger.InfoFields("DNS server configuration", map[string]any{
+			"cache_max_size":    cfg.DNS.Cache.MaxSize,
+			"cache_default_ttl": cfg.DNS.Cache.DefaultTTL,
+			"upstream_servers":  len(cfg.DNS.Forwarder.Upstreams),
+			"max_concurrent":    cfg.DNS.MaxConcurrentQueries,
+		})
+
+		if len(cfg.DNS.Forwarder.Upstreams) > 0 {
+			dnsLogger.InfoFields("Upstream servers", map[string]any{
+				"upstreams": cfg.DNS.Forwarder.Upstreams,
+				"timeout":   cfg.DNS.Forwarder.Timeout,
+				"retries":   cfg.DNS.Forwarder.Retries,
+			})
+		}
+
+		err := server.Start(ctx)
+		if err != nil {
+			serverErrChan <- err
+		}
+	}()
+
+	// Start metrics collection if enabled
+	var metricsServer *metrics.Server
+	if cfg.Metrics.Enabled && cfg.Metrics.EnableEndpoint {
+		serverConfig := metrics.ServerConfig{
+			Port:    cfg.Metrics.Port,
+			Host:    cfg.Metrics.Host,
+			Enabled: cfg.Metrics.EnableEndpoint,
+		}
+		metricsCollector := metrics.New(dnsLogger.GetSlogger())
+		metricsServer = metrics.NewServer(serverConfig, metricsCollector, dnsLogger.GetSlogger())
+		metricsServer.StartInBackground()
+
+		dnsLogger.Info("📊 Metrics endpoint available at: http://%s:%s/metrics",
+			cfg.Metrics.Host, cfg.Metrics.Port)
+
+		defer func() {
+			if metricsServer != nil {
+				metricsServer.Stop(ctx)
+			}
+		}()
+	}
+
+	// Print startup status
+	go func() {
+		time.Sleep(2 * time.Second)
+		stats := server.GetStats()
+		dnsLogger.InfoFields("DNS server status", map[string]any{
+			"uptime":        time.Since(stats.StartTime),
+			"queries_total": stats.QueriesReceived,
+			"cache_hits":    stats.CacheHits,
+			"cache_misses":  stats.CacheMisses,
+		})
+	}()
+
+	// Wait for shutdown signal or server error
+	select {
+	case sig := <-sigChan:
+		dnsLogger.Info("Received shutdown signal: %v", sig)
+		cancel()
+
+		// Graceful shutdown with timeout
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer shutdownCancel()
+
+		if err := server.Stop(shutdownCtx); err != nil {
+			dnsLogger.Error("Error during server shutdown: %v", err)
+		}
+
+		dnsLogger.Success("✅ DNS server shutdown complete")
+
+	case err := <-serverErrChan:
+		dnsLogger.Error("DNS server error: %v", err)
+		return err
+	}
+
+	return nil
 }

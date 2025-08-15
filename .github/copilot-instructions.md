@@ -311,14 +311,12 @@ make fast-build       # Optimized build with aggressive caching
 15. **Conventional Commits**: Use conventional commit format for all commits - enables automated versioning and changelog generation
 16. **GitLab Flow**: Follow GitLab Flow with release branches - main for development, release/vX.Y for stable releases, feature branches for development
 17. **Semantic Versioning**: Automated SemVer based on commit messages - feat: (minor), fix: (patch), BREAKING CHANGE: (major)
-18. **Embedded Assets**: All web templates and static files must use `//go:embed` for single binary distribution
 19. **Fix Merge Conflicts**: Always resolve merge conflicts in your own branch before submitting changes
 20. **Documentation Updates**: Keep all documentation up to date with code changes
 21. **Inconsistent Code Styles**: Ensure consistent code styles across the codebase
 22. **Unoptimized Code Paths**: Identify and optimize any performance bottlenecks in the codebase
 23. **Error Handling Improvements**: Enhance error handling and logging throughout the codebase
 24. **Testing Coverage**: Ensure all new features and bug fixes have corresponding tests
-
 
 ## Common Tasks
 

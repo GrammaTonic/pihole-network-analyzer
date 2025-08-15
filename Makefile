@@ -217,13 +217,13 @@ test-pihole: build ## Test Pi-hole connection and analyze data
 	./$(BINARY_NAME) --pihole $(PIHOLE_CONFIG)
 
 clean: ## Clean build artifacts
-	rm -f $(BINARY_NAME)
-	rm -f $(TEST_BINARY)
-	rm -f dns_usage_report_*.txt
-	rm -f pihole-data-*.db
+	 rm -f $(BINARY_NAME)
+	 rm -f $(TEST_BINARY)
+	 rm -f dns_usage_report_*.txt
+	 rm -f pihole-data-*.db
 
 test: ## Run tests (if any)
-	go test ./...
+	 go test ./...
 
 test-web: ## Run web integration tests with screenshots
 	@echo "🌐 Running web integration tests with screenshot capture..."

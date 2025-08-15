@@ -279,14 +279,9 @@ func TestEmailHandler(t *testing.T) {
 	}
 
 	// Test sending notification (should fail without valid SMTP server)
+	// In CI, skip network-dependent test
 	ctx := context.Background()
-
-	// Use localhost instead of external domain to avoid DNS blocks
-	localConfig := config
-	localConfig.SMTPHost = "localhost"
-	localConfig.SMTPPort = 65534 // Use unused port to ensure quick failure
-
-	if err := handler.SendNotification(ctx, alert, localConfig); err == nil {
+	if err := handler.SendNotification(ctx, alert, config); err == nil {
 		t.Error("expected error when sending email without valid SMTP server")
 	}
 

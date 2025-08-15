@@ -6,12 +6,19 @@
     <title>{{.Title}} - Enhanced Dashboard</title>
     
     <!-- Chart.js -->
+<<<<<<< HEAD
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- D3.js for advanced visualizations -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+=======
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" 
             onerror="this.onerror=null; this.src='/static/chart.min.js'; console.warn('Using fallback Chart.js');"></script>
     
     <!-- D3.js for advanced visualizations -->
     <script src="https://d3js.org/d3.v7.min.js"
             onerror="this.onerror=null; this.src='/static/d3.min.js'; console.warn('Using fallback D3.js');"></script>
+>>>>>>> main
     
     <style>
         * {
@@ -560,6 +567,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Enhanced Pi-hole Dashboard loaded');
             
+<<<<<<< HEAD
+=======
             // Check if required libraries are available
             if (typeof Chart === 'undefined') {
                 console.warn('Chart.js not available - charts will be disabled');
@@ -572,6 +581,7 @@
                 showLibraryError('D3.js not available - network topology visualization is disabled');
             }
             
+>>>>>>> main
             // Initialize all charts
             initializeCharts();
             
@@ -586,6 +596,22 @@
         function initializeCharts() {
             console.log('Initializing charts...');
             
+<<<<<<< HEAD
+            // Initialize timeline chart
+            initTimelineChart();
+            
+            // Initialize client chart
+            initClientChart();
+            
+            // Initialize domain chart
+            initDomainChart();
+            
+            // Initialize performance chart
+            initPerformanceChart();
+            
+            // Initialize network topology
+            initTopologyChart();
+=======
             try {
                 // Initialize timeline chart
                 initTimelineChart();
@@ -609,6 +635,7 @@
                 console.error('Error initializing charts:', error);
                 showLibraryError('Chart initialization failed: ' + error.message);
             }
+>>>>>>> main
         }
 
         // Initialize timeline chart
@@ -878,11 +905,14 @@
 
         // Render network topology using D3.js
         function renderNetworkTopology(data) {
+<<<<<<< HEAD
+=======
             if (typeof d3 === 'undefined') {
                 showTopologyError('D3.js not available');
                 return;
             }
             
+>>>>>>> main
             const container = document.getElementById('topology-chart');
             
             // Clear previous visualization
@@ -1115,6 +1145,8 @@
             container.innerHTML = `<div class="chart-error">${message}</div>`;
         }
 
+<<<<<<< HEAD
+=======
         function showLibraryError(message) {
             // Create a notification banner for library errors
             const notification = document.createElement('div');
@@ -1136,6 +1168,7 @@
             }, 5000);
         }
 
+>>>>>>> main
         function updateConnectionIndicator(connected) {
             const statusBar = document.querySelector('.status-bar');
             let wsIndicator = document.querySelector('.ws-status');

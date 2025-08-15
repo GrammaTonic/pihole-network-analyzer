@@ -5,6 +5,12 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 ## System Requirements
 
 ### Minimum Requirements
+- **Operating System**: Linux, macOS, or Windows
+- **Go Version**: 1.23.12 or later
+- **Memory**: 256MB RAM
+- **Storage**: 50MB free space
+
+### Recommended Requirements
 - **Docker** (recommended) - For the easiest and most reliable setup
 - **Memory**: 256MB RAM
 - **Storage**: 50MB free space
@@ -154,7 +160,7 @@ docker pull ghcr.io/grammatonic/pihole-analyzer:latest
 
 # Run with configuration
 docker run --rm -v $(pwd)/config.json:/config.json \
-  ghcr.io/grammatonic/pihole-analyzer:latest --pihole /config.json
+  ghcr.io/grammatonic/pihole-network-analyzer:latest --pihole /config.json
 ```
 
 #### Build from Source
@@ -347,7 +353,7 @@ make docker-prod
 version: '3.8'
 services:
   pihole-analyzer:
-    image: ghcr.io/grammatonic/pihole-analyzer:latest
+    image: ghcr.io/grammatonic/pihole-network-analyzer:latest
     volumes:
       - ./config/config.json:/config.json:ro
       - ./reports:/reports

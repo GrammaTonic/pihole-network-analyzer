@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"pihole-analyzer/internal/dns"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/types"
 	"pihole-analyzer/internal/validation"
@@ -185,6 +186,8 @@ func DefaultConfig() *types.Config {
 			},
 			Generic: []types.GenericIntegrationConfig{},
 		},
+
+		DNS: dns.GetDefaultTypesConfig(),
 	}
 }
 

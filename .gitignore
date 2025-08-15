@@ -3,7 +3,6 @@ pihole-analyzer
 /pihole-analyzer-test
 *.exe
 
-# Test output and artifacts
 test_output.txt
 test-screenshots/
 *.exe~

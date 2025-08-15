@@ -103,6 +103,14 @@ docker run --rm ghcr.io/grammatonic/pihole-analyzer:latest-development
 
 ### Environment Variables
 
+<<<<<<< HEAD
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `PIHOLE_CONFIG` | Configuration file path | `/home/appuser/.pihole-analyzer/config.json` | `/config/pihole.json` |
+| `LOG_LEVEL` | Logging level | `info` | `debug`, `info`, `warn`, `error` |
+| `OUTPUT_FORMAT` | Output format | `table` | `json`, `csv`, `table` |
+| `DEVELOPMENT` | Development mode | `false` | `true` |
+=======
 Complete environment variable support for container-first deployments:
 
 | Category | Variable | Description | Default | Example |
@@ -133,6 +141,7 @@ Environment variables follow this precedence order:
 2. **Environment variables**
 3. **Configuration file** 
 4. **Defaults** (lowest priority)
+>>>>>>> main
 
 ## Docker Compose Configurations
 

@@ -216,7 +216,6 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
-
     - name: Set up Chrome
       uses: browser-actions/setup-chrome@v1
         

@@ -91,6 +91,7 @@ type Config struct {
 	NetworkAnalysis NetworkAnalysisConfig `json:"network_analysis"`
 	Integrations    IntegrationsConfig    `json:"integrations"`
 	Alerts          AlertConfig           `json:"alerts"`
+	DNS             DNSConfig             `json:"dns"`
 }
 
 // PiholeConfig represents Pi-hole specific configuration
@@ -952,4 +953,68 @@ type NetworkAnalysisSummary struct {
 	OverallHealth     string   `json:"overall_health"`
 	HealthScore       float64  `json:"health_score"` // 0-100
 	KeyInsights       []string `json:"key_insights"`
+}
+
+// DNS Server Configuration
+
+// DNSConfig represents DNS server configuration
+type DNSConfig struct {
+	// Server settings
+	Enabled    bool   `json:"enabled"`
+	Host       string `json:"host"`
+	Port       int    `json:"port"`
+	TCPEnabled bool   `json:"tcp_enabled"`
+	UDPEnabled bool   `json:"udp_enabled"`
+
+	// Timeouts (in seconds)
+	ReadTimeout  int `json:"read_timeout"`
+	WriteTimeout int `json:"write_timeout"`
+	IdleTimeout  int `json:"idle_timeout"`
+
+	// Cache configuration
+	Cache DNSCacheConfig `json:"cache"`
+
+	// Forwarder configuration
+	Forwarder DNSForwarderConfig `json:"forwarder"`
+
+	// Logging
+	LogQueries bool `json:"log_queries"`
+	LogLevel   int  `json:"log_level"`
+
+	// Performance
+	MaxConcurrentQueries int `json:"max_concurrent_queries"`
+	BufferSize           int `json:"buffer_size"`
+}
+
+// DNSCacheConfig represents DNS cache configuration
+type DNSCacheConfig struct {
+	Enabled         bool `json:"enabled"`
+	MaxSize         int  `json:"max_size"`
+	DefaultTTL      int  `json:"default_ttl"`      // seconds
+	MaxTTL          int  `json:"max_ttl"`          // seconds
+	MinTTL          int  `json:"min_ttl"`          // seconds
+	CleanupInterval int  `json:"cleanup_interval"` // seconds
+
+	// Cache strategy: "lru", "lfu", "ttl"
+	EvictionPolicy string `json:"eviction_policy"`
+
+	// Memory limits
+	MaxMemoryMB int `json:"max_memory_mb"`
+}
+
+// DNSForwarderConfig represents DNS forwarder configuration
+type DNSForwarderConfig struct {
+	Enabled        bool     `json:"enabled"`
+	Upstreams      []string `json:"upstreams"`
+	Timeout        int      `json:"timeout"` // seconds
+	Retries        int      `json:"retries"`
+	HealthCheck    bool     `json:"health_check"`
+	HealthInterval int      `json:"health_interval"` // seconds
+
+	// Load balancing: "round_robin", "random", "fastest"
+	LoadBalancing string `json:"load_balancing"`
+
+	// EDNS0 support
+	EDNS0Enabled bool `json:"edns0_enabled"`
+	UDPSize      int  `json:"udp_size"`
 }
