@@ -1,3 +1,4 @@
+package reporting
 import (
 	"bytes"
 	"io"
@@ -20,7 +21,6 @@ func captureOutput(f func()) string {
 	os.Stdout = old
 	return buf.String()
 }
-package reporting
 
 import (
 	"pihole-analyzer/internal/types"
