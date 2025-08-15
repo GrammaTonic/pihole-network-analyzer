@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.1.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v3.0.0...v3.1.0) (2025-08-15)
+
+
+### 🚀 Features
+
+* add DHCP web interface and complete integration ([c513f66](https://github.com/GrammaTonic/pihole-network-analyzer/commit/c513f66034e2afd54291f4f24393dd6bcfa2defa))
+* create feature branch for DHCP server implementation ([29bf0fa](https://github.com/GrammaTonic/pihole-network-analyzer/commit/29bf0fa9a4d4e385f48ab7e8d5f2f372f7540736))
+* implement core DHCP server architecture with lease management ([f4454d3](https://github.com/GrammaTonic/pihole-network-analyzer/commit/f4454d32ff141571a2cb8de257d5951281c53d60))
+
+
+### 🐛 Bug Fixes
+
+* comment out undefined runDNSMode to fix pipeline error ([2988303](https://github.com/GrammaTonic/pihole-network-analyzer/commit/2988303c1dbec81ed85122afaabec0981fb42427))
+* improve DHCP test reliability and finalize implementation ([0a9bfe4](https://github.com/GrammaTonic/pihole-network-analyzer/commit/0a9bfe4be4093de159effd75f18bc9442214bde5))
+* resolve pipeline test failures and improve test reliability ([f93ece9](https://github.com/GrammaTonic/pihole-network-analyzer/commit/f93ece997c5ca18ff5157a8571671fc769a4af10))
+
 ## [3.0.0](https://github.com/GrammaTonic/pihole-network-analyzer/compare/v2.0.0...v3.0.0) (2025-08-15)
 
 
