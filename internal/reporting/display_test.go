@@ -1,14 +1,15 @@
 package reporting
+
 import (
 	"bytes"
 	"io"
 	"os"
 	"strings"
 	"testing"
-)
-import (
+
 	"pihole-analyzer/internal/types"
 )
+
 // captureOutput captures stdout output for assertions in tests
 func captureOutput(f func()) string {
 	old := os.Stdout
@@ -21,12 +22,6 @@ func captureOutput(f func()) string {
 	os.Stdout = old
 	return buf.String()
 }
-
-import (
-	"pihole-analyzer/internal/types"
-	"strings"
-	"testing"
-)
 
 func TestDisplayResultsWithConfig_NoData(t *testing.T) {
 	clientStats := map[string]*types.ClientStats{}
