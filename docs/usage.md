@@ -24,34 +24,34 @@ This guide covers all the ways to use the Pi-hole Network Analyzer, from basic a
 
 ### Core Operations
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `--pihole <config>` | Analyze Pi-hole with configuration | `--pihole ~/.pihole-analyzer/config.json` |
-| `--pihole-setup` | Interactive Pi-hole API configuration | `--pihole-setup` |
-| `--test` | Run with mock data (use test binary) | `./pihole-analyzer-test --test` |
+| Command             | Description                           | Example                                   |
+| ------------------- | ------------------------------------- | ----------------------------------------- |
+| `--pihole <config>` | Analyze Pi-hole with configuration    | `--pihole ~/.pihole-analyzer/config.json` |
+| `--pihole-setup`    | Interactive Pi-hole API configuration | `--pihole-setup`                          |
+| `--test`            | Run with mock data (use test binary)  | `./pihole-analyzer-test --test`           |
 
 ### Configuration Management
 
-| Command | Description | Example |
-|---------|-------------|---------|
+| Command           | Description                   | Example                   |
+| ----------------- | ----------------------------- | ------------------------- |
 | `--config <path>` | Use custom configuration file | `--config /tmp/test.json` |
-| `--create-config` | Create default configuration | `--create-config` |
-| `--show-config` | Display current configuration | `--show-config` |
+| `--create-config` | Create default configuration  | `--create-config`         |
+| `--show-config`   | Display current configuration | `--show-config`           |
 
 ### Output Control
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `--quiet` | Suppress non-essential output | `--quiet` |
-| `--no-color` | Disable colored output | `--no-color` |
-| `--no-emoji` | Disable emoji symbols | `--no-emoji` |
+| Command      | Description                   | Example      |
+| ------------ | ----------------------------- | ------------ |
+| `--quiet`    | Suppress non-essential output | `--quiet`    |
+| `--no-color` | Disable colored output        | `--no-color` |
+| `--no-emoji` | Disable emoji symbols         | `--no-emoji` |
 
 ### Filtering Options
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `--online-only` | Show only online clients | `--online-only` |
-| `--no-exclude` | Disable default exclusions | `--no-exclude` |
+| Command         | Description                | Example         |
+| --------------- | -------------------------- | --------------- |
+| `--online-only` | Show only online clients   | `--online-only` |
+| `--no-exclude`  | Disable default exclusions | `--no-exclude`  |
 
 ## Configuration Examples
 
@@ -201,22 +201,22 @@ docker run --rm \
 ### Docker Compose
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   pihole-analyzer:
     image: ghcr.io/grammatonic/pihole-analyzer:latest
     container_name: pihole-analyzer
-    
+
     volumes:
       - ./config.json:/app/config.json:ro
       - ./reports:/app/reports
-    
+
     environment:
       - LOG_LEVEL=info
       - NO_COLOR=false
       - NO_EMOJI=false
-    
+
     command: ["--config", "/app/config.json"]
 ```
 
@@ -253,17 +253,9 @@ nohup ./pihole-analyzer --pihole config.json --quiet > analysis.log 2>&1 &
 ```json
 {
   "exclusions": {
-    "networks": [
-      "172.17.0.0/16",
-      "10.0.0.0/8"
-    ],
-    "hostnames": [
-      "localhost",
-      "docker-host"
-    ],
-    "clients": [
-      "192.168.1.1"
-    ]
+    "networks": ["172.17.0.0/16", "10.0.0.0/8"],
+    "hostnames": ["localhost", "docker-host"],
+    "clients": ["192.168.1.1"]
   }
 }
 ```
@@ -419,18 +411,23 @@ grep "client_stats" /var/log/pihole-analyzer.log | jq '.client_count'
 ## FAQ
 
 ### Q: Can I analyze multiple Pi-hole instances?
+
 A: Currently, the analyzer connects to one Pi-hole instance at a time. Configure different config files for multiple instances.
 
 ### Q: How often should I run the analyzer?
+
 A: For daily monitoring, running once per day is sufficient. For real-time monitoring, consider running every hour.
 
 ### Q: Does the analyzer affect Pi-hole performance?
+
 A: No, the analyzer uses read-only API calls and doesn't modify Pi-hole configuration or data.
 
 ### Q: Can I run this on Raspberry Pi?
+
 A: Yes, ARM builds are available. Use the appropriate container image for your architecture.
 
 ### Q: How do I backup my configuration?
+
 A: Copy your config.json file. The configuration is self-contained and portable.
 
 This usage guide provides comprehensive coverage of the Pi-hole Network Analyzer's capabilities with API-only connectivity.
