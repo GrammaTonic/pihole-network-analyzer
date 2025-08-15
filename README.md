@@ -28,17 +28,21 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 - **🧪 Testing Support**: Built-in mock data for development and CI
 - **🔒 Security**: Session-based API authentication with 2FA support
 - **📈 Performance**: Optimized for large Pi-hole datasets
+<<<<<<< HEAD
 - **🚀 DNS Server**: Built-in DNS server with caching and super fast responses
 - **📦 Web UI**: Real-time dashboard with WebSocket updates
 - **📊 Prometheus Metrics**: Built-in metrics collection and monitoring
 - **🤖 Machine Learning**: AI-powered anomaly detection and trend analysis
 - **🔍 Network Analysis**: Deep packet inspection, traffic patterns, security analysis
 - **⚠️ Alert System**: Configurable alerts with Slack/Email notifications
+=======
+>>>>>>> main
 
 ## 📋 Quick Start
 
 ### Prerequisites
 
+<<<<<<< HEAD
 - **Go 1.24+** - For building and running the application
 - **Pi-hole with API access** - Target Pi-hole server
 - **Terminal with color support** (recommended)
@@ -48,6 +52,65 @@ A Go-based DNS analysis tool that connects to Pi-hole via API to generate colori
 
 ```bash
 # Clone the repository
+=======
+- **Docker** (recommended) - For the easiest setup and deployment
+- **Terminal with color support** (recommended)
+- **Pi-hole with API access** - Target Pi-hole server
+
+### 🐳 Docker Installation (Recommended)
+
+The fastest way to get started is using Docker:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with environment variables (no config file needed)
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run with configuration file
+docker run --rm \
+  -v ~/.pihole-analyzer:/home/appuser/.pihole-analyzer:ro \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --config /home/appuser/.pihole-analyzer/config.json
+
+# Start web UI with environment variables
+docker run -d -p 8080:8080 \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  -e WEB_ENABLED=true \
+  -e WEB_DAEMON_MODE=true \
+  --name pihole-analyzer \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+```
+
+### Docker Compose (Production Ready)
+
+```bash
+# Create docker-compose.yml with your Pi-hole details
+curl -O https://raw.githubusercontent.com/GrammaTonic/pihole-network-analyzer/main/docker-compose.yml
+
+# Configure via environment variables
+export PIHOLE_HOST=192.168.1.100
+export PIHOLE_API_PASSWORD=your-api-token
+
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+### 🔧 Alternative: Build from Source
+
+For development or custom builds:
+
+```bash
+# Requires Go 1.24+ and Node.js (dev tools only)
+>>>>>>> main
 git clone https://github.com/GrammaTonic/pihole-network-analyzer.git
 cd pihole-network-analyzer
 
@@ -58,6 +121,7 @@ make build
 go build -o pihole-analyzer ./cmd/pihole-analyzer
 ```
 
+<<<<<<< HEAD
 ### Basic Usage
 
 ```bash
@@ -81,6 +145,48 @@ go build -o pihole-analyzer ./cmd/pihole-analyzer
 
 # Create default configuration file
 ./pihole-analyzer --create-config
+=======
+### Configuration Options
+
+**Environment Variables** (Docker-friendly):
+```bash
+# Required
+PIHOLE_HOST=192.168.1.100
+PIHOLE_API_PASSWORD=your-api-token
+
+# Optional
+LOG_LEVEL=info
+WEB_ENABLED=true
+WEB_PORT=8080
+METRICS_ENABLED=true
+ANALYSIS_ONLINE_ONLY=false
+```
+
+**Configuration File** (traditional):
+```bash
+# Create default config
+docker run --rm -v $(pwd):/output \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest \
+  --create-config
+
+# Edit the generated config.json file
+```
+
+### Basic Usage
+
+```bash
+# Docker with environment variables
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Binary with config file (if built from source)
+./pihole-analyzer --pihole ~/.pihole-analyzer/config.json
+
+# Test with mock data (no Pi-hole required)
+docker run --rm ghcr.io/grammatonic/pihole-network-analyzer:latest-development
+>>>>>>> main
 ```
 
 ## � Container Support
@@ -180,6 +286,7 @@ Example configuration:
     "colors": true,
     "emoji": true,
     "saveReports": true
+<<<<<<< HEAD
   },
   "dns": {
     "enabled": true,
@@ -199,6 +306,8 @@ Example configuration:
       "timeout": 5,
       "retries": 2
     }
+=======
+>>>>>>> main
   }
 }
 ```
@@ -211,6 +320,7 @@ Example configuration:
 --pihole-setup        # Interactive Pi-hole configuration setup
 --test               # Run with mock data for testing
 
+<<<<<<< HEAD
 # DNS Server (NEW!)
 --dns                # Enable DNS server with caching and super fast responses
 --dns-port <port>    # DNS server port (default: 5353)
@@ -224,6 +334,8 @@ Example configuration:
 --web-host <host>    # Web interface host (default: localhost)
 --daemon             # Run in daemon mode (implies --web)
 
+=======
+>>>>>>> main
 # Configuration
 --config <path>      # Custom configuration file path
 --create-config      # Create default configuration file
@@ -250,7 +362,10 @@ The project follows the Standard Go Project Layout:
 │   ├── cli/                # Command-line interface
 │   ├── colors/             # Terminal colorization
 │   ├── config/             # Configuration management
+<<<<<<< HEAD
 │   ├── dns/                # DNS server with caching (NEW!)
+=======
+>>>>>>> main
 │   ├── interfaces/         # Data source abstraction
 │   ├── logger/             # Structured logging
 │   ├── network/            # Network analysis & ARP

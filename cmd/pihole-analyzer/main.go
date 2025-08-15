@@ -12,7 +12,10 @@ import (
 	"pihole-analyzer/internal/analyzer"
 	"pihole-analyzer/internal/cli"
 	"pihole-analyzer/internal/config"
+<<<<<<< HEAD
 	"pihole-analyzer/internal/dns"
+=======
+>>>>>>> main
 	"pihole-analyzer/internal/interfaces"
 	"pihole-analyzer/internal/logger"
 	"pihole-analyzer/internal/metrics"
@@ -81,6 +84,7 @@ func main() {
 		return
 	}
 
+<<<<<<< HEAD
 	// Handle DNS server mode
 	if cfg.DNS.Enabled {
 		if err := runDNSMode(flags, cfg, appLogger); err != nil {
@@ -90,6 +94,8 @@ func main() {
 		return
 	}
 
+=======
+>>>>>>> main
 	// Handle Pi-hole specific operations
 	if *flags.Pihole != "" {
 		if err := analyzePihole(*flags.Pihole, cfg, appLogger); err != nil {
@@ -350,6 +356,7 @@ func loadPiholeConfig(configFile string) (*types.PiholeConfig, error) {
 		APITimeout:  30,
 	}, nil
 }
+<<<<<<< HEAD
 
 func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) error {
 	dnsLogger := appLogger.Component("dns-server")
@@ -465,3 +472,5 @@ func runDNSMode(flags *cli.Flags, cfg *types.Config, appLogger *logger.Logger) e
 
 	return nil
 }
+=======
+>>>>>>> main

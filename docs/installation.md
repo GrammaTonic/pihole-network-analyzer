@@ -5,11 +5,23 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 ## System Requirements
 
 ### Minimum Requirements
+<<<<<<< HEAD
 - **Operating System**: Linux, macOS, or Windows
 - **Go Version**: 1.23.12 or later
 - **Memory**: 256MB RAM
 - **Storage**: 50MB free space
 
+=======
+- **Docker** (recommended) - For the easiest and most reliable setup
+- **Memory**: 256MB RAM
+- **Storage**: 50MB free space
+
+### Traditional Requirements (Building from Source)
+- **Operating System**: Linux, macOS, or Windows
+- **Go Version**: 1.24+ 
+- **Node.js** (optional) - Only for development and release automation
+
+>>>>>>> main
 ### Network Requirements
 - Pi-hole API access enabled
 - Network connectivity to Pi-hole server
@@ -17,7 +29,100 @@ This guide provides detailed instructions for installing and setting up the Pi-h
 
 ## Installation Methods
 
+<<<<<<< HEAD
 ### Method 1: Build from Source (Recommended)
+=======
+### Method 1: Docker (Recommended)
+
+Docker provides the fastest, most reliable installation with zero dependencies.
+
+#### Quick Start with Environment Variables
+
+```bash
+# Pull and run immediately
+docker run --rm \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+
+# Run web dashboard
+docker run -d -p 8080:8080 \
+  -e PIHOLE_HOST=192.168.1.100 \
+  -e PIHOLE_API_PASSWORD=your-api-token \
+  -e WEB_ENABLED=true \
+  -e WEB_DAEMON_MODE=true \
+  --name pihole-analyzer \
+  ghcr.io/grammatonic/pihole-network-analyzer:latest
+```
+
+#### Docker Compose Setup
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  pihole-analyzer:
+    image: ghcr.io/grammatonic/pihole-network-analyzer:latest
+    container_name: pihole-analyzer
+    environment:
+      PIHOLE_HOST: "${PIHOLE_HOST}"
+      PIHOLE_API_PASSWORD: "${PIHOLE_API_PASSWORD}"
+      WEB_ENABLED: "true"
+      WEB_DAEMON_MODE: "true"
+      LOG_LEVEL: "info"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+```
+
+Then run:
+
+```bash
+# Set your Pi-hole details
+export PIHOLE_HOST=192.168.1.100
+export PIHOLE_API_PASSWORD=your-api-token
+
+# Start the service
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+#### Available Environment Variables
+
+```bash
+# Pi-hole Configuration (Required)
+PIHOLE_HOST=192.168.1.100          # Pi-hole IP address
+PIHOLE_API_PASSWORD=your-token     # Pi-hole API token
+
+# Pi-hole Configuration (Optional)
+PIHOLE_PORT=80                     # Pi-hole port (default: 80)
+PIHOLE_USE_HTTPS=false             # Use HTTPS (default: false)
+PIHOLE_API_TIMEOUT=30              # API timeout seconds
+
+# Web Interface
+WEB_ENABLED=true                   # Enable web dashboard
+WEB_HOST=0.0.0.0                   # Bind address (0.0.0.0 for containers)
+WEB_PORT=8080                      # Web server port
+WEB_DAEMON_MODE=true               # Run as background service
+
+# Logging
+LOG_LEVEL=info                     # debug, info, warn, error
+LOG_ENABLE_COLORS=true             # Colorized output
+LOG_ENABLE_EMOJIS=true             # Emoji in output
+
+# Analysis
+ANALYSIS_ONLINE_ONLY=false         # Show only online devices
+METRICS_ENABLED=true               # Enable Prometheus metrics
+METRICS_PORT=9090                  # Metrics server port
+```
+
+### Method 2: Build from Source
+
+For development or custom requirements:
+>>>>>>> main
 
 #### 1. Clone Repository
 
