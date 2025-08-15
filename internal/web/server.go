@@ -223,8 +223,10 @@ type responseWrapper struct {
 }
 
 func (rw *responseWrapper) WriteHeader(code int) {
-	rw.statusCode = code
-	rw.ResponseWriter.WriteHeader(code)
+	if rw.statusCode == 0 {
+		rw.statusCode = code
+		rw.ResponseWriter.WriteHeader(code)
+	}
 }
 
 // handleDashboard serves the main dashboard page
